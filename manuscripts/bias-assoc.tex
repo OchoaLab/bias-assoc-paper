@@ -186,7 +186,7 @@ Thus, several sets of kinship matrices with different biases result in identical
 %   \label{fig:betas_cor}
 % \end{figure}
 
-\subsection{Theoretical justification of empirical observations}
+\subsection{Theoretical justification of empirical observations under standard kinship bias}
 
 Our empirical observations suggested that the biases of the Standard kinship estimator do not alter association statistics whatsoever; here we provide proof that this is indeed the case.
 To eliminate random estimation noise from the analysis (which our empirical evaluations suggest play a minor role), we shall focus exclusively on the limiting bias of the Standard (ROM) kinship estimator.
@@ -561,6 +561,121 @@ The p-value of the genetic effect is usually calculated using a chi-squared test
 Therefore, both the focal genetic effect coefficient $\beta$ and its p-value are invariant under this particular kinship bias compared to using the true kinship matrix.
 However, the result for PCA relies on an approximation, whereas for LMM it was exact.
 
+\subsection{Proof that WG is equivalent to true kinship in its random effects}
+
+\subsubsection{The LMM genetic association model under Weir-Goudetkinship estimator}
+
+Base on the equation below:
+
+\[
+\widehat{\Phi^{WG}}=\frac{1}{1-\tilde{\varphi}}(\boldsymbol{\Phi}-\tilde{\varphi}\boldsymbol{\mathrm{J}})W
+\]
+
+We could also express $\widehat{\Phi^{WG}}$ in this way:
+
+\[
+\varPhi=p\widehat{\Phi^{WG}}+q\mathrm{\mathbf{J}},
+\]
+
+where p and q are coefficients that adjust the bias between Weir-Goudet
+kinship estimator and the true estimator. Specifically,
+
+\[
+p=1-\tilde{\varphi},q=\tilde{\varphi}.
+\]
+
+We denote the random effect the LMM using Weir-Goudet kinship estimator
+$s^{WG}$, thus it satisfies:
+
+\[
+s^{WG}\sim N(\mathbf{0},\widehat{\Phi^{WG}}).
+\]
+
+In the LMM using true kinship matrix $\Phi$, we denote the random
+effect s, which satisfies:
+
+\[
+s\sim N(\mathbf{0},\frac{1}{p}\mathbf{\varPhi})
+\]
+
+From the equation above, we could assume:
+
+\[
+s=s^{WG}+\eta\mathbf{1},
+\]
+
+where:
+
+\[
+\eta\sim N(\mathbf{0},\sigma_{\eta}^{2}),\eta\mathbf{1}\sim N(\mathbf{0},\sigma_{\eta}^{2}\mathbf{J})
+\]
+
+and $\eta\mathbf{1}$ should be independent to $s^{WG}$.
+
+This matches the mean of covariance of the desired s, namely
+
+\[
+E(s)=\mathbf{0}
+\]
+
+\[
+Cov(s)=Cov(s^{WG})+Cov(\eta\mathbf{1})=\frac{1}{p}\mathbf{\Phi}.
+\]
+
+From this equation, we could know that $\sigma_{\eta}^{2}=\frac{\tilde{\varphi}}{1-\tilde{\varphi}}.$
+
+\subsubsection{Equivalent LMM fit under Weir-Goudet kinship bias}
+
+Similarly, we consider two LMM fit: one we use s based on true kinship
+matrix $\mathbf{\Phi}$, while in the other we use $s^{WG}$ which
+based on Weir-Goudet kinship estimator:
+
+\[
+y=\alpha\mathbf{1}+\beta\mathbf{X}+\gamma s+\epsilon=\alpha^{'}\mathbf{1}+\beta^{'}\mathbf{X}+\gamma^{'}s^{WG}+\epsilon^{'}.
+\]
+
+Now, we want to construct coefficients in the second model that results
+in the same fit as the first model using the truth kinship matrix.
+We could first set $\beta=\beta^{'},\epsilon=\epsilon'$. As a results,
+we only need to construct $\alpha'$ and $\gamma'$, which must satisfy:
+
+\[
+\alpha\mathbf{1}+\gamma s=\alpha^{'}\mathbf{1}+\gamma^{'}s^{WG}
+\]
+
+Then, we substitute $s^{WG}=s-\eta\mathbf{1}$, where $\eta\sim N(0,\frac{\tilde{\varphi}}{1-\tilde{\varphi}})$
+in the equation () above, which results in:
+
+\[
+\alpha\mathbf{1}+\gamma s=\alpha^{'}\mathbf{1}+\gamma^{'}(s-\eta\mathbf{1}).
+\]
+
+The unknown could be solved by, in turn, left-multiplying by $\mathbf{C}$
+and by $\mathbf{1}^{T}$. We first left multiple the equation by C,
+which results in:
+
+\[
+\gamma\mathbf{C}s=\gamma^{'}\mathbf{C}s,
+\]
+
+so $\gamma=\gamma'.$
+
+In the second case, we left multiple the equation by $\mathbf{1}^{T}$,
+plug in $\gamma=\gamma'$ and obtain:
+
+\[
+\alpha^{'}=\alpha+\gamma\eta.
+\]
+
+By the equation above, we determined the corresponding coefficients
+when using Weir-Goudet kinship estimator compared with using the true
+kinship matrix, which leads to equal likelihood and equal fit to the
+data. This shows that genetic effect coefficients and significance
+statistics remain invariant under Weir-Goudet kinship bias compared
+with using the true kinship matrix. The proofs related to PCA under
+Weir-Goudet kinship bias are similar to these under standard kinship
+bias and omitted here to reduce redundancy.
+
 \section{Discussion}
 
 The biased kinship matrix may be more desireable in PCA, from the standoint of numerical stability, as the resulting eigenvectors are not only orthogonal to each other but also to the intercept (whereas the eigenvectors of the true kinship matrix are not orthogonal to the intercept).
@@ -920,6 +1035,104 @@ popkin is estimated with the popkin R package.
 All other estimators and limits are calculated using the popkinsuppl R package.
 
 
+\section{Appendix}
+
+\subsection{Proof of WG being positive-definite.}
+
+Similar to the proof of standard kinship estimator, here we only consider
+the true kinship matrix \kinMat and the limit of Weir-Goudet kinship estimator
+(see Methods 5.2.4 Eq. 12). Here, we also express it in matrix notations:
+
+\begin{equation}
+\widehat{\Phi^{WG}}=\frac{1}{1-\tilde{\varphi}}(\boldsymbol{\Phi}-\tilde{\varphi}\boldsymbol{\mathrm{J}})
+\end{equation}
+
+where $\mathbf{J}=\mathbf{1}\mathbf{1}^{\intercal}$is the $n\times n$
+matrix full of ones, $\tilde{\varphi}=\frac{2}{n(n-1)}\sum_{j=2}^{n}\sum_{k=1}^{j-1}\varphi_{jk}.$
+
+We shall first show that Weir-Goudet kinship matrix is positive-semidefinite,
+so we could guarantee the decomposition to matrix square root exists.
+
+The proof will be divided into three cases:
+
+(i)
+
+For every length-n vector $\mathbf{v}$ with $\mathbf{v}\bot\mathbf{1}$,
+we have $\mathbf{1}^{T}\mathbf{v}=\mathbf{0}$. Then, we left-multiply
+expression above with $\mathbf{v}$:
+
+\[
+\widehat{\Phi^{WG}}\mathbf{v}=\frac{1}{1-\tilde{\varphi}}(\boldsymbol{\Phi}-\tilde{\varphi}\mathbf{1}\mathbf{1}^{\intercal})\mathbf{v}=\frac{1}{1-\tilde{\varphi}}\mathbf{\Phi}\mathbf{v}.
+\]
+
+Then, we right-multiply the equation with $\mathbf{v}^{T}$:
+
+\[
+\mathbf{v}^{T}\widehat{\Phi^{WG}}\mathbf{v}=\frac{1}{1-\tilde{\varphi}}\mathbf{v}^{T}\mathbf{\Phi}\mathbf{v}
+\]
+
+Since $\Phi$ is positive definite and, by definition, $\mathbf{v}^{T}\mathbf{\Phi}\mathbf{v}$
+for all length-n vector $v$, thus $\mathbf{v}^{T}\widehat{\Phi^{WG}}\mathbf{v}>0$
+in case (i).
+
+(ii)
+
+For $\mathbf{v}=\beta\mathbf{1}\land\beta\neq0$, we left-multiply
+expression (14) with $\mathbf{v}$:
+
+\[
+\widehat{\Phi^{WG}}\mathbf{v}=\frac{\beta}{1-\tilde{\varphi}}(\boldsymbol{\Phi1}-\tilde{\varphi}\mathbf{1}n).
+\]
+
+Then, we right-multiply the equation with $\mathbf{v}^{T}=\beta\mathbf{1^{\mathrm{T}}}$:
+
+\[
+\mathbf{v}^{T}\widehat{\Phi^{WG}}\mathbf{v}=\frac{\beta^{2}}{1-\tilde{\varphi}}(\boldsymbol{1^{\mathrm{T}}\Phi1}-\tilde{\varphi}n^{2})=\frac{\beta^{2}n^{2}}{1-\tilde{\varphi}}(\overline{\varphi}-\tilde{\varphi}).
+\]
+
+Now, we want to show that $\overline{\varphi}-\tilde{\varphi}\geq0.$
+
+Remember $\bar{\varphi}=\frac{1}{n^{2}}\sum_{j=1}^{n}\sum_{k=1}^{n}\varphi_{jk}$
+and $\tilde{\varphi}=\frac{2}{n(n-1)}\sum_{j=2}^{n}\sum_{k=1}^{j-1}\varphi_{jk}$.
+We could denote the mean of the diagonal terms as $\overline{d}=\frac{1}{n}\sum_{j=1}^{n}\varphi_{jj}$,
+which results in:
+
+\[
+\overline{\varphi}=\frac{\tilde{\varphi}(n-1)+\overline{d}}{n}.
+\]
+
+Based on results from previous research (), we could conclude $\overline{d}\geq\overline{\varphi}$,
+which results in:
+
+\[
+\overline{d}\geq\frac{\tilde{\varphi}(n-1)+\overline{d}}{n}\Longrightarrow\overline{d}\geq\tilde{\varphi}.
+\]
+
+Since $\overline{\varphi}-\tilde{\varphi}=$$\frac{\overline{d}-\tilde{\varphi}}{n}$,
+we could conclude that $\varphi\ge\varphi$ and the equality holds
+if and only if $\varphi_{jk}=\varphi\forall j,k$.
+
+As a result, $\mathbf{v}^{T}\widehat{\Phi^{WG}}\mathbf{v}\geq0$.
+
+(iii)
+
+Based on (i) and (ii), we could express all length-n vector $\mathbf{w}$
+from $\mathbb{R}^{n}$ in this way: 
+
+\[
+\{\mathbf{w}=\mathbf{v}+\beta\mathbf{1}|\mathbf{v}\bot\mathbf{1},\beta\in\mathbb{R}\}.
+\]
+
+In other words, the whole space is the direct sum of the subspace
+spanned by vectors orthogonal to $\mathbf{1}$ and the subspace spanned
+by vectors parallel to $\mathbf{1}$\citep{hefferon_2020}.
+
+If there exists one negative eigenvalue associated to a negative subspace,
+it does not overlap with the subspace spanned by vectors orthogonal
+to $\mathbf{1}$ and it does not overlap with the subspace spanned
+by vectors parallel to $\mathbf{1}$. Thus, this negative subspace
+does not intersect with the whole space, which means there is no negative
+eigenvalue for $\widehat{\Phi^{WG}}$.
 
 
 \printbibliography
