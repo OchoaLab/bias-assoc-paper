@@ -12,10 +12,6 @@ setwd( '../../scripts/' )
 # standard code for a complex trait and an admixed population
 source('sim_geno_trait_k3.R')
 
-# load new functions from external scripts
-source('kinship_to_evd.R')
-source('kinship_gcta_limit.R')
-
 # place outputs in "data" (in a subdirectory depending on params)
 setwd( '../bias/data/' )
 
@@ -195,7 +191,7 @@ betas <- data.frame( lmm_gcta = data$beta )
 message( "pca_gcta" )
 # indexes for PCs
 indexes <- 1 : k_subpops
-eigenvectors <- kinship_to_evd( kinship_gcta )
+eigenvectors <- eigen( kinship_gcta )$vectors
 eigenvectors <- eigenvectors[, indexes ] # subset
 # write eigenvectors to file
 write_eigenvec( name, eigenvectors, fam, plink2 = TRUE, verbose = FALSE )
@@ -237,7 +233,7 @@ do_all <- function(kinship) {
     
     # PCA
     message( name_pca_method )
-    eigenvectors <- kinship_to_evd( kinship )
+    eigenvectors <- eigen( kinship )$vectors
     eigenvectors <- eigenvectors[, indexes ] # subset
     # remove last eigenvector (or two) in some cases to avoid colinearity
     # made case super narrow to re-evaluate if params change
