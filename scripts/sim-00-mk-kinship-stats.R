@@ -5,21 +5,12 @@ library(genio)       # to write BED files for external software
 library(popkin)      # to estimate kinship without bias
 library(popkinsuppl) # for PCA's kinship estimator
 library(genbin)      # gcta and plink binary wrappers
-
-# switch to main scripts directory
-setwd( '../../scripts/' )
-
-# standard code for a complex trait and an admixed population
-source('sim_geno_trait_k3.R')
-
-# place outputs in "data" (in a subdirectory depending on params)
-setwd( '../bias/data/' )
+library(simgenphen)  # for genotype+phenotype simulations
 
 # a name for temporary BED/etc data, under project dir
 name <- 'data'
 # same name for all cases! (gets overwritten serially, removed in the end)
 file_covar <- paste0( name, '.eigenvec' )
-
 
 ############
 ### ARGV ###
@@ -76,6 +67,8 @@ dir_out <- paste0(
     if ( fes ) '-fes' else '-rc'
 )
 
+# go where we want data outputs to be
+setwd( '../data' )
 
 # place data in a new figure specific to this simulation
 if ( !dir.exists( dir_out ) )
@@ -88,7 +81,7 @@ setwd( dir_out )
 ############
 
 # simulate genotypes and trait as usual
-obj <- sim_geno_trait_k3(
+data <- sim_gen_phen(
     n_ind = n_ind,
     m_loci = m_loci,
     m_causal = m_causal,
@@ -100,11 +93,11 @@ obj <- sim_geno_trait_k3(
     verbose = TRUE,
     fst = fst
 )
-X <- obj$X
-kinship_true <- obj$kinship
-trait <- obj$trait
-causal_indexes <- obj$causal_indexes
-causal_coeffs <- obj$causal_coeffs
+X <- data$X
+kinship_true <- data$kinship
+trait <- data$trait
+causal_indexes <- data$causal_indexes
+causal_coeffs <- data$causal_coeffs
 
 # save causal trait data for AUC evaluations later
 save(
@@ -147,11 +140,8 @@ kinship_std_rom_lim <- kinship_std_limit( kinship_true )
 kinship_std_rom <- kinship_std( X )
 kinship_std_mor <- kinship_std( X, mean_of_ratios = TRUE )
 
-# 4) popkin estimate
-# need labels first
-labs <- ceiling( ( 1 : n_ind ) / n_ind * 10 )
-# actual popkin estimate
-kinship_popkin <- popkin(X, labs)
+# 4) popkin estimate, without labels
+kinship_popkin <- popkin( X )
 
 # 5) WG
 # limit of estimator
@@ -167,9 +157,9 @@ kinship_gcta_lim <- kinship_gcta_limit( kinship_true )
 gcta_grm( name, name_out = 'kinship_gcta', verbose = FALSE )
 delete_files_log( 'kinship_gcta' ) # unneeded log file
 # read GCTA kinship into R (need for PCA version)
-obj <- read_grm( 'kinship_gcta', verbose = FALSE )
-kinship_gcta <- obj$kinship / 2
-M <- obj$M # same for all methods (control that aspect)
+data <- read_grm( 'kinship_gcta', verbose = FALSE )
+kinship_gcta <- data$kinship / 2
+M <- data$M # same for all methods (control that aspect)
 
 ############
 ### GCTA ###
@@ -190,7 +180,8 @@ betas <- data.frame( lmm_gcta = data$beta )
 
 message( "pca_gcta" )
 # indexes for PCs
-indexes <- 1 : k_subpops
+# use top r=k-1 !
+indexes <- 1 : ( k_subpops - 1 )
 eigenvectors <- eigen( kinship_gcta )$vectors
 eigenvectors <- eigenvectors[, indexes ] # subset
 # write eigenvectors to file
@@ -235,14 +226,12 @@ do_all <- function(kinship) {
     message( name_pca_method )
     eigenvectors <- eigen( kinship )$vectors
     eigenvectors <- eigenvectors[, indexes ] # subset
-    # remove last eigenvector (or two) in some cases to avoid colinearity
-    # made case super narrow to re-evaluate if params change
-    if ( name_method == 'true' && G == 20 && fes )
-        eigenvectors <- eigenvectors[ , - ( (k_subpops-1) : k_subpops), drop = FALSE ]
-    #eigenvectors <- eigenvectors[ , - k_subpops ]
     # write eigenvectors to file
     write_eigenvec( name, eigenvectors, fam, plink2 = TRUE, verbose = FALSE )
-    data <- plink_glm( name, file_covar = file_covar, verbose = FALSE )
+    # set maximum VIF for two special cases where near-collinearity is otherwise a problem for plink with defaults
+    # Actual error message: "  Error: Cannot proceed with --glm regression on phenotype 'PHENO1', since variance inflation factor for covariate 'PC1' is too high (VIF_TOO_HIGH). You may want to remove redundant covariates and try again."
+    vif <- if ( name_method == 'true' || name_method == 'popkin' ) 100 else NA
+    data <- plink_glm( name, file_covar = file_covar, vif = vif, verbose = FALSE )
     # cleanup
     unlink( file_covar )
     delete_files_plink_glm( name )
