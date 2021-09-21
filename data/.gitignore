@@ -1,7 +1,8 @@
 *.grm.bin
 *.grm.N.bin
 *.grm.id
-betas.txt
+betas.txt.gz
 betas_cor.pdf
-pvals.txt
+pvals.txt.gz
+pvals_cor_report.txt
 simtrait.RData

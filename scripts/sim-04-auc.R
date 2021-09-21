@@ -9,53 +9,15 @@ library(simtrait) # pval_aucpr
 
 # define options
 option_list = list(
-    make_option(c("-n", "--n_ind"), type = "integer", default = 1000, 
-                help = "number of individuals", metavar = "int"),
-    make_option(c("-m", "--m_loci"), type = "integer", default = 10000, 
-                help = "number of loci", metavar = "int"),
-    make_option(c("-k", "--k_subpops"), type = "integer", default = 3, 
-                help = "admixture intermediate subpopulations", metavar = "int"),
-    make_option(c("-f", "--fst"), type = "double", default = 0.3, 
-                help = "FST (fixation index)", metavar = "double"),
-    make_option(c("--bias_coeff"), type = "double", default = 0.5, 
-                help = "admixture bias coeff", metavar = "double"),
-    make_option(c("-g", "--generations"), type = "integer", default = 1, 
-                help = "number of generations, for realistic local kinship", metavar = "int"),
-    make_option("--herit", type = "double", default = 0.8, 
-                help = "heritability", metavar = "double"),
-    make_option("--m_causal", type = "integer", default = 100, 
-                help = "num causal loci", metavar = "int"),
-    make_option("--fes", action = "store_true", default = FALSE, 
-                help = "Use FES instead of RC trait model")
+    make_option("--bfile", type = "character", default = NA, 
+                help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 
 # get values
-n_ind <- opt$n_ind
-m_loci <- opt$m_loci
-k_subpops <- opt$k_subpops
-fst <- opt$fst
-bias_coeff <- opt$bias_coeff
-generations <- opt$generations
-m_causal <- opt$m_causal
-herit <- opt$herit
-fes <- opt$fes
-
-# output path for BED files and all results files
-dir_out <- paste0(
-    'sim-admix',
-    '-n', n_ind,
-    '-m', m_loci,
-    '-k', k_subpops,
-    '-f', fst,
-    '-s', bias_coeff,
-    '-mc', m_causal,
-    '-h', herit,
-    '-g', generations,
-    if ( fes ) '-fes' else '-rc'
-)
+dir_out <- opt$bfile
 
 # before switching away from "scripts", load a table located there
 kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
@@ -63,11 +25,10 @@ n_kinship <- nrow( kinship_methods )
 
 # load pre-existing data
 setwd( '../data/' )
-#setwd( 'D:/3.Duke/research/alex_ochoa/1.reverse_regression/coding/mycode/true-vs-biased-kinship-gwas/results' )
 setwd( dir_out )
 
 # load tibbles
-pvals <- read_tsv( 'pvals.txt', show_col_types = FALSE )
+pvals <- read_tsv( 'pvals.txt.gz', show_col_types = FALSE )
 # and true causal info, for AUC
 load( 'simtrait.RData' )
 

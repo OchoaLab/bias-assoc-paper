@@ -1,47 +1,32 @@
 
-# generate data on standard K=3 admixture
-# time Rscript sim-00-mk-kinship-stats.R 
-# # 0m28.729s viiiaR5
-# # 0m48.462s ideapad
-# time Rscript sim-00-mk-kinship-stats.R --fes
-# inv trait and family!  This is the only version shown in paper so far!!!
-# also only version redone with most recent changes (simfam and genbin)
-time Rscript sim-00-mk-kinship-stats.R -g 20 --fes
-# 0m53.873s ideapad
+# simulate genotypes and phenotypes data on standard K=3 admixture
+time Rscript sim-00-sim-gen-phen.R -g 20 --fes
+# 0m10.618s viiiaR5
+# dir output name for this run, which gets passed to other scripts
+name='sim-admix-n1000-m10000-k3-f0.3-s0.5-mc100-h0.8-g20-fes'
+
+# create all kinship estimates
+time Rscript sim-01-kinship.R --bfile $name
+# 0m3.313s
 
 # kinship plots
-# should be about the same for both trait types, so just run one
-# (made both to just load the most convenient copy while we decide)
-# time Rscript sim-01-kinship-plot.R
-# time Rscript sim-01-kinship-plot.R --fes
-time Rscript sim-01-kinship-plot.R -g 20 --fes
+time Rscript sim-02-kinship-plot.R --bfile $name
+# 0m3.002s
+
+# run association tests
+time Rscript sim-03-assoc.R --bfile $name -r 2
+# 0m18.826s
+
+# calculate AUCs
+time Rscript sim-04-auc.R --bfile $name
+# 0m0.615s
 
 # statistic correlation heatmaps
-# Rscript sim-02-pval-beta-corr.R
-# Rscript sim-02-pval-beta-corr.R --fes
-Rscript sim-02-pval-beta-corr.R -g 20 --fes
-# Subset: PCA, Weir-Goudet lim., PCA, Standard ROM lim., PCA, GCTA lim., PCA, Weir-Goudet est., PCA, Standard ROM est., PCA, Standard MOR est., PCA, GCTA est.
-# Range: 0.995473892620475, 1
-# Subset: PCA, Weir-Goudet lim., PCA, Standard ROM lim., PCA, GCTA lim., PCA, Popkin est., PCA, Weir-Goudet est., PCA, Standard ROM est., PCA, Standard MOR est., PCA, GCTA est.
-# Range: 0.97312763475995, 1
-# Subset: PCA, True Kinship, PCA, Weir-Goudet lim., PCA, Standard ROM lim., PCA, GCTA lim., PCA, Popkin est., PCA, Weir-Goudet est., PCA, Standard ROM est., PCA, Standard MOR est., PCA, GCTA est.
-# Range: 0.970466941724987, 1
-# Subset: LMM, True Kinship, LMM, Weir-Goudet lim., LMM, Standard ROM lim.
-# Range: 0.999999839327728, 1
-# Subset: LMM, True Kinship, LMM, Weir-Goudet lim., LMM, Standard ROM lim., LMM, GCTA lim.
-# Range: 0.991417155638545, 1
-# Subset: LMM, Popkin est., LMM, Weir-Goudet est., LMM, Standard ROM est.
-# Range: 0.999997467390203, 1
-# Subset: LMM, Standard MOR est., LMM, GCTA est.
-# Range: 1, 1
-# Subset: LMM, Popkin est., LMM, Weir-Goudet est., LMM, Standard ROM est., LMM, Standard MOR est., LMM, GCTA est.
-# Range: 0.967053222476237, 1
-# Subset: LMM, True Kinship, LMM, Weir-Goudet lim., LMM, Standard ROM lim., LMM, GCTA lim., LMM, Popkin est., LMM, Weir-Goudet est., LMM, Standard ROM est., LMM, Standard MOR est., LMM, GCTA est.
-# Range: 0.877022643496176, 1
+time Rscript sim-05-stats-corr.R --bfile $name
+# 0m0.649s
 
-# Rscript sim-03-auc.R
-# Rscript sim-03-auc.R --fes
-Rscript sim-03-auc.R -g 20 --fes
+
+
 
 
 ### THEORY/OBSOLETE ###
