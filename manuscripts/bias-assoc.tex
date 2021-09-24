@@ -4,6 +4,7 @@
 \usepackage{hyperref}
 \usepackage{graphicx}
 \usepackage[capitalize]{cleveref}
+\usepackage{appendix}
 
 % next three for UTF8 to work (for non-ASCII names to work without awkward codes)
 \usepackage[T1]{fontenc}
@@ -28,11 +29,17 @@
   }%
   \xspace%
 }%
-\newcommand{\kinMatStdLim}{%
+\newcommand{\kinMatEstNamed}[1]{%
   \ensuremath{%
-    \mathbf{\hat{\Phi}}^\text{std-lim}
+    \mathbf{\hat{\Phi}}^\text{#1}
   }%
   \xspace%
+}%
+\newcommand{\kinMatStdLim}{%
+  \kinMatEstNamed{std-lim}
+}%
+\newcommand{\kinMatWGLim}{%
+  \kinMatEstNamed{WG-lim}
 }%
 
 % % for theorems!
@@ -49,7 +56,7 @@
 % spacing smaller than double
 \renewcommand{\baselinestretch}{1.2}
 
-\title{\Large \textbf{The effect of population kinship estimation bias in structured genetic association studies}}
+\title{\Large \textbf{Fixed and mixed-effect genetic association models are robust to common population kinship estimation biases}}
 \author{Zhuoran Hou$^1$, Alejandro Ochoa$^{1,2,*}$}
 \date{}
 
@@ -63,34 +70,17 @@ $^*$ Corresponding author: \texttt{alejandro.ochoa@duke.edu}
 
 
 \begin{abstract}
-  Population kinship matrices are estimated for a variety of applications, including control for population structure in genetic association studies.
-  Recent work found that the most common kinship estimators can be severely biased.
-  In this work, we investigate the effect of this kinship bias on the downstream application of genetic association.
-  Remarkably, kinship bias does not affect genetic associations based on either Principal Components Analysis (PCA) or Linear Mixed-effects Models (LMM).
-  We present empirical observations using simulated data, then prove association equivalence for specific biases theoretically using linear algebra.
-  In particular, the exact form of the kinship bias is compensated for by fitting the intercept in both PCA and LMM approaches, which model population structure via covariates, suggesting that only models with this precise arrangement will be robust to this kinship bias.
+  Genetic association studies for structured populations model the correlation structure between individuals, most often using population kinship matrices.
+  The two most common association models, Principal Components Analysis (PCA) association and the Linear Mixed-effects Model (LMM), are expressed in terms of kinship matrices.
+  However, the most common kinship estimators can have severe biases that were only recently characterized.
+  The goal of this work is to characterize the effect of these kinship biases on genetic association.
+  We employed a large simulated admixed family and data from the 1000 Genomes Project, both with simulated traits, to evaluate the performance of each of PCA and LMM when a variety of kinship matrices is used.
+  We tested several common kinship estimators, and in the simulated admixed family we also included the true kinship matrix and the the theoretical limits of the biased estimators (as the number of loci approaches infinity).
+  Remarkably, we find negligible differences in association statistics and overall performance between all kinship matrices tested.
+  Our empirical observations led us to the hypothesis that the association tests are invariant to whether the true kinship matrix or two of the biased limits are employed.
+  We prove, using linear algebra, that our hypothesis holds exactly for LMM and approximately for PCA.
+  Our constructive proof shows that both biased kinship matrices result in regression covariates (PCs in PCA, random effects in LMM) whose biases are compensated for by fitting the intercept, suggesting that only models with this precise arrangement will be robust to these kinship biases.
 \end{abstract}
-
-\clearpage
-
-\tableofcontents
-
-\clearpage
-	
-\section{TO DO}
-
-Plan for finishing paper.
-Will pursue these items in this order:
-
-\begin{itemize}
-\item Prove WG equivalence just like for the standard kinship estimator.
-  NOTE: I couldn't come up with a transformation like the centering matrix that carries over easily to the matrix square root, so it may be challenging.
-\item Add a real genotype illustration (1000 Genomes).
-  \begin{itemize}
-  \item Adds smaller kinship matrix fig and p-value correlation fig.
-  \end{itemize}
-\end{itemize}
-
 
 \clearpage
 
@@ -111,7 +101,7 @@ popkin is unbiased  \citep{ochoa_estimating_2021}.
 To quantify the effect of the various kinship matrix estimators, and their limiting biases, we simulated genotypes and a trait, and calculated association p-values for all kinship variants of the PCA and LMM methods.
 We first simulated an admixed population with $K=3$ ancestries, then simulated a 20-generation random pedigree from the admixed population as founders.
 This high-dimensinal admixed family scenario results in a large difference in performance between PCA and LMM approaches \citep{yao_testing_2019}.
-To further differentiate methods, we increase noise in kinship estimation by purposefully simulated a small number of loci, $m=10,000$.
+To further differentiate methods, we increase noise in kinship estimation by purposefully simulating a small number of loci: $m=10,000$.
 
 % path for figures
 \graphicspath{ {../data/sim-admix-n1000-m10000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/} }
@@ -210,7 +200,7 @@ $$
 where
 $\mathbf{1}$ is a length-$n$ column vector of ones,
 $\mathbf{J} = \mathbf{1} \mathbf{1}^\intercal$ is the $n \times n$ matrix full of ones,
-$\boldsymbol{\varphi} = \frac{1}{n} \mathbf{1}^\intercal \kinMat$ is a length-$n$ vector of per-row mean kinship values, and
+$\boldsymbol{\varphi} = \frac{1}{n} \kinMat \mathbf{1}$ is a length-$n$ vector of per-row mean kinship values, and
 $\bar{\varphi} = \frac{1}{n^2} \mathbf{1}^\intercal \kinMat \mathbf{1}$ is the overall mean kinship (scalar).
 The two kinship matrices are related more succinctly using the $n \times n$ centering matrix,
 $$
@@ -341,7 +331,7 @@ Given a square root of the true kinship matrix, $\kinMat^\frac{1}{2}$, we can co
   \mathbf{C} \kinMat^\frac{1}{2}
   .
 \end{equation}
-It can be directly verified that this matrix square root indeed satisfies
+This matrix square root can be verified to satisfy
 $\left( \kinMatStdLim \right)^\frac{1}{2} \left( \left( \kinMatStdLim \right)^\frac{1}{2} \right)^\intercal = \kinMatStdLim$
 as given in \cref{eq:kin-std-lim-C}.
 
@@ -357,12 +347,12 @@ The LMM regression model is given by
   \label{eq:lmm_gwas}
   \mathbf{y}
   =
-  \mathbf{1} \alpha + \mathbf{x}_i \beta + \mathbf{s} + \boldsymbol{\epsilon}
+  \alpha \mathbf{1} + \beta \mathbf{x}_i + \mathbf{s} + \boldsymbol{\epsilon}
   ,
 \end{equation}
 where $\alpha$ is the intercept coefficient,
 $\beta$ is the genetic effect coefficient,
-$\boldsymbol{\epsilon}$ are random independent residuals ($\boldsymbol{\epsilon} \sim \text{Normal}(\mathbf{0}, \mathbf{I} \sigma^2_\epsilon)$ for some $\sigma^2_\epsilon$),
+$\boldsymbol{\epsilon}$ are random independent residuals ($\boldsymbol{\epsilon} \sim \text{Normal}(\mathbf{0}, \sigma^2_\epsilon \mathbf{I})$ for some $\sigma^2_\epsilon$ fit to the data),
 and the random effect satisfies \citep{sul_population_2018}
 $$
 \mathbf{s} \sim \text{Normal} \left( \mathbf{0}, \sigma^2 \kinMat \right),
@@ -373,7 +363,7 @@ The dependence of the model on \kinMat is clearer by writing it equivalently as
   \label{eq:lmm_gwas2}
   \mathbf{y}
   =
-  \mathbf{1} \alpha + \mathbf{x}_i \beta + \sigma \kinMat^\frac{1}{2} \mathbf{r} + \boldsymbol{\epsilon}
+  \alpha \mathbf{1} + \beta \mathbf{x}_i + \sigma \kinMat^\frac{1}{2} \mathbf{r} + \boldsymbol{\epsilon}
   ,
 \end{equation}
 where $\mathbf{r} \sim \text{Normal} \left( \mathbf{0}, \mathbf{I} \right)$.
@@ -403,10 +393,10 @@ The first fit will result in the unprimed variables below, while we distinguish 
 \begin{align*}
   \mathbf{y}
   &=
-    \mathbf{1} \alpha + \mathbf{x}_i \beta + \sigma \kinMat^\frac{1}{2} \mathbf{r} + \boldsymbol{\epsilon}
+    \alpha \mathbf{1} + \beta \mathbf{x}_i + \sigma \kinMat^\frac{1}{2} \mathbf{r} + \boldsymbol{\epsilon}
   \\
   &=
-    \mathbf{1} \alpha' + \mathbf{x}_i \beta' + \sigma' \left( \kinMat' \right)^\frac{1}{2} \mathbf{r}' + \boldsymbol{\epsilon}'
+    \alpha' \mathbf{1} + \beta' \mathbf{x}_i + \sigma' \left( \kinMat' \right)^\frac{1}{2} \mathbf{r}' + \boldsymbol{\epsilon}'
     .
 \end{align*}
 Now we shall construct coefficients for the second model that result in the same fit to the data, including the same likelihood, as the first model.
@@ -418,16 +408,16 @@ $\mathbf{r}' = \mathbf{r}$.
 Note that the previous equal random effects (including residuals) immediately results in the same likelihood for both models.
 The only parameters left to construct are $\alpha'$ and $\sigma'$, which must satisfy
 $$
-\mathbf{1} \alpha  + \sigma \kinMat^\frac{1}{2} \mathbf{r}
+\alpha \mathbf{1}  + \sigma \kinMat^\frac{1}{2} \mathbf{r}
 =
-\mathbf{1} \alpha' + \sigma' \left( \kinMat' \right)^\frac{1}{2} \mathbf{r}
+\alpha' \mathbf{1} + \sigma' \left( \kinMat' \right)^\frac{1}{2} \mathbf{r}
 .
 $$
 Next we substitute $\kinMat' = \kinMatStdLim$ using the matrix square root determined in terms of \kinMat in \cref{eq:eq:kin-std-lim-C-sqrt}, which results in
 $$
-\mathbf{1} \alpha  + \sigma \kinMat^\frac{1}{2} \mathbf{r}
+\alpha \mathbf{1} + \sigma \kinMat^\frac{1}{2} \mathbf{r}
 =
-\mathbf{1} \alpha' + \sigma'
+\alpha' \mathbf{1} + \sigma'
 \frac{1}{ \sqrt{ 1 - \bar{\varphi} } }
 \mathbf{C} \kinMat^\frac{1}{2}
 \mathbf{r}
@@ -458,6 +448,18 @@ $$
 \alpha  + \sigma \frac{1}{n} \mathbf{1}^\intercal \kinMat^\frac{1}{2} \mathbf{r}
 .
 $$
+Note that the last equation can also be written as
+$$
+\alpha'
+=
+\alpha  + \eta
+,
+\quad\quad
+\eta \sim \text{Normal}( 0, \sigma^2 \bar{\varphi} )
+,
+$$
+since $\eta = \sigma \frac{1}{n} \mathbf{1}^\intercal \kinMat^\frac{1}{2} \mathbf{r}$ is a scalar random Normal variable (because it is a sum of marginals of a Multivariate Normal, each of which are Normal) with mean zero (because $\mathbf{r}$ had mean zero) and the stated variance (since $\Var( \sigma \frac{1}{n} \mathbf{1}^\intercal \kinMat^\frac{1}{2} \mathbf{r} ) = ( \sigma \frac{1}{n} \mathbf{1}^\intercal \kinMat^\frac{1}{2}) \Cov( \mathbf{r} ) ( \sigma \frac{1}{n} \mathbf{1}^\intercal \kinMat^\frac{1}{2} )^\intercal$, $\Cov( \mathbf{r} ) = \mathbf{I}$, and $\frac{1}{n^2} \mathbf{1}^\intercal \kinMat \mathbf{1} = \bar{\varphi}$).
+
 
 We just determined that every solution in terms of the true kinship matrix (including every combination of fixed coefficients and random effects) has a corresponding solution in terms of the limit of the standard kinship estimator, which has equal likelihood and equal fit to the data.
 This includes the optimal solution, whether determined by the ML or REML criteria.
@@ -475,7 +477,7 @@ The PCA regression model is
   \label{eq:pca_gwas}
   \mathbf{y}
   =
-  \mathbf{1} \alpha + \mathbf{x}_i \beta + \mathbf{U}_d \boldsymbol{\gamma}_d + \boldsymbol{\epsilon}
+  \alpha \mathbf{1} + \beta \mathbf{x}_i + \mathbf{U}_d \boldsymbol{\gamma}_d + \boldsymbol{\epsilon}
   ,
 \end{equation}
 where
@@ -499,7 +501,7 @@ $$
 \mathbf{U} \mathbf{\Lambda}^\frac{1}{2}
 ,
 $$
-where $\mathbf{\Lambda}^\frac{1}{2}$ simply contains the square roots of each eigenvalue along the diagonal.
+where $\mathbf{\Lambda}^\frac{1}{2}$ contains the square roots of each eigenvalue along the diagonal.
 This equation reveals that the LMM model in \cref{eq:lmm_gwas2} can be written in terms of the eigendecomposition, and thus resemble the PCA model even more closely, since
 $$
 \sigma \kinMat^\frac{1}{2} \mathbf{r}
@@ -528,18 +530,18 @@ The two model fits we are considering are
 \begin{align*}
   \mathbf{y}
   &=
-    \mathbf{1} \alpha + \mathbf{x}_i \beta + \mathbf{U}_d \boldsymbol{\gamma}_d + \boldsymbol{\epsilon}
+    \alpha \mathbf{1} + \beta \mathbf{x}_i + \mathbf{U}_d \boldsymbol{\gamma}_d + \boldsymbol{\epsilon}
   \\
   &=
-    \mathbf{1} \alpha' + \mathbf{x}_i \beta' + \mathbf{U}_d' \boldsymbol{\gamma}_d' + \boldsymbol{\epsilon}'
+    \alpha' \mathbf{1} + \beta' \mathbf{x}_i + \mathbf{U}_d' \boldsymbol{\gamma}_d' + \boldsymbol{\epsilon}'
     ,
 \end{align*}
 and we again assume that the focal parameter $\beta' = \beta$ and the residuals $\boldsymbol{\epsilon}' = \boldsymbol{\epsilon}$ are equal.
 Eliminating the resulting shared terms, and replacing $\mathbf{U}_d' = \mathbf{C} \mathbf{U}_d$ (assuming that our approximation holds exactly) results in the remaining coefficients having to satisfy
 $$
-\mathbf{1} \alpha + \mathbf{U}_d \boldsymbol{\gamma}_d
+\alpha \mathbf{1} + \mathbf{U}_d \boldsymbol{\gamma}_d
 =
-\mathbf{1} \alpha' + \mathbf{C} \mathbf{U}_d \boldsymbol{\gamma}_d'.
+\alpha' \mathbf{1} + \mathbf{C} \mathbf{U}_d \boldsymbol{\gamma}_d'.
 $$
 We solve for the missing coefficients by left-multiplying by $\mathbf{C}$ and $\mathbf{1}^\intercal$ as before, which here ultimately results in
 \begin{align*}
@@ -561,120 +563,111 @@ The p-value of the genetic effect is usually calculated using a chi-squared test
 Therefore, both the focal genetic effect coefficient $\beta$ and its p-value are invariant under this particular kinship bias compared to using the true kinship matrix.
 However, the result for PCA relies on an approximation, whereas for LMM it was exact.
 
-\subsection{Proof that WG is equivalent to true kinship in its random effects}
+\subsection{Proof that association based on Weir-Goudet and true kinship are equivalent}
 
-\subsubsection{The LMM genetic association model under Weir-Goudetkinship estimator}
+The limiting bias of the Weir-Goudet (WG) estimator (see Methods, \cref{eq:wg_lim}) is given in terms of the true kinship matrix by
+\begin{equation}
+  \label{eq:wg_lim_mat}
+  \kinMatWGLim
+  =
+  \frac{1}{1-\tilde{\varphi}}( \kinMat - \tilde{\varphi}\mathbf{J})
+  .
+\end{equation}
+Our strategy for proving the association equivalence under both kinship matrices is to construct a random effect structured as the true kinship matrix from a random effect structured as WG.
+Although we were unable to calculate a matrix square root for the WG limit in terms of the true kinship matrix, we found that this alternate derivation for LMMs proves the desired result and leads to strikingly analogous equations for the variance scale $\sigma^2$ and intercept $\alpha$ between both models, where the only difference ultimately is the replacement of the mean kinship $\bar{\varphi}$ in the standard estimator results with $\tilde{\varphi}$ for WG.
+We were unable to prove the PCA case with this strategy.
 
-Base on the equation below:
+\subsubsection{Constructing random effects with true kinship structure from Weir-Goudet structure}
 
-\[
-\widehat{\Phi^{WG}}=\frac{1}{1-\tilde{\varphi}}(\boldsymbol{\Phi}-\tilde{\varphi}\boldsymbol{\mathrm{J}})W
-\]
-
-We could also express $\widehat{\Phi^{WG}}$ in this way:
-
-\[
-\varPhi=p\widehat{\Phi^{WG}}+q\mathrm{\mathbf{J}},
-\]
-
-where p and q are coefficients that adjust the bias between Weir-Goudet
-kinship estimator and the true estimator. Specifically,
-
-\[
-p=1-\tilde{\varphi},q=\tilde{\varphi}.
-\]
-
-We denote the random effect the LMM using Weir-Goudet kinship estimator
-$s^{WG}$, thus it satisfies:
-
-\[
-s^{WG}\sim N(\mathbf{0},\widehat{\Phi^{WG}}).
-\]
-
-In the LMM using true kinship matrix $\Phi$, we denote the random
-effect s, which satisfies:
-
-\[
-s\sim N(\mathbf{0},\frac{1}{p}\mathbf{\varPhi})
-\]
-
-From the equation above, we could assume:
-
-\[
-s=s^{WG}+\eta\mathbf{1},
-\]
-
-where:
-
-\[
-\eta\sim N(\mathbf{0},\sigma_{\eta}^{2}),\eta\mathbf{1}\sim N(\mathbf{0},\sigma_{\eta}^{2}\mathbf{J})
-\]
-
-and $\eta\mathbf{1}$ should be independent to $s^{WG}$.
-
-This matches the mean of covariance of the desired s, namely
-
-\[
-E(s)=\mathbf{0}
-\]
-
-\[
-Cov(s)=Cov(s^{WG})+Cov(\eta\mathbf{1})=\frac{1}{p}\mathbf{\Phi}.
-\]
-
-From this equation, we could know that $\sigma_{\eta}^{2}=\frac{\tilde{\varphi}}{1-\tilde{\varphi}}.$
+Solving for the true kinship matrix in \cref{eq:wg_lim_mat}, we obtain
+\begin{equation}
+  \label{eq:kin_mat_true_wg}
+  \kinMat = (1-\tilde{\varphi}) \kinMatWGLim + \tilde{\varphi} \mathbf{J}.
+\end{equation}
+Let the random effect from the LMM using the WG limit be
+$$
+\mathbf{s}^\text{WG} \sim \text{Normal} \left( \mathbf{0}, \sigma^2_\text{WG} \kinMatWGLim \right),
+$$
+where $\sigma^2_\text{WG}$ is a parameter fit to the data.
+The Normal distribution above requires that \kinMatWGLim be positive definite, a fact that is proven for arbitrary true kinship matrices (except for one degenerate case) in \cref{sec:wg_posdef}.
+We desire to construct a random effect such that 
+$
+\mathbf{s} \sim \text{Normal} \left( \mathbf{0}, \sigma^2 \kinMat \right),
+$
+where again $\sigma^2$ has been fit to the data.
+\cref{eq:kin_mat_true_wg} suggest a relationship of the form
+$$
+\mathbf{s} = \mathbf{s}^\text{WG} + \eta \mathbf{1},
+$$
+where $\eta$ is a random scalar drawn independently from a Normal distribution,
+$$
+\eta \sim \text{Normal}( 0,\sigma_{\eta}^2),
+$$
+where $\sigma_{\eta}^2$ is yet to be determined.
+This constructed $\mathbf{s}$ is indeed Multivariate Normal since $\eta \mathbf{1}$ is a (degenerate) Multivariate Normal and the sum of two Multivariate Normal variables is itself a Multivariate Normal variable.
+All that is left is to match the mean of covariance of the desired $\mathbf{s}$, namely
+\begin{align*}
+  \E[ \mathbf{s} ]
+  &=
+    \E \left[ \mathbf{s}^\text{WG} \right] + \E [ \eta ] \mathbf{1}
+    =
+    \mathbf{0},
+  \\
+  \Cov( \mathbf{s} )
+  &=
+    \Cov \left( \mathbf{s}^\text{WG} \right) + \Var ( \eta ) \mathbf{J}
+    \\
+  &= 
+    \sigma^2_\text{WG} \kinMatWGLim + \sigma_{\eta}^2 \mathbf{J}
+    =
+    \sigma^2 \kinMat
+    ,
+\end{align*}
+which is achieved with $\sigma^2 = \sigma^2_\text{WG} / ( 1 - \tilde{\varphi} )$ and $\sigma_{\eta}^2 = \tilde{\varphi} \sigma^2$.
 
 \subsubsection{Equivalent LMM fit under Weir-Goudet kinship bias}
 
-Similarly, we consider two LMM fit: one we use s based on true kinship
-matrix $\mathbf{\Phi}$, while in the other we use $s^{WG}$ which
-based on Weir-Goudet kinship estimator:
+Similarly to the case for the standard kinship estimator, we consider two equivalent LMM fits, one with $\mathbf{s}$ from the true kinship matrix, the other with $\mathbf{s}' = \mathbf{s}^\text{WG}$ from the WG limit:
+$$
+\mathbf{y}
+=
+\alpha \mathbf{1} + \beta \mathbf{x}_i + \mathbf{s} + \boldsymbol{\epsilon}
+=
+\alpha' \mathbf{1} + \beta' \mathbf{x}_i + \mathbf{s}' + \boldsymbol{\epsilon}'
+.
+$$
+As before, our empirical results motivate that $\beta = \beta', \boldsymbol{\epsilon} = \boldsymbol{\epsilon}'$, and only $\alpha'$ is left, which must satisfy
+$$
+\alpha \mathbf{1} + \mathbf{s}
+=
+\alpha' \mathbf{1} + \mathbf{s}'
+.
+$$
+We now substitute our constructed $\mathbf{s} = \mathbf{s}' + \eta \mathbf{1}$, where $\eta$ is as determined in the previous subsection, which after simplifying yields
+$$
+\alpha \mathbf{1} + \eta \mathbf{1}
+=
+\alpha' \mathbf{1}
+.
+$$
+Note $\mathbf{s}'$ drops out of the equation, which follows from having previously selected its variance appropriately to match that of the model for the true kinship matrix, namely
+$$
+\sigma' = \sigma \sqrt{ 1 - \tilde{\varphi} },
+$$
+which agrees with the solution we found earlier for the standard kinship estimator, expect replacing $\bar{\varphi}$ with $\tilde{\varphi}$.
+Lastly, the relation between intercepts is
+$$
+\alpha' = \alpha + \eta,
+$$
+which again resembles the solution for the standard model, where both draw a random variable with mean zero, except the earlier variance of $\sigma^2 \bar{\varphi}$ is replaced with $\sigma^2 \tilde{\varphi}$ here.
+As before, these results imply that the association statistics are invariant to the choice between the true and WG limit kinship matrices.
 
-\[
-y=\alpha\mathbf{1}+\beta\mathbf{X}+\gamma s+\epsilon=\alpha^{'}\mathbf{1}+\beta^{'}\mathbf{X}+\gamma^{'}s^{WG}+\epsilon^{'}.
-\]
+% \subsubsection{Approximately equivalent PCA fit under Weir-Goudet kinship bias}
 
-Now, we want to construct coefficients in the second model that results
-in the same fit as the first model using the truth kinship matrix.
-We could first set $\beta=\beta^{'},\epsilon=\epsilon'$. As a results,
-we only need to construct $\alpha'$ and $\gamma'$, which must satisfy:
+% ...
+% The rest of the proof for PCA association equivalence under Weir-Goudet kinship bias is similar to the one for standard kinship bias and is omitted.
 
-\[
-\alpha\mathbf{1}+\gamma s=\alpha^{'}\mathbf{1}+\gamma^{'}s^{WG}
-\]
 
-Then, we substitute $s^{WG}=s-\eta\mathbf{1}$, where $\eta\sim N(0,\frac{\tilde{\varphi}}{1-\tilde{\varphi}})$
-in the equation () above, which results in:
-
-\[
-\alpha\mathbf{1}+\gamma s=\alpha^{'}\mathbf{1}+\gamma^{'}(s-\eta\mathbf{1}).
-\]
-
-The unknown could be solved by, in turn, left-multiplying by $\mathbf{C}$
-and by $\mathbf{1}^{T}$. We first left multiple the equation by C,
-which results in:
-
-\[
-\gamma\mathbf{C}s=\gamma^{'}\mathbf{C}s,
-\]
-
-so $\gamma=\gamma'.$
-
-In the second case, we left multiple the equation by $\mathbf{1}^{T}$,
-plug in $\gamma=\gamma'$ and obtain:
-
-\[
-\alpha^{'}=\alpha+\gamma\eta.
-\]
-
-By the equation above, we determined the corresponding coefficients
-when using Weir-Goudet kinship estimator compared with using the true
-kinship matrix, which leads to equal likelihood and equal fit to the
-data. This shows that genetic effect coefficients and significance
-statistics remain invariant under Weir-Goudet kinship bias compared
-with using the true kinship matrix. The proofs related to PCA under
-Weir-Goudet kinship bias are similar to these under standard kinship
-bias and omitted here to reduce redundancy.
 
 \section{Discussion}
 
@@ -685,6 +678,8 @@ The GCTA kinship estimator was not analyzed theoretically, but it is very simila
 \section{Methods}
 
 \subsection{Genetic model}
+
+The following genetic model justifies the use of kinship matrices in association studies, and is the basis of all kinship estimation bias calculations that our theoretical work depends upon.
 
 Suppose there are $m$ biallelic loci and $n$ diploid individuals.
 The genotype $\xij \in \{0,1,2\}$ at a locus $i$ of individual $j$ is encoded as the number of reference alleles, for a preselected but otherwise arbitrary reference allele per locus.
@@ -741,7 +736,7 @@ $\pith = \frac{1}{2n} \sum_{j=1}^n \xij$ is the standard ancestral allele freque
 $\bar{\varphi}_j = \frac{1}{n} \sum_{k=1}^n \kt$ is the mean kinship of individual $j$ with all others, and
 $\bar{\varphi} = \frac{1}{n^2} \sum_{j=1}^n \sum_{k=1}^n \kt$ is the overall mean kinship.
 This is a complex bias that varies for every pair of individuals, and which is on average a downward bias.
-(Note that the mean estimate, or $\frac{1}{n^2} \sum_{j=1}^n \sum_{k=1}^n \ktHatNamed{std-rom}$, is algebraically zero, regardless of the true value of the mean kinship.)
+(Note that the mean estimate per row and column, or $\frac{1}{n} \sum_{k=1}^n \ktHatNamed{std-rom}$ for every $j$, is algebraically zero, regardless of the true value of the row mean kinship; the same is true for the MOR version below.)
 
 The MOR version of the standard estimator, which again is the most common form of the estimator, is given by
 \begin{equation}
@@ -815,21 +810,17 @@ The popkin (population kinship) estimator is given by \citep{ochoa_estimating_20
     &=
     \frac{1}{m} \sum_{i=1}^m (\xij-1)(\xij[k]-1) - 1
     , \\
-    \AMinHat
-    &=
-    \min_{u \ne v} \frac{1}{|S_u||S_v|} \sum_{j \in S_u} \sum_{k \in S_v} \Ajk
-    , \\
     \ktHatNew
     &= 1 - \frac{\Ajk}{\AMinHat},
   \end{split}
 \end{equation}
-where $S_u$ are subpopulations that partition individuals.
-This estimator is accurate, namely by satisfying
+where $\AMinHat$ is an estimate of the minimum of the limiting values of \Ajk.
+Here we employ $\AMinHat = \min_{j \ne k} \Ajk$.
+This kinship estimator is accurate, namely by satisfying
 $$
 \ktHatNew \toas \kt,
 $$
 under the assumption that \AMinHat is calculated over individual pairs whose true kinship is zero.
-In other words, the two subpopulations $S_u$ and $S_v$ with the minimum mean \Ajk value should have its true mean kinship value \kt be zero.
 
 \subsubsection{Weir-Goudet kinship estimator}
 
@@ -845,24 +836,32 @@ The Weir-Goudet (WG) kinship estimator and its limit are given by \citep{weir_un
     \frac{ \kt - \tilde{\varphi} }{ 1 - \tilde{\varphi} }
     ,
 \end{align}
-where \Ajk is as in \cref{eq:popkin},
-\begin{align*}
-  \AAvgHat
-  &=
+where \Ajk is as in \cref{eq:popkin}, and
+\begin{equation}
+  \label{eq:wg_tilde}
+  \begin{split}
+    \AAvgHat
+    &=
     \frac{2}{n(n-1)}
     \sum_{j=2}^n
     \sum_{k=1}^{j-1}
     \Ajk
     ,\\
-  \tilde{\varphi}
-  &=
+    \tilde{\varphi}
+    &=
     \frac{2}{n(n-1)}
     \sum_{j=2}^n
     \sum_{k=1}^{j-1}
     \kt
     .
-\end{align*}
+  \end{split}
+\end{equation}
 Thus, the WG estimator resembles the popkin estimator in \cref{eq:popkin}, except it replaces \AMinHat with \AAvgHat and that results in a uniform downward bias given by $\tilde{\varphi}$, which is the mean kinship between all different individual pairs (it excludes the diagonal, or self-kinship values, compared to the $\bar{\varphi}$ that appears in the standard and GCTA estimators).
+In \cref{sec:mean_kinship_ineqs} we prove that
+$$
+0 \le \tilde{\varphi} \le \bar{\varphi} \le \bar{d} \le 1,
+$$
+where $\bar{d} = \frac{1}{n} \sum_{j=1}^n \kt[j]$, and equalities are achieved if and only if all kinship values are equal.
 
 \subsection{Simulations}
 
@@ -1017,126 +1016,102 @@ TODO: describe the BNPSD simulation.
 
 Also describe family structure.
 
-
+Describe 1000 Genomes.
 
 \subsection{Software}
 
 TODO: state versions, download links, etc.
 
 GCTA \citep{yang_gcta:_2011}.
-We pass $2 \mathbf{\Phi}$ for all kinship matrices tested.
+Used to calculate GCTA kinship estimates.
+We pass $2 \kinMat$ for all kinship matrices tested.
 
 PCA: implemented regression in R (function lm).
 p-values based on F-test.
-Used $r=10$ in all cases.
+Used $r=k-1=2$ for admixed family simulations, and $r=10$ for 1000 Genomes project.
 
 popkin is estimated with the popkin R package.
 
 All other estimators and limits are calculated using the popkinsuppl R package.
 
 
-\section{Appendix}
-
-\subsection{Proof of WG being positive-definite.}
-
-Similar to the proof of standard kinship estimator, here we only consider
-the true kinship matrix \kinMat and the limit of Weir-Goudet kinship estimator
-(see Methods 5.2.4 Eq. 12). Here, we also express it in matrix notations:
-
-\begin{equation}
-\widehat{\Phi^{WG}}=\frac{1}{1-\tilde{\varphi}}(\boldsymbol{\Phi}-\tilde{\varphi}\boldsymbol{\mathrm{J}})
-\end{equation}
-
-where $\mathbf{J}=\mathbf{1}\mathbf{1}^{\intercal}$is the $n\times n$
-matrix full of ones, $\tilde{\varphi}=\frac{2}{n(n-1)}\sum_{j=2}^{n}\sum_{k=1}^{j-1}\varphi_{jk}.$
-
-We shall first show that Weir-Goudet kinship matrix is positive-semidefinite,
-so we could guarantee the decomposition to matrix square root exists.
-
-The proof will be divided into three cases:
-
-(i)
-
-For every length-n vector $\mathbf{v}$ with $\mathbf{v}\bot\mathbf{1}$,
-we have $\mathbf{1}^{T}\mathbf{v}=\mathbf{0}$. Then, we left-multiply
-expression above with $\mathbf{v}$:
-
-\[
-\widehat{\Phi^{WG}}\mathbf{v}=\frac{1}{1-\tilde{\varphi}}(\boldsymbol{\Phi}-\tilde{\varphi}\mathbf{1}\mathbf{1}^{\intercal})\mathbf{v}=\frac{1}{1-\tilde{\varphi}}\mathbf{\Phi}\mathbf{v}.
-\]
-
-Then, we right-multiply the equation with $\mathbf{v}^{T}$:
-
-\[
-\mathbf{v}^{T}\widehat{\Phi^{WG}}\mathbf{v}=\frac{1}{1-\tilde{\varphi}}\mathbf{v}^{T}\mathbf{\Phi}\mathbf{v}
-\]
-
-Since $\Phi$ is positive definite and, by definition, $\mathbf{v}^{T}\mathbf{\Phi}\mathbf{v}$
-for all length-n vector $v$, thus $\mathbf{v}^{T}\widehat{\Phi^{WG}}\mathbf{v}>0$
-in case (i).
-
-(ii)
-
-For $\mathbf{v}=\beta\mathbf{1}\land\beta\neq0$, we left-multiply
-expression (14) with $\mathbf{v}$:
-
-\[
-\widehat{\Phi^{WG}}\mathbf{v}=\frac{\beta}{1-\tilde{\varphi}}(\boldsymbol{\Phi1}-\tilde{\varphi}\mathbf{1}n).
-\]
-
-Then, we right-multiply the equation with $\mathbf{v}^{T}=\beta\mathbf{1^{\mathrm{T}}}$:
-
-\[
-\mathbf{v}^{T}\widehat{\Phi^{WG}}\mathbf{v}=\frac{\beta^{2}}{1-\tilde{\varphi}}(\boldsymbol{1^{\mathrm{T}}\Phi1}-\tilde{\varphi}n^{2})=\frac{\beta^{2}n^{2}}{1-\tilde{\varphi}}(\overline{\varphi}-\tilde{\varphi}).
-\]
-
-Now, we want to show that $\overline{\varphi}-\tilde{\varphi}\geq0.$
-
-Remember $\bar{\varphi}=\frac{1}{n^{2}}\sum_{j=1}^{n}\sum_{k=1}^{n}\varphi_{jk}$
-and $\tilde{\varphi}=\frac{2}{n(n-1)}\sum_{j=2}^{n}\sum_{k=1}^{j-1}\varphi_{jk}$.
-We could denote the mean of the diagonal terms as $\overline{d}=\frac{1}{n}\sum_{j=1}^{n}\varphi_{jj}$,
-which results in:
-
-\[
-\overline{\varphi}=\frac{\tilde{\varphi}(n-1)+\overline{d}}{n}.
-\]
-
-Based on results from previous research (), we could conclude $\overline{d}\geq\overline{\varphi}$,
-which results in:
-
-\[
-\overline{d}\geq\frac{\tilde{\varphi}(n-1)+\overline{d}}{n}\Longrightarrow\overline{d}\geq\tilde{\varphi}.
-\]
-
-Since $\overline{\varphi}-\tilde{\varphi}=$$\frac{\overline{d}-\tilde{\varphi}}{n}$,
-we could conclude that $\varphi\ge\varphi$ and the equality holds
-if and only if $\varphi_{jk}=\varphi\forall j,k$.
-
-As a result, $\mathbf{v}^{T}\widehat{\Phi^{WG}}\mathbf{v}\geq0$.
-
-(iii)
-
-Based on (i) and (ii), we could express all length-n vector $\mathbf{w}$
-from $\mathbb{R}^{n}$ in this way: 
-
-\[
-\{\mathbf{w}=\mathbf{v}+\beta\mathbf{1}|\mathbf{v}\bot\mathbf{1},\beta\in\mathbb{R}\}.
-\]
-
-In other words, the whole space is the direct sum of the subspace
-spanned by vectors orthogonal to $\mathbf{1}$ and the subspace spanned
-by vectors parallel to $\mathbf{1}$\citep{hefferon_2020}.
-
-If there exists one negative eigenvalue associated to a negative subspace,
-it does not overlap with the subspace spanned by vectors orthogonal
-to $\mathbf{1}$ and it does not overlap with the subspace spanned
-by vectors parallel to $\mathbf{1}$. Thus, this negative subspace
-does not intersect with the whole space, which means there is no negative
-eigenvalue for $\widehat{\Phi^{WG}}$.
-
 
 \printbibliography
 
 
+\begin{appendices}
+  \appendix
+
+  \appendixpage
+  
+  \section{Proof that WG limits are always positive definite.}
+
+  \label{sec:wg_posdef}
+
+  Starting from the fact that a true kinship matrix is positive definite by definition (it is a covariance matrix), we shall prove that the limit of the Weir-Goudet estimator is also positive definite, with the exception of one degenerate case.
+  Recall from \cref{eq:wg_lim_mat} that these two matrices are related by
+  $
+  \kinMatWGLim
+  =
+  \frac{1}{1-\tilde{\varphi}}(\kinMat-\tilde{\varphi}\boldsymbol{J})
+  .
+  $
+  We shall not consider $\kinMat = \mathbf{J}$ as a valid kinship matrix, which therefore ensures that $\tilde{\varphi} < 1$ as there is at least one kinship value with $\kt < 1$.
+  Below we will consider two linear subspaces of $\mathbb{R}^n$, $S_1$ spanned by $\mathbf{1}$ and $S_2$ its complement (orthogonal to $\mathbf{1}$), and prove that \kinMatWGLim is positive definite in both subspaces, therefore it is positive-definite in the direct sum of the subspaces, which equals the entire space: $\mathbb{R}^n = S_1 \oplus S_2$.
+  (This follows since vectors $\mathbf{v}$ for which \kinMatWGLim is not positive definite, if they exist, span a linear subspace, but its intersection to $S_1$, $S_2$, and therefore $S_1 \oplus S_2$, is trivial \citep{hefferon_2020}.)
+  In both subspaces we will prove that $\mathbf{v} \in S_i$ and $\mathbf{v} \ne \mathbf{0}$ implies $\mathbf{v}^\intercal \kinMatWGLim \mathbf{v} > 0$ which proves that \kinMatWGLim is positive definite in that subspace.
+
+  We begin by considering $\mathbf{v} \in S_2$, which satisfy $\mathbf{1}^\intercal \mathbf{v} = \mathbf{0}$, and by hypothesis $\mathbf{v} \ne \mathbf{0}$.
+  Therefore $\mathbf{v}^\intercal \mathbf{J} \mathbf{v} = 0$ in this subspace, which results in
+  $$
+  \mathbf{v}^\intercal \kinMatWGLim \mathbf{v}
+  =
+  \frac{1}{1-\tilde{\varphi}} \mathbf{v}^\intercal \kinMat \mathbf{v}
+  >
+  0
+  ,
+  $$
+  where the final inequality follows since the true kinship matrix is positive definite and $1-\tilde{\varphi} > 0$.
+
+  Lastly, we consider $\mathbf{v} \in S_1$, which are necessarily of the form $\mathbf{v} = \beta \mathbf{1}$, and by hypothesis $\beta \ne 0$.
+  Therefore
+  $$
+  \mathbf{v}^\intercal \kinMatWGLim \mathbf{v}
+  =
+  \frac{ \beta^2 }{1-\tilde{\varphi}}(\boldsymbol{1^\intercal \kinMat 1} - \tilde{\varphi} n^2)
+  =
+  \frac{ \beta^2 n^2 }{1-\tilde{\varphi}}(\bar{\varphi}-\tilde{\varphi})
+  ,
+  $$
+  where $\bar{\varphi}$ is the overall mean kinship value, while $\tilde{\varphi}$ is the mean of the off-diagonal kinship values only (\cref{eq:wg_tilde}).
+  Note that $\beta^2, n^2, 1 - \tilde{\varphi} > 0$, so the desired result follows if $\tilde{\varphi} < \bar{\varphi}$, which is proven in \cref{sec:mean_kinship_ineqs}.
+  In general it is true that $\tilde{\varphi} \le \bar{\varphi}$, and $\tilde{\varphi} = \bar{\varphi}$ occurs if and only if the true kinship matrix has the degenerate form $\kinMat = \bar{\varphi} \mathbf{J}$, which is a singular matrix not expected to be observed in any real scenarios (in this case \kinMatWGLim is a matrix full of zeroes).
+
+  \section{Mean kinship inequalities}
+
+  \label{sec:mean_kinship_ineqs}
+
+  Denote the mean of the diagonal kinship terms as $\bar{d} = \frac{1}{n} \sum_{j=1}^n \kt[j]$.
+  Here we prove that
+  $$
+  0 \le \tilde{\varphi} \le \bar{\varphi} \le \bar{d} \le 1,
+  $$
+  with each of $\tilde{\varphi} = \bar{\varphi}$ and $\bar{\varphi}= \bar{d}$ if and only if all kinship values are equal.
+
+  The inequalities $0 \le \bar{\varphi} \le \bar{d} \le 1$ follow directly from previous work, applied to a kinship matrix rather than a coancestry matrix as done originally, as the proof required solely a covariance matrix with values between 0 and 1 \citep{ochoa_estimating_2021}.
+  Recall that $\tilde{\varphi}$ is defined in \cref{eq:wg_tilde}.
+  The lower bound $0 \le \tilde{\varphi}$ follows since every kinship value is non-negative.
+  Note that $\bar{\varphi}$ and $\tilde{\varphi}$ are related by
+  \begin{equation}
+    \label{eq:kinship_mean_tilde}
+    \bar{\varphi}
+    =
+    \frac{ \tilde{\varphi}(n-1) + \bar{d} }{n}.
+  \end{equation}
+  Applying $\bar{\varphi} \le \bar{d}$ to \cref{eq:kinship_mean_tilde} and simplifying yields $\tilde{\varphi} \le \bar{d}$.
+  Lastly, since $\bar{\varphi} - \tilde{\varphi} = ( \bar{d}-\tilde{\varphi} ) / n$ (from rearranging \cref{eq:kinship_mean_tilde}), it also follows that $\tilde{\varphi} \le \bar{\varphi}$, as desired.
+  Furthermore, $\tilde{\varphi} = \bar{\varphi}$ holds if and only if all $\kt = \bar{d}$, since that is necessary and sufficient for $\bar{\varphi} = \bar{d}$.
+
+\end{appendices}
 
 \end{document}
