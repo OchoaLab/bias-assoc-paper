@@ -36,6 +36,9 @@ indexes <- 1 : n_pcs
 setwd( '../data' )
 setwd( dir_out )
 
+# behavior depends on the presence of a true kinship matrix, which tells us if this is a simulation or a real dataset.
+# present => sim; absent => real.
+is_sim <- file.exists( 'kinship/true.grm.bin' )
 
 #############
 ### ASSOC ###
@@ -94,14 +97,18 @@ assoc_all <- function( name_method ) {
 }
 
 assoc_all( 'gcta' )
-assoc_all( 'gcta_lim' )
-assoc_all( 'true' )
 assoc_all( 'popkin' )
 assoc_all( 'std_rom' )
-assoc_all( 'std_rom_lim' )
 assoc_all( 'std_mor' )
 assoc_all( 'wg' )
-assoc_all( 'wg_lim' )
+
+# limits are avaiable for simulations only (true kinship must be known)
+if ( is_sim ) {
+    assoc_all( 'true' )
+    assoc_all( 'gcta_lim' )
+    assoc_all( 'std_rom_lim' )
+    assoc_all( 'wg_lim' )
+}
 
 # save data frames!
 write_tsv( pvals, 'pvals.txt.gz' )

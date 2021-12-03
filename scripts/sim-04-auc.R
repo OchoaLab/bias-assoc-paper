@@ -21,7 +21,6 @@ dir_out <- opt$bfile
 
 # before switching away from "scripts", load a table located there
 kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
-n_kinship <- nrow( kinship_methods )
 
 # load pre-existing data
 setwd( '../data/' )
@@ -32,6 +31,23 @@ pvals <- read_tsv( 'pvals.txt.gz', show_col_types = FALSE )
 # and true causal info, for AUC
 load( 'simtrait.RData' )
 
+# behavior depends on the presence of a true kinship matrix, which tells us if this is a simulation or a real dataset.
+# present => sim; absent => real.
+is_sim <- file.exists( 'kinship/true.grm.bin' )
+
+if ( !is_sim ) {
+    # in real data the oracle methods (truth and biased limits) are missing
+    # harmonize `kinship_methods` to match
+    # "true" is only one without "_lim" at the end, the rest can be picked up with that regex
+    codes_rm <- c('true', grep('_lim$', kinship_methods$code, value = TRUE) )
+    # now prune table
+    kinship_methods <- kinship_methods[ !(kinship_methods$code %in% codes_rm), ]
+    # since all that is left are estimators, could remove the "est." part of the "nice" names
+    kinship_methods$nice <- sub( ' est.', '', kinship_methods$nice )
+}
+# get correct count of methods now
+n_kinship <- nrow( kinship_methods )
+
 # let's plot data in the order of the `kinship_methods` table
 # also, plot PCA first, LMM second
 method_codes <- c(
@@ -39,7 +55,7 @@ method_codes <- c(
     paste0( 'lmm_', kinship_methods$code )
 )
 # compute AUC for each case
-n_methods <- length( method_codes )
+n_methods <- length( method_codes ) # = 2 * n_kinship
 stopifnot( ncol( pvals ) == n_methods )
 aucs <- vector( 'numeric', n_methods )
 # names as they appear on the plot

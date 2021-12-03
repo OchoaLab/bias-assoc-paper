@@ -2,6 +2,9 @@
 unpub
 scripts/figs*/*
 
+# a really specific file not needed for versioning
+data/tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pops-annot.txt
+
 # we should never commit data here, so let's forbid the bed/bim/fam/phen extensions
 # (Yiqi has accidentally added these files several times)
 *.bed

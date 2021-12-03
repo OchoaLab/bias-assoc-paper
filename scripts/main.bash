@@ -1,3 +1,4 @@
+### SIM ###
 
 # simulate genotypes and phenotypes data on standard K=3 admixture
 time Rscript sim-00-sim-gen-phen.R -g 20 --fes
@@ -26,6 +27,60 @@ time Rscript sim-05-stats-corr.R --bfile $name
 # 0m0.649s
 
 
+
+### REAL ###
+
+# 1000 Genomes version
+name='tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01'
+DATA_DIR='/home/viiia/dbs/tgp-nygc'
+
+cd ../data/
+mkdir $name
+cd $name
+
+ln -s "$DATA_DIR/$name.bed" data.bed
+ln -s "$DATA_DIR/$name.bim" data.bim
+ln -s "$DATA_DIR/$name.fam" data.fam
+
+# copy annotations table from PCA project
+cp ../../../pca-assoc-paper/data/$name/pops-annot.txt .
+
+# return to scripts dir
+cd ../../scripts/
+
+# need all kinship estimates first!
+# (popkin needed by simtrait)
+time Rscript sim-01-kinship.R --bfile $name
+# 22m49.585s
+
+# popkin plots!
+time Rscript real-00-kinship-plot.R --bfile $name
+# 0m9.135s
+
+# simulate trait now!
+time Rscript real-01-simtrait.R --bfile $name --fes
+# m_causal: 250
+# 0m2.075s
+
+# run association tests
+time Rscript sim-03-assoc.R --bfile $name -r 10
+# 97m4.535s
+
+# calculate AUCs
+# TODO: missing LMM/PCA markers
+# weird result: MOR/gcta outperforms rom/wg/popkin by tons!
+time Rscript sim-04-auc.R --bfile $name
+# 0m6.258s
+
+# statistic correlation heatmaps
+# NOTE: extremely high correlation for all (even PCA-LMM) compared to sim
+time Rscript sim-05-stats-corr.R --bfile $name
+# 0m2.957s
+# NOTE: beta fig fails every time (betas are extremely correlated) 
+
+# hack for storing reps, real data
+mkdir rep-2
+mv auc.pdf betas* data.phen pvals* simtrait.RData rep-2/
 
 
 
