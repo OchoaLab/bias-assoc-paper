@@ -2,6 +2,7 @@ library(optparse) # for terminal options
 library(genio)    # to read GRM files
 library(popkin)   # to plot
 library(ochoalabtools) # for nice PDF
+library(readr)
 
 ############
 ### ARGV ###
@@ -19,22 +20,39 @@ opt <- parse_args(opt_parser)
 # get values
 dir_out <- opt$bfile
 
+# before switching away from "scripts", load a table located there
+kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
+
 # load pre-existing data
 setwd( '../data/' )
 setwd( dir_out )
 setwd( 'kinship' )
 
-# they have these names
-# all are 2x, scaled as GCTA wants them, halve here for plots
-kinship_true <- read_grm( 'true' )$kinship / 2
-kinship_popkin <- read_grm( 'popkin' )$kinship / 2
-kinship_std_rom <- read_grm( 'std_rom' )$kinship / 2
-kinship_std_rom_lim <- read_grm( 'std_rom_lim' )$kinship / 2
-kinship_std_mor <- read_grm( 'std_mor' )$kinship / 2
-kinship_gcta <- read_grm( 'gcta' )$kinship / 2
-kinship_gcta_lim <- read_grm( 'gcta_lim' )$kinship / 2
-kinship_wg <- read_grm( 'wg' )$kinship / 2
-kinship_wg_lim <- read_grm( 'wg_lim' )$kinship / 2
+# kinship files have these names, will appear in this order
+codes <- c(
+    'true',
+    'popkin_rom',
+    'popkin_mor',
+    'std_rom_lim',
+    'std_rom',
+    'std_mor',
+    'gcta_rom_lim',
+    'gcta_mor',
+    'wg_rom_lim',
+    'wg_rom',
+    'wg_mor'
+)
+# map to human-readable names from table
+titles <- kinship_methods$nice[ match( codes, kinship_methods$code ) ]
+
+# read in all kinship matrices
+data <- lapply( codes, function ( name ) {
+    # all are 2x, scaled as GCTA wants them, halve here for plots
+    read_grm( name )$kinship / 2
+})
+
+# HACK, since we don't have gcta_rom yet, to have a nice figure with columns aligned, insert a NULL in the right place
+data <- c( data[ 1:7 ], list(NULL), data[ 8:length(data) ] )
 
 # save figure in lower level
 setwd( '..' )
@@ -47,32 +65,8 @@ fig_start(
     height = dims[2]
 )
 plot_popkin(
-    inbr_diag(
-        list(
-            kinship_true,
-            kinship_popkin,
-            NULL,
-            kinship_std_rom_lim,
-            kinship_std_rom,
-            kinship_std_mor,
-            kinship_gcta_lim,
-            kinship_gcta,
-            NULL,
-            kinship_wg_lim,
-            kinship_wg
-        )
-    ),
-    titles = c(
-        'Truth',
-        'Popkin est.',
-        'Standard ROM lim.',
-        'Standard ROM est.',
-        'Standard MOR est.',
-        'GCTA lim.',
-        'GCTA est.',
-        'Weir-Goudet lim.',
-        'Weir-Goudet est.'
-    ),
+    inbr_diag( data ),
+    titles = titles,
     layout_rows = 4,
     mar = c(0, 2),
     panel_letters_adj = 0 # old default, works better here because there's no labels

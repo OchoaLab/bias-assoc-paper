@@ -46,7 +46,7 @@ setwd( name )
 ################
 
 # load precalculated popkin kinship matrix
-kinship <- read_grm( 'kinship/popkin' )$kinship
+kinship <- read_grm( 'kinship/popkin_rom' )$kinship
 
 # load FAM table, for phen output
 fam <- read_fam( name_in )

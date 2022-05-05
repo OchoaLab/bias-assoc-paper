@@ -16,7 +16,7 @@ time Rscript sim-02-kinship-plot.R --bfile $name
 
 # run association tests
 time Rscript sim-03-assoc.R --bfile $name -r 2
-# 0m18.826s
+# 0m26.525s
 
 # calculate AUCs
 time Rscript sim-04-auc.R --bfile $name
@@ -41,9 +41,7 @@ cd $name
 ln -s "$DATA_DIR/$name.bed" data.bed
 ln -s "$DATA_DIR/$name.bim" data.bim
 ln -s "$DATA_DIR/$name.fam" data.fam
-
-# copy annotations table from PCA project
-cp ../../../pca-assoc-paper/data/$name/pops-annot.txt .
+ln -s "$DATA_DIR/pops-annot.txt" pops-annot.txt
 
 # return to scripts dir
 cd ../../scripts/
@@ -64,7 +62,7 @@ time Rscript real-01-simtrait.R --bfile $name --fes
 
 # run association tests
 time Rscript sim-03-assoc.R --bfile $name -r 10
-# 97m4.535s
+# 97m4.535s + 37m13.190s (popkin MOR, wg MOR)
 
 # calculate AUCs
 # TODO: missing LMM/PCA markers

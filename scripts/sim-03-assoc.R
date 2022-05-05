@@ -80,7 +80,7 @@ assoc_all <- function( name_method ) {
     write_eigenvec( name, eigenvectors, fam, plink2 = TRUE )
     # set maximum VIF for two special cases where near-collinearity is otherwise a problem for plink with defaults
     # Actual error message: "  Error: Cannot proceed with --glm regression on phenotype 'PHENO1', since variance inflation factor for covariate 'PC1' is too high (VIF_TOO_HIGH). You may want to remove redundant covariates and try again."
-    vif <- if ( name_method == 'true' || name_method == 'popkin' ) 100 else NA
+    vif <- if ( name_method == 'true' || grepl( 'popkin', name_method ) ) 100 else NA
     # association
     data <- plink_glm( name, file_covar = file_covar, vif = vif )
     # cleanup
@@ -96,19 +96,21 @@ assoc_all <- function( name_method ) {
     betas <<- betas
 }
 
-assoc_all( 'gcta' )
-assoc_all( 'popkin' )
-assoc_all( 'std_rom' )
-assoc_all( 'std_mor' )
-assoc_all( 'wg' )
-
 # limits are avaiable for simulations only (true kinship must be known)
 if ( is_sim ) {
     assoc_all( 'true' )
-    assoc_all( 'gcta_lim' )
     assoc_all( 'std_rom_lim' )
-    assoc_all( 'wg_lim' )
+    assoc_all( 'gcta_rom_lim' )
+    assoc_all( 'wg_rom_lim' )
 }
+
+assoc_all( 'popkin_rom' )
+assoc_all( 'popkin_mor' )
+assoc_all( 'std_rom' )
+assoc_all( 'std_mor' )
+assoc_all( 'gcta_mor' )
+assoc_all( 'wg_rom' )
+assoc_all( 'wg_mor' )
 
 # save data frames!
 write_tsv( pvals, 'pvals.txt.gz' )

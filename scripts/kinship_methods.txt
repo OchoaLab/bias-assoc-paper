@@ -1,10 +1,12 @@
 code	nice
 true	True Kinship
-wg_lim	Weir-Goudet lim.
+wg_rom_lim	Weir-Goudet ROM lim.
 std_rom_lim	Standard ROM lim.
-gcta_lim	GCTA lim.
-popkin	Popkin est.
-wg	Weir-Goudet est.
+gcta_rom_lim	GCTA ROM lim.
+popkin_rom	Popkin ROM est.
+wg_rom	Weir-Goudet ROM est.
 std_rom	Standard ROM est.
+popkin_mor	Popkin MOR est.
+wg_mor	Weir-Goudet MOR est.
 std_mor	Standard MOR est.
-gcta	GCTA est.
+gcta_mor	GCTA MOR est.

@@ -68,12 +68,12 @@ for ( i in 1 : n_methods ) {
 }
 
 # now make plot of data
-dims <- fig_scale( 2 )
+dims <- fig_scale( if ( is_sim ) 1.5 else 2 ) # w/h
 fig_start(
     'auc',
     width = dims[1],
     height = dims[2],
-    mar_l = 10
+    mar_l = if ( is_sim ) 11 else 10
 )
 ## boxplot(
 ##     aucs,
@@ -88,12 +88,13 @@ ys <- barplot(
     xlab = expression(bold(AUC[PR]))
 )
 # add separating lines
-x_line <- -c(0.19, 0.19)
+x_line0 <- if ( is_sim ) 0.22 else 0.055
+x_line <- -c(x_line0, x_line0)
 y_line1 <- ys[ c(1, n_kinship) ]
 y_line2 <- ys[ c(1, n_kinship) + n_kinship ]
 lines( x_line, y_line1, xpd = NA )
 lines( x_line, y_line2, xpd = NA )
 # and labels
-text( -0.2, mean( y_line2 ), 'PCA', xpd = NA, srt = 90 )
-text( -0.2, mean( y_line1 ), 'LMM', xpd = NA, srt = 90 )
+text( - x_line0 * 1.05, mean( y_line2 ), 'PCA', xpd = NA, srt = 90 )
+text( - x_line0 * 1.05, mean( y_line1 ), 'LMM', xpd = NA, srt = 90 )
 fig_end()
