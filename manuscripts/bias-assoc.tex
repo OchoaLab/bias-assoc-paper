@@ -221,25 +221,30 @@ The GCTA kinship estimator differs from the standard estimator only for $j=k$ \c
 
 \subsubsection{Popkin kinship estimator}
 
-The popkin (population kinship) estimator is given by \citep{ochoa_estimating_2021}
+The popkin (population kinship) estimator \citep{ochoa_estimating_2021}, generalized here to include locus weights $w_i$, is given by
 \begin{equation}
   \label{eq:popkin}
   \begin{split}
     \Ajk
     &=
-    \frac{1}{m} \sum_{i=1}^m (\xij-1)(\xij[k]-1) - 1
-    , \\
-    \ktHatNew
-    &= 1 - \frac{\Ajk}{\AMinHat},
+      \frac{1}{m} \sum_{i=1}^m w_i ( (\xij-1)(\xij[k]-1) - 1 )
+      , \\
+    \ktHatNamed{popkin}
+    &=
+      1 - \frac{\Ajk}{\AMinHat}
+      ,
   \end{split}
 \end{equation}
-where $\AMinHat$ is an estimate of the minimum of the limiting values of \Ajk.
-Here we employ $\AMinHat = \min_{j \ne k} \Ajk$.
-This kinship estimator is accurate, namely by satisfying
+where in this work $\AMinHat = \min_{j \ne k} \Ajk$, and $w_i$ must be positive but need not add to 1.
+We consider two broad forms for this estimator.
+The original \textit{ratio-of-means} (ROM) estimator, has $w_i = 1$ and satisfies
 $$
-\ktHatNew \toas \kt,
+\ktHatNamed{popkin-ROM} \toas \kt,
 $$
-under the assumption that \AMinHat is calculated over individual pairs whose true kinship is zero.
+under the assumption that the pair with the minimum kinship value has a zero true kinship.
+In contrast, the \textit{mean-of-ratios} (MOR) version (introduced here) has $w_i = (\pith (1-\pith))^{-1}$, so it upweighs rare variants; although it has no closed-form limit, it is approximately unbiased as well (\cref{sec:popkin_w_justif}) and it is connected to the most common standard estimator (explained below).
+The use of locus weights here is inspired by previous calculations relating the standard kinship ROM and MOR estimators \citep{wang_efficient_2017}.
+
 
 \subsubsection{Weir-Goudet kinship estimator}
 
@@ -1045,6 +1050,206 @@ The GCTA kinship estimator was not analyzed theoretically, but it is very simila
   \appendix
 
   \appendixpage
+  
+  \section{Justification for popkin generalizations.}
+
+  \label{sec:popkin_w_justif}
+
+  The popkin estimator in \cref{eq:popkin} has been generalized in this work to include locus weights $w_i$.
+  The original formulation had $w_i=1$ \citep{ochoa_estimating_2021}.
+  Recalling from that original work that
+  $$
+  \E[ (\xij-1)(\xij[k]-1) - 1 ] = 4 \pit ( 1 - \pit ) ( \kt - 1 ),
+  $$
+  then for fixed $w_i$ we get
+  \begin{align*}
+    \E[ \Ajk ]
+    &=
+      v_m ( \kt - 1 )
+      , \\
+    v_m
+    &=
+      \frac{4}{m} \sum_{i=1}^m w_i \pit ( 1 - \pit )
+      .
+  \end{align*}
+  Therefore, as before all the unknowns \pit and now also the weights $w_i$ collapse into a single parameter $v_m$, which is estimated under the original assumption that the minimum kinship is zero, giving $\AMinHat = -v_m$, so that
+  $$
+  \ktHatNamed{popkin-ROM}
+  =
+  1 - \frac{\Ajk}{\AMinHat}
+  \toas
+  \kt
+  $$
+  as desired.
+
+  The MOR case of $w_i = (\pith (1-\pith))^{-1}$ does not fit the previous case because this $w_i$ is a random variable (it is a function of the genotypes).
+  The term of interest $w_i ( (\xij-1)(\xij[k]-1) - 1 )$ is a ratio of random variables whose expectation does not have a closed form.
+  In this case, we rely on the first-order approximation to this expectation, namely
+  \begin{align*}
+    \E \left[ \frac{ (\xij-1)(\xij[k]-1) - 1 }{ \pith (1-\pith) } \right]
+    &\approx
+      \frac{ \E[ (\xij-1)(\xij[k]-1) - 1 ] }{ \E[ \pith (1-\pith) ] }
+    \\
+    &=
+      \frac{ 4 \pit ( 1 - \pit ) ( \kt - 1 ) }{ \pit (1-\pit) ( 1 - \bar{\varphi} ) }
+    \\
+    &=
+      \frac{ 4 ( \kt - 1 ) }{ 1 - \bar{\varphi} }
+  ,
+  \end{align*}
+  where the expectation for $\pith (1-\pith)$ was also calculated previously \citep{ochoa_estimating_2021}.
+  In this case the expectation of \Ajk, summing across loci, is also approximated by
+  $$
+  \E[ \Ajk ]
+  \approx
+  \frac{ 4 ( \kt - 1 ) }{ 1 - \bar{\varphi} }
+  .
+  $$
+  The same strategy as before applies to estimate the unknown factor $4 / ( 1- \bar{\varphi} )$, namely that if the minimum kinship is zero then $\AMinHat \approx - 4 / ( 1- \bar{\varphi} )$, resulting in
+  $$
+  \ktHatNamed{popkin-MOR}
+  =
+  1 - \frac{\Ajk}{\AMinHat}
+  \approx
+  \kt
+  .
+  $$
+
+  \section{Connection between popkin and standard kinship estimator}
+
+  Since the conection we discovered holds when data is complete but not under missingness, to determine necessary conditions, here we introduce more complete forms of the estimators that handle missingness.
+  The generalized popkin estimator (including both ROM and MOR special cases) is
+  \begin{equation*}
+    %\label{eq:popkin_miss}
+    \begin{split}
+      A_{ijk}
+      &=
+        I_{ij} I_{ik} ( (\xij-1)(\xij[k]-1) - 1 )
+      , \\
+      \Ajk
+      &=
+        \frac{1}{m_{jk}} \sum_{i=1}^m w_i A_{ijk}
+        , \\
+      m_{jk}
+      &=
+        \sum_{i=1}^m I_{ij} I_{ik}
+        ,
+    \end{split}
+  \end{equation*}
+  where $I_{ij} = 1$ if \xij is not missing, 0 otherwise (this way missing \xij can be treated as having any finite value and not contribute to the estimator).
+  Note that only loci where both genotypes ($\xij$ and $\xij[k]$) are non-missing are included in the above average, and $m_{jk}$ counts the total number of such loci.
+  The ancestral allele frequency estimator with missingness is
+  \begin{align*}
+    \pith
+    &=
+      \frac{1}{2 n_i} \sum_{j=1}^n I_{ij} \xij
+      , \\
+    n_i
+    &=
+      \sum_{j=1}^n I_{ij}
+      ,
+  \end{align*}
+  which averages over individuals rather than loci, so its denominator is the number of non-missing individuals at this locus.
+  Let us compute some averages of the generalized popkin estimator.
+  Since the result we want holds at every locus separately, let us formulate the averages of interest at locus $i$ only:
+  \begin{align*}
+    \bar{A}_{ij}
+    &=
+      \frac{1}{n} \sum_{k=1}^n A_{ijk}
+      =
+      I_{ij} \frac{n_i}{n} ( ( \xij - 1 )( 2 \pith - 1 ) - 1 )
+      , \\
+    \bar{A}_i
+    &=
+      \frac{1}{n} \sum_{k=1}^n \bar{A}_{ij}
+      =
+      - \left( \frac{n_i}{n} \right)^2 4 \pith ( 1 - \pith )
+      .
+  \end{align*}
+  Therefore, the combination of interest is:
+  \begin{align*}
+    A_{ijk} + \bar{A}_i - \bar{A}_{ij}  - \bar{A}_{ik}
+    % &=
+    %   I_{ij} I_{ik} ( (\xij-1)(\xij[k]-1) - 1 )
+    %   - \left( \frac{n_i}{n} \right)^2 4 \pith ( 1 - \pith )
+    %   - I_{ij} \frac{n_i}{n} ( ( \xij - 1 )( 2 \pith - 1 ) - 1 )
+    %   - I_{ik} \frac{n_i}{n} ( ( \xij[k] - 1 )( 2 \pith - 1 ) - 1 )
+    % \\
+    &=
+      I_{ij} I_{ik} (\xij - 2 \pith) (\xij[k] - 2 \pith )
+      \\
+    &+ \frac{n_i}{n} ( I_{ij} - \frac{n_i}{n} ) 4 \pith
+      - I_{ij} ( I_{ik} - \frac{n_i}{n} ) \xij
+      - I_{ij} ( I_{ik} - \frac{n_i}{n} ) \xij[k] \\
+    &+ \left( \left( \frac{n_i}{n} \right)^2 -  I_{ij} I_{ik} \right) 4 \pith^2
+      - I_{ij} \left( \frac{n_i}{n} - I_{ik} \right) \xij 2 \pith
+      - I_{ik} \left( \frac{n_i}{n} - I_{ij} \right) \xij[k] 2 \pith
+      .
+  \end{align*}
+  To arrive at the desired result of $I_{ij} I_{ik} (\xij - 2 \pith) (\xij[k] - 2 \pith )$, it is necessary for the rest of the terms to vanish for arbitrary values of \pith, \xij, and \xij[k].
+  Since $n_i > 0$ (there is at least one non-missing individual at every locus), the term $\frac{n_i}{n} ( I_{ij} - \frac{n_i}{n} ) 4 \pith$ vanishes if and only if $I_{ij} = \frac{n_i}{n}$, and since $I_{jk}=0$ does not solve this equation (because $n_i > 0$) the only other case is $I_{jk}=1$, which requires $n_i=n$, so no individuals can have missing data at this locus.
+  Thus,
+  $$
+  A_{ijk} + \bar{A}_i - \bar{A}_{ij}  - \bar{A}_{ik}
+  =
+  I_{ij} I_{ik} (\xij - 2 \pith) (\xij[k] - 2 \pith )
+  $$
+  if and only if there is no missing data at locus $i$.
+  The other desired result of
+  $$
+  \bar{A}_i
+  =
+  - 4 \pith ( 1 - \pith )
+  $$
+  also requires $n_i = n$.
+
+  Assuming now no missingness, transforming the popkin estimates as desired gives
+  \begin{align*}
+    \frac{
+    \ktHatNamed{popkin}
+    + \bar{ \hat{ \varphi } }^\text{popkin}
+    - \bar{ \hat{ \varphi } }_j^\text{popkin}
+    - \bar{ \hat{ \varphi } }_k^\text{popkin}
+    }{
+    1 - \bar{ \hat{ \varphi } }^\text{popkin}
+    }
+    % &=
+    %   \frac{
+    %   ( 1 - \frac{\Ajk}{\AMinHat} )
+    %   + ( 1 - \frac{\bar{A}}{\AMinHat} )
+    %   - ( 1 - \frac{\bar{A}_j}{\AMinHat} )
+    %   - ( 1 - \frac{\bar{A}_k}{\AMinHat} )
+    %   }{
+    %   \frac{\bar{A}}{\AMinHat}
+    %   }
+    % \\
+    &=
+      \frac{
+      \Ajk
+      + \bar{A}
+      - \bar{A}_j
+      - \bar{A}_k
+      }{
+      - \bar{A}
+      }
+    \\
+    &=
+      \frac{
+      \sum_{i=1}^m w_i ( A_{ijk} + \bar{A}_i - \bar{A}_{ij} - \bar{A}_{ik} )
+      }{
+      - \sum_{i=1}^m w_i \bar{A}_i
+      }
+    \\
+    &=
+      \frac{
+      \sum_{i=1}^m w_i (\xij - 2 \pith) (\xij[k] - 2 \pith )
+      }{
+      \sum_{i=1}^m w_i 4 \pith ( 1 - \pith )
+      }
+      .
+  \end{align*}
+  Therefore, if the ROM version of popkin is input ($w_i=1$), this transformation yields the ROM version of the standard kinship estimator.
+  On the other hand, if the MOR version of popkin is used ($w_i^{-1} = \pith ( 1 - \pith )$), the transformation yields the MOR version of the standard kinship estimator.
   
   \section{Proof that WG limits are always positive definite.}
 
