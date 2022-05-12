@@ -100,7 +100,6 @@ assoc_all <- function( name_method ) {
 if ( is_sim ) {
     assoc_all( 'true' )
     assoc_all( 'std_rom_lim' )
-    assoc_all( 'gcta_rom_lim' )
     assoc_all( 'wg_rom_lim' )
 }
 
@@ -108,7 +107,6 @@ assoc_all( 'popkin_rom' )
 assoc_all( 'popkin_mor' )
 assoc_all( 'std_rom' )
 assoc_all( 'std_mor' )
-assoc_all( 'gcta_mor' )
 assoc_all( 'wg_rom' )
 assoc_all( 'wg_mor' )
 

@@ -47,7 +47,6 @@ codes <- c(
     'popkin_mor',
     'std_rom',
     'std_mor',
-    'gcta_mor',
     'wg_rom',
     'wg_mor'
 )
@@ -75,14 +74,11 @@ cap_kinship <- function( x ) {
 }
 data <- lapply( data, cap_kinship )
 
-# HACK, since we don't have gcta_rom yet, to have a nice figure with columns aligned, insert a NULL in the right place
-data <- c( data[ 1:4 ], list(NULL), data[ 5:length(data) ] )
-
 # save figure in lower level
 setwd( '..' )
 
 # visualize all matrices for test
-dims <- fig_scale( ratio = 1.1/2 ) # w/h
+dims <- fig_scale( ratio = 2.2/3 ) # w/h
 fig_start(
     'kinship',
     width = dims[1],
@@ -94,7 +90,7 @@ plot_popkin(
     labs = fam$superpop,
     labs_line = 0.2,
     labs_cex = 0.7,
-    layout_rows = 4,
+    layout_rows = 3,
     mar = c(2, 2)
 #    panel_letters_adj = 0 # old default, works better here because there's no labels
 )

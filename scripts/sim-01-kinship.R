@@ -52,8 +52,8 @@ write_grm_softlinks <- function(name, kinship) {
     # create a softlink from true "M" file, so those are the same for all files (limit variation due to that)
     # same with ID table (less big but whatever)
     # softlink saves space!
-    softlink( 'gcta_mor', name, 'grm.id' ) # these files exist but are bad, overwrite!
-    softlink( 'gcta_mor', name, 'grm.N.bin' )
+    softlink( 'std_mor', name, 'grm.id' ) # these files exist but are bad, overwrite!
+    softlink( 'std_mor', name, 'grm.N.bin' )
 }
 
 # There are all of these kinship matrices to consider
@@ -67,8 +67,6 @@ write_grm_softlinks <- function(name, kinship) {
 # - `kinship_wg_mor`: MOR version of WG (based on popkin MOR)
 # - `kinship_wg_rom`: biased (and noisy) WG estimate from genotypes
 # - `kinship_wg_rom_lim`: limit of biased WG estimator
-# - `kinship_gcta_mor`: biased (and noisy) GCTA estimate from genotypes
-# - `kinship_gcta_lim`: limit of biased GCTA estimator
 
 # behavior depends on the presence of a true kinship matrix, which tells us if this is a simulation or a real dataset.
 # present => sim; absent => real.
@@ -78,18 +76,18 @@ is_sim <- file.exists( 'kinship/true.grm.bin' )
 if ( !is_sim )
     dir.create( 'kinship' )
 
-# GCTA estimate
+# standard estimate, calculated with GCTA
 # (only case not calculated in R, need gcta64 binary)
 # do first as other estimators link aux files to these
-gcta_grm( name, name_out = 'kinship/gcta_mor' )
-delete_files_log( 'kinship/gcta_mor' ) # unneeded log file
+gcta_grm( name, name_out = 'kinship/std_mor' )
+delete_files_log( 'kinship/std_mor' ) # unneeded log file
 
 # rest of work occurs in this subdirectory
 setwd( 'kinship' )
 
-# biased "standard" kinship estimate
+# biased "standard" kinship estimate, ROM only
 write_grm_softlinks( 'std_rom', kinship_std( X ) )
-write_grm_softlinks( 'std_mor', kinship_std( X, mean_of_ratios = TRUE ) )
+#write_grm_softlinks( 'std_mor', kinship_std( X, mean_of_ratios = TRUE ) ) # same as GCTA's
 
 # popkin estimates, without labels
 kinship_popkin_rom <- popkin( X )
@@ -106,17 +104,14 @@ write_grm_softlinks( 'wg_mor', kinship_wg_limit( kinship_popkin_mor ) )
 if ( is_sim ) {
     # true kinship (as given by simulation; already written but need to load to calculate limits of biased estimates)
     kinship_true <- read_grm( 'true' )$kinship / 2
-    # (re)link these optional files to GCTA's so they're identical (and save space)
-    softlink( 'gcta_mor', 'true', 'grm.id' )
-    softlink( 'gcta_mor', 'true', 'grm.N.bin' )
+    # (re)link these optional files to STD's so they're identical (and save space)
+    softlink( 'std_mor', 'true', 'grm.id' )
+    softlink( 'std_mor', 'true', 'grm.N.bin' )
 
     # limit of biased "standard" estimator
     write_grm_softlinks( 'std_rom_lim', kinship_std_limit( kinship_true ) )
 
     # WG limit
     write_grm_softlinks( 'wg_rom_lim', kinship_wg_limit( kinship_true ) )
-
-    # GCTA limit
-    write_grm_softlinks( 'gcta_lim', kinship_gcta_limit( kinship_true ) )
 }
 

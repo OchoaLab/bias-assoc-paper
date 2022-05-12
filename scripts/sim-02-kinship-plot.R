@@ -36,8 +36,6 @@ codes <- c(
     'std_rom_lim',
     'std_rom',
     'std_mor',
-    'gcta_rom_lim',
-    'gcta_mor',
     'wg_rom_lim',
     'wg_rom',
     'wg_mor'
@@ -51,14 +49,11 @@ data <- lapply( codes, function ( name ) {
     read_grm( name )$kinship / 2
 })
 
-# HACK, since we don't have gcta_rom yet, to have a nice figure with columns aligned, insert a NULL in the right place
-data <- c( data[ 1:7 ], list(NULL), data[ 8:length(data) ] )
-
 # save figure in lower level
 setwd( '..' )
 
 # visualize all matrices for test
-dims <- fig_scale( ratio = 3/4 )
+dims <- fig_scale( ratio = 1 )
 fig_start(
     'kinship',
     width = dims[1],
@@ -67,7 +62,7 @@ fig_start(
 plot_popkin(
     inbr_diag( data ),
     titles = titles,
-    layout_rows = 4,
+    layout_rows = 3,
     mar = c(0, 2),
     panel_letters_adj = 0 # old default, works better here because there's no labels
 )
