@@ -1,27 +1,33 @@
 ### SIM ###
 
+#m_loci=10000 # original
+m_loci=100000 # bigger, matches pca-assoc
 n_rep=10
 gen=20
 
 # dir output name for this run, which gets passed to other scripts
-name='sim-admix-n1000-m10000-k3-f0.3-s0.5-mc100-h0.8-g'$gen'-fes'
+name='sim-admix-n1000-m'$m_loci'-k3-f0.3-s0.5-mc100-h0.8-g'$gen'-fes'
 
 for rep in $(seq 1 $n_rep); do
     # simulate genotypes and phenotypes data on standard K=3 admixture
-    time Rscript sim-00-sim-gen-phen.R -g $gen --fes -r $rep
-    # 0m10.618s viiiaR5
+    time Rscript sim-00-sim-gen-phen.R -g $gen --fes -r $rep -m $m_loci
+    # 0m10.618s small m viiiaR5
+    # 0m53.628s big m
 
     # create all kinship estimates
     time Rscript sim-01-kinship.R --bfile $name -r $rep
-    # 0m3.313s
+    # 0m3.313s small m
+    # 0m13.995s big m
     
     # run association tests
     time Rscript sim-03-assoc.R --bfile $name -p 2 -r $rep
-    # 0m26.525s
+    # 0m26.525s small m
+    # 1m29.778s big m
 
     # calculate AUCs and SRMSDs
     time Rscript sim-04-auc-calc.R --bfile $name -r $rep
-    # 0m0.615s
+    # 0m0.615s small m
+    # 0m1.487s big m
 done
 
 # kinship plots (rep-1 only)
