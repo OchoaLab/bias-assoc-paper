@@ -25,7 +25,7 @@ if ( is.na( n_rep ) )
     stop( 'Option `--n_rep` is required!' )
 
 # before switching away from "scripts", load a table located there
-kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
+kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cccc' )
 
 # go where the data is
 setwd( '../data/' )
@@ -44,19 +44,12 @@ for ( rep in 1 : n_rep ) {
     data <- bind_rows( data, data_rep )
 }
 
-if ( !is_sim ) {
-    # in real data the oracle methods (truth and biased limits) are missing
-    # harmonize `kinship_methods` to match
-    # "true" is only one without "_lim" at the end, the rest can be picked up with that regex
-    codes_rm <- c('true', grep('_lim$', kinship_methods$code, value = TRUE) )
-    # now prune table
-    kinship_methods <- kinship_methods[ !(kinship_methods$code %in% codes_rm), ]
-    # since all that is left are estimators, could remove the "est." part of the "nice" names
-    kinship_methods$nice <- sub( ' est.', '', kinship_methods$nice )
-}
+# in real data the oracle methods (truth and biased limits) are missing, exclude from `kinship_methods`
+if ( !is_sim )
+    kinship_methods <- kinship_methods[ kinship_methods$type != 'ROM lim.', ]
+
 # get correct count of methods now
 n_kinship <- nrow( kinship_methods )
-
 
 # let's plot data in the order of the `kinship_methods` table
 # also, plot PCA first, LMM second
@@ -64,8 +57,13 @@ method_codes <- c(
     paste0( 'pca_', kinship_methods$code ),
     paste0( 'lmm_', kinship_methods$code )
 )
-# compute AUC for each case
-n_methods <- length( method_codes ) # = 2 * n_kinship
+# same but human-readable
+labs_short <- rep.int( kinship_methods$short, 2 )
+labs_type <- rep.int( kinship_methods$type, 2 )
+labs_model <- c(
+    rep.int( 'PCA', n_kinship ),
+    rep.int( 'LMM', n_kinship )
+)
 
 # plotting labels
 lab_rmsd <- expression( bold( SRMSD[p] ) )
@@ -86,46 +84,46 @@ plot_measure <- function( name = 'auc' ) {
         return( auc_x[[ name ]] )
     })
 
-    # replace codes with nice names we want on plot
-    # NOTE: no PCA/LMM marks (will be added to plot separately)
-    names( data_list ) <- rep.int( kinship_methods$nice, 2 )
-
     # now make plot of data
-    dims <- fig_scale( if ( is_sim ) 1.5 else 2 ) # w/h
+    dims <- fig_scale( 1.5 ) # w/h
     fig_start(
         name,
         width = dims[1],
         height = dims[2],
-        mar_l = if ( is_sim ) 11 else 10
+        mar_b = 8
     )
     boxplot(
-        rev( data_list ),
-        horizontal = TRUE,
-        las = 1,
-        xlab = if ( name == 'rmsd' ) lab_rmsd else lab_auc
+        data_list,
+        names = NA, # individual labels will be plotted with rest
+        xaxt = 'n',
+        ylab = if ( name == 'rmsd' ) lab_rmsd else lab_auc
     )
+    mtext( 'Association Model, Kinship Estimate', side = 1, line = 7 )
     # mark zero and band area in this case
     if ( name == 'rmsd' ) {
-        abline( v = 0, lty = 2, col = 'gray' )
-        abline( v = 0.01, lty = 2, col = 'gray' )
-        abline( v = -0.01, lty = 2, col = 'gray' )
+        abline( h = 0, lty = 2, col = 'gray' )
+        abline( h = 0.01, lty = 2, col = 'gray' )
+        abline( h = -0.01, lty = 2, col = 'gray' )
     }
-        
-    # add separating lines
-    x_line0 <- if ( is_sim ) {
-                   if ( name == 'rmsd' ) -0.083 else 0.07
-               } else {
-                   if ( name == 'rmsd' ) -0.025 else -0.005
-               }
-    x_line_txt <- x_line0 * if ( name == 'rmsd' ) 1.04 else if ( is_sim ) 0.85 else 2
-    x_line <- c(x_line0, x_line0)
-    y_line1 <- c(1, n_kinship)
-    y_line2 <- c(1, n_kinship) + n_kinship
-    lines( x_line, y_line1, xpd = NA )
-    lines( x_line, y_line2, xpd = NA )
-    # and labels
-    text( x_line_txt, mean( y_line2 ), 'PCA', xpd = NA, srt = 90 )
-    text( x_line_txt, mean( y_line1 ), 'LMM', xpd = NA, srt = 90 )
+    
+    # reuse popkin-style labeling!  Great for hierarchical/factorial setup
+    # though popkin has defaults for these, the raw function doesn't have defaults!
+    popkin:::print_labels_multi(
+                 labs = cbind( labs_short, labs_type, labs_model ),
+                 labs_cex = c(0.7, 0.7, 1),
+                 labs_las = c(2, 0, 0),
+                 labs_line = c(0.5, 4, 6),
+                 labs_lwd = 1, # default
+                 labs_sep = c(FALSE, TRUE, TRUE),
+                 labs_even = c(FALSE, TRUE, TRUE),
+                 labs_ticks = FALSE, # default
+                 labs_text = TRUE, # default
+                 labs_col = 'black', # default
+                 # these align with barplot-specific changes
+                 xc_ind = 1 : length( method_codes ),
+                 doMat = FALSE
+             )
+    
     fig_end()
 }
 

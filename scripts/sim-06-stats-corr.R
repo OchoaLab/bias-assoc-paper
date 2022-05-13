@@ -24,7 +24,7 @@ dir_out <- opt$bfile
 rep <- opt$rep
 
 # before switching away from "scripts", load a table located there
-kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
+kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cccc' )
 
 # load pre-existing data
 setwd( '../data/' )
