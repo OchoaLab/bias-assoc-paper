@@ -16,6 +16,8 @@ name_in <- 'data'
 option_list = list(
     make_option("--bfile", type = "character", default = NA, 
                 help = "Base name for input plink files (.BED/BIM/FAM)", metavar = "character"),
+    make_option(c("-r", "--rep"), type = "integer", default = 1, 
+                help = "Replicate number", metavar = "int"),
     make_option("--herit", type = "double", default = 0.8, 
                 help = "heritability", metavar = "double"),
     make_option("--m_causal_fac", type = "double", default = 10,
@@ -29,6 +31,7 @@ opt <- parse_args(opt_parser)
 
 # get values
 name <- opt$bfile
+rep <- opt$rep
 herit <- opt$herit
 m_causal_fac <- opt$m_causal_fac
 fes <- opt$fes
@@ -40,6 +43,12 @@ if ( is.na(name) )
 # move to where the data is
 setwd( '../data/' )
 setwd( name )
+
+# check that replicate doesn't already exist (don't overwrite!)
+dir_rep <- paste0( 'rep-', rep )
+if ( dir.exists( dir_rep ) )
+    stop( 'Replicate ', rep, ' already exists!' )
+dir.create( dir_rep )
 
 ################
 ### simtrait ###
@@ -73,6 +82,9 @@ trait = obj_trait$trait
 causal_indexes = obj_trait$causal_indexes
 # locus coefficient vector (for causal loci only)
 causal_coeffs = obj_trait$causal_coeffs
+
+# move into replicate now, where output data is stored
+setwd( dir_rep )
 
 # now save, as R data
 save(

@@ -29,7 +29,9 @@ option_list = list(
     make_option("--m_causal", type = "integer", default = 100, 
                 help = "num causal loci", metavar = "int"),
     make_option("--fes", action = "store_true", default = FALSE, 
-                help = "Use FES instead of RC trait model")
+                help = "Use FES instead of RC trait model"),
+    make_option(c("-r", "--rep"), type = "integer", default = 1, 
+                help = "Replicate number", metavar = "int")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -45,7 +47,7 @@ G <- opt$generations
 m_causal <- opt$m_causal
 herit <- opt$herit
 fes <- opt$fes
-
+rep <- opt$rep
 
 # output path for BED files and all results files
 dir_out <- paste0(
@@ -69,6 +71,13 @@ if ( !dir.exists( dir_out ) )
     dir.create( dir_out )
 setwd( dir_out )
 
+# lastly, create replicate subdirectory
+# never overwrite existing replicates!
+dir_rep <- paste0( 'rep-', rep )
+if ( dir.exists( dir_rep ) )
+    stop( 'Replicate ', rep, ' already exists!' )
+dir.create( dir_rep )
+setwd( dir_rep )
 
 ############
 ### SIMS ###

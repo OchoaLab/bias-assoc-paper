@@ -11,7 +11,9 @@ library(readr)
 # define options
 option_list = list(
     make_option("--bfile", type = "character", default = NA, 
-                help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character")
+                help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
+    make_option(c("-r", "--rep"), type = "integer", default = 1, 
+                help = "Replicate number", metavar = "int")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -19,14 +21,19 @@ opt <- parse_args(opt_parser)
 
 # get values
 dir_out <- opt$bfile
+rep <- opt$rep
 
 # before switching away from "scripts", load a table located there
 kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
 
-# load pre-existing data
+# go where the data is
 setwd( '../data/' )
 setwd( dir_out )
+dir_rep <- paste0( 'rep-', rep )
+setwd( dir_rep )
 setwd( 'kinship' )
+
+# load pre-existing data
 
 # kinship files have these names, will appear in this order
 codes <- c(
@@ -50,7 +57,7 @@ data <- lapply( codes, function ( name ) {
 })
 
 # save figure in lower level
-setwd( '..' )
+setwd( '../..' )
 
 # visualize all matrices for test
 dims <- fig_scale( ratio = 1 )

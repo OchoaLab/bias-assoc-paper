@@ -1,29 +1,38 @@
 ### SIM ###
 
-# simulate genotypes and phenotypes data on standard K=3 admixture
-time Rscript sim-00-sim-gen-phen.R -g 20 --fes
-# 0m10.618s viiiaR5
+n_rep=10
+gen=20
+
 # dir output name for this run, which gets passed to other scripts
-name='sim-admix-n1000-m10000-k3-f0.3-s0.5-mc100-h0.8-g20-fes'
+name='sim-admix-n1000-m10000-k3-f0.3-s0.5-mc100-h0.8-g'$gen'-fes'
 
-# create all kinship estimates
-time Rscript sim-01-kinship.R --bfile $name
-# 0m3.313s
+for rep in $(seq 1 $n_rep); do
+    # simulate genotypes and phenotypes data on standard K=3 admixture
+    time Rscript sim-00-sim-gen-phen.R -g $gen --fes -r $rep
+    # 0m10.618s viiiaR5
 
-# kinship plots
-time Rscript sim-02-kinship-plot.R --bfile $name
+    # create all kinship estimates
+    time Rscript sim-01-kinship.R --bfile $name -r $rep
+    # 0m3.313s
+    
+    # run association tests
+    time Rscript sim-03-assoc.R --bfile $name -p 2 -r $rep
+    # 0m26.525s
+
+    # calculate AUCs and SRMSDs
+    time Rscript sim-04-auc-calc.R --bfile $name -r $rep
+    # 0m0.615s
+done
+
+# kinship plots (rep-1 only)
+time Rscript sim-02-kinship-plot.R --bfile $name -r 1
 # 0m3.002s
 
-# run association tests
-time Rscript sim-03-assoc.R --bfile $name -r 2
-# 0m26.525s
+# plot AUCs and SRMSDs (all reps)
+time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 
-# calculate AUCs
-time Rscript sim-04-auc.R --bfile $name
-# 0m0.615s
-
-# statistic correlation heatmaps
-time Rscript sim-05-stats-corr.R --bfile $name
+# statistic correlation heatmaps (rep-1 only)
+time Rscript sim-06-stats-corr.R --bfile $name -r 1
 # 0m0.649s
 
 
@@ -47,38 +56,42 @@ ln -s "$DATA_DIR/pops-annot.txt" pops-annot.txt
 cd ../../scripts/
 
 # need all kinship estimates first!
+# for real data no need to do for each replicate, these are shared across replicates
 # (popkin needed by simtrait)
-time Rscript sim-01-kinship.R --bfile $name
-# 22m49.585s
+time Rscript sim-01-kinship.R --bfile $name -r 0
+# 14m6.050s/58m6.979s viiiaR5
 
-# popkin plots!
+# popkin plots! (no need to specify replicate)
 time Rscript real-00-kinship-plot.R --bfile $name
 # 0m9.135s
 
-# simulate trait now!
-time Rscript real-01-simtrait.R --bfile $name --fes
-# m_causal: 250
-# 0m2.075s
+for rep in $(seq 1 $n_rep); do
+    # simulate trait now!
+    time Rscript real-01-simtrait.R --bfile $name --fes -r $rep
+    # m_causal: 250
+    # 0m2.075s
 
-# run association tests
-time Rscript sim-03-assoc.R --bfile $name -r 10
-# 97m4.535s + 37m13.190s (popkin MOR, wg MOR)
+    # run association tests
+    time Rscript sim-03-assoc.R --bfile $name -p 10 -r $rep
+    # 108m24.091s
 
-# calculate AUCs
-# TODO: missing LMM/PCA markers
-# weird result: MOR/gcta outperforms rom/wg/popkin by tons!
-time Rscript sim-04-auc.R --bfile $name
+    # calculate AUCs and SRMSDs
+    time Rscript sim-04-auc-calc.R --bfile $name -r $rep
+    # 0m0.615s
+done
+
+# plot AUCs and SRMSDs (all reps)
+time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 # 0m6.258s
 
-# statistic correlation heatmaps
+# statistic correlation heatmaps (rep-1 only)
 # NOTE: extremely high correlation for all (even PCA-LMM) compared to sim
-time Rscript sim-05-stats-corr.R --bfile $name
+time Rscript sim-06-stats-corr.R --bfile $name -r 1
 # 0m2.957s
 # NOTE: beta fig fails every time (betas are extremely correlated) 
 
-# hack for storing reps, real data
-mkdir rep-2
-mv auc.pdf betas* data.phen pvals* simtrait.RData rep-2/
+
+
 
 
 

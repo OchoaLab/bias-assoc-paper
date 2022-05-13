@@ -16,7 +16,9 @@ name <- 'data'
 # define options
 option_list = list(
     make_option("--bfile", type = "character", default = NA, 
-                help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character")
+                help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
+    make_option(c("-r", "--rep"), type = "integer", default = 1, 
+                help = "Replicate number.  Special case 0 means use base (for real data).", metavar = "int")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -24,10 +26,15 @@ opt <- parse_args(opt_parser)
 
 # get values
 dir_out <- opt$bfile
+rep <- opt$rep
 
 # go where we want data outputs to be
 setwd( '../data' )
 setwd( dir_out )
+if ( rep > 0 ) {
+    dir_rep <- paste0( 'rep-', rep )
+    setwd( dir_rep )
+}
 
 # load genotypes for kinship estimates
 X <- BEDMatrix( name, simple_names = TRUE )

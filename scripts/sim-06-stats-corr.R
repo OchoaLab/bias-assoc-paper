@@ -11,7 +11,9 @@ library(tibble)
 # define options
 option_list = list(
     make_option("--bfile", type = "character", default = NA, 
-                help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character")
+                help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
+    make_option(c("-r", "--rep"), type = "integer", default = 1, 
+                help = "Replicate number", metavar = "int")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -19,6 +21,7 @@ opt <- parse_args(opt_parser)
 
 # get values
 dir_out <- opt$bfile
+rep <- opt$rep
 
 # before switching away from "scripts", load a table located there
 kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
@@ -27,9 +30,11 @@ kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
 setwd( '../data/' )
 setwd( dir_out )
 
-# behavior depends on the presence of a true kinship matrix, which tells us if this is a simulation or a real dataset.
-# present => sim; absent => real.
-is_sim <- file.exists( 'kinship/true.grm.bin' )
+# if this directory exists here, this is real data
+is_sim <- !file.exists( 'kinship' )
+
+dir_rep <- paste0( 'rep-', rep )
+setwd( dir_rep )
 
 if ( !is_sim ) {
     # in real data the oracle methods (truth and biased limits) are missing
@@ -90,6 +95,9 @@ plot_cor <- function( data, name ) {
     # return in same order, etc
     return( cor_data )
 }
+
+# save figure in lower level
+setwd( '..' )
 
 cor_pvals <- plot_cor( pvals, 'pvals_cor' )
 # plot of betas fail in TGP (min correlations are much too high), just skip

@@ -18,7 +18,9 @@ file_covar <- paste0( name, '.eigenvec' )
 option_list = list(
     make_option("--bfile", type = "character", default = NA, 
                 help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
-    make_option(c("-r", "--n_pcs"), type = "integer", default = 2, 
+    make_option(c("-r", "--rep"), type = "integer", default = 1, 
+                help = "Replicate number", metavar = "int"),
+    make_option(c("-p", "--n_pcs"), type = "integer", default = 2, 
                 help = "Number of PCs to use", metavar = "int")
 )
 
@@ -27,6 +29,7 @@ opt <- parse_args(opt_parser)
 
 # get values
 dir_out <- opt$bfile
+rep <- opt$rep
 n_pcs <- opt$n_pcs
 
 # indexes for PCs
@@ -36,9 +39,16 @@ indexes <- 1 : n_pcs
 setwd( '../data' )
 setwd( dir_out )
 
-# behavior depends on the presence of a true kinship matrix, which tells us if this is a simulation or a real dataset.
-# present => sim; absent => real.
-is_sim <- file.exists( 'kinship/true.grm.bin' )
+# if this directory exists here, this is real data
+is_sim <- !file.exists( 'kinship' )
+
+dir_rep <- paste0( 'rep-', rep )
+# stay in lower level for real data
+if ( is_sim ) 
+    setwd( dir_rep )
+
+# include rep dir for phenotypes if we have real data
+name_phen <- if ( is_sim ) name else paste0( dir_rep, '/', name )
 
 #############
 ### ASSOC ###
@@ -60,7 +70,7 @@ assoc_all <- function( name_method ) {
     # LMM
     message( name_lmm_method )
     # association
-    data <- gcta_mlma( name, name_grm = name_grm )
+    data <- gcta_mlma( name, name_grm = name_grm, name_phen = name_phen )
     # cleanup
     delete_files_gcta_mlma( name )
     delete_files_log( name )
@@ -82,7 +92,7 @@ assoc_all <- function( name_method ) {
     # Actual error message: "  Error: Cannot proceed with --glm regression on phenotype 'PHENO1', since variance inflation factor for covariate 'PC1' is too high (VIF_TOO_HIGH). You may want to remove redundant covariates and try again."
     vif <- if ( name_method == 'true' || grepl( 'popkin', name_method ) ) 100 else NA
     # association
-    data <- plink_glm( name, file_covar = file_covar, vif = vif )
+    data <- plink_glm( name, name_phen = name_phen, file_covar = file_covar, vif = vif )
     # cleanup
     unlink( file_covar )
     delete_files_plink_glm( name )
@@ -111,5 +121,8 @@ assoc_all( 'wg_rom' )
 assoc_all( 'wg_mor' )
 
 # save data frames!
+# move into rep now for real data (we're already there for sims)
+if ( !is_sim )
+    setwd( dir_rep )
 write_tsv( pvals, 'pvals.txt.gz' )
 write_tsv( betas, 'betas.txt.gz' )
