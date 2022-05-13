@@ -1,16 +1,28 @@
 *~
 unpub
-scripts/figs*/*
 
 # a really specific file not needed for versioning
 data/tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pops-annot.txt
 
 # we should never commit data here, so let's forbid the bed/bim/fam/phen extensions
-# (Yiqi has accidentally added these files several times)
 *.bed
 *.bim
 *.fam
 *.phen
+
+# derived kinship matrices
+*.grm.bin
+*.grm.N.bin
+*.grm.id
+
+# other intermediate data
+betas.txt.gz
+betas_cor.pdf
+pvals.txt.gz
+eval.txt.gz
+pvals_cor_report.txt
+simtrait.RData
+
 
 ## list trimmed from https://github.com/github/gitignore/blob/master/TeX.gitignore
 
@@ -40,13 +52,3 @@ data/tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pops-annot.txt
 #*.pre
 *.snm
 #*.vrb
-
-# only in SVN cases so far...
-# # minitoc
-# *.maf
-# *.mlf
-# *.mlt
-# *.mtc[0-9]*
-# *.slf[0-9]*
-# *.slt[0-9]*
-# *.stc[0-9]*
