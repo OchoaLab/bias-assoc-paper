@@ -36,16 +36,10 @@ is_sim <- !file.exists( 'kinship' )
 dir_rep <- paste0( 'rep-', rep )
 setwd( dir_rep )
 
-if ( !is_sim ) {
-    # in real data the oracle methods (truth and biased limits) are missing
-    # harmonize `kinship_methods` to match
-    # "true" is only one without "_lim" at the end, the rest can be picked up with that regex
-    codes_rm <- c('true', grep('_lim$', kinship_methods$code, value = TRUE) )
-    # now prune table
-    kinship_methods <- kinship_methods[ !(kinship_methods$code %in% codes_rm), ]
-    # since all that is left are estimators, could remove the "est." part of the "nice" names
-    kinship_methods$nice <- sub( ' est.', '', kinship_methods$nice )
-}
+# in real data the oracle methods (truth and biased limits) are missing, exclude from `kinship_methods`
+if ( !is_sim )
+    kinship_methods <- kinship_methods[ kinship_methods$type != 'ROM lim.', ]
+
 # get correct count of methods now
 n_kinship <- nrow( kinship_methods )
 
@@ -56,9 +50,11 @@ method_codes <- c(
     paste0( 'lmm_', kinship_methods$code )
 )
 # same but human-readable
-method_nice <- c(
-    paste0( 'PCA, ', kinship_methods$nice ),
-    paste0( 'LMM, ', kinship_methods$nice )
+labs_short <- rep.int( kinship_methods$short, 2 )
+labs_type <- rep.int( kinship_methods$type, 2 )
+labs_model <- c(
+    rep.int( 'PCA', n_kinship ),
+    rep.int( 'LMM', n_kinship )
 )
 
 # load tibbles
@@ -69,7 +65,7 @@ plot_cor <- function( data, name ) {
     # reorder columns of data to be a manually-selected order
     data <- data[ method_codes ]
     # replace original codes with nice names
-    colnames( data ) <- method_nice
+    colnames( data ) <- labs_short
     # compute correlation matrix
     cor_data <- cor( data, use = 'pairwise.complete.obs' )
     
@@ -82,9 +78,13 @@ plot_cor <- function( data, name ) {
     )
     plot_popkin(
         cor_data,
+        labs = cbind( labs_model, labs_type ),
+        labs_cex = c(1, 0.7),
+        labs_line = c(6, 4),
+        labs_even = TRUE,
         names = TRUE,
         names_cex = 0.7,
-        mar = 8,
+        mar = 7,
         ylab = 'Association Model, Kinship Estimate',
         ylab_adj = 0.75,
         leg_title = expression(bold(paste("Pearson Correlation ", (rho)))),
