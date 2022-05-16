@@ -17,6 +17,7 @@
 \bibliography{zotero, dummy} % biblatex wants this in the preamble...
 
 % copied from PCA-GWAS paper
+\newcommand{\rmsd}{\text{SRMSD}_p}
 \newcommand{\auc}{\text{AUC}_\text{PR}}
 
 \usepackage[noT]{kinshipsymbols}
@@ -87,8 +88,8 @@ $^*$ Corresponding author: \texttt{alejandro.ochoa@duke.edu}
 \section{Introduction}
 
 % direct copy from Part II
-Kinship is utilized in principal components analyses and linear-mixed effects models to correct for structure in Genome-Wide Association Studies (GWAS) \citep{xie_combining_1998,yu_unified_2006, aulchenko_genomewide_2007, price_principal_2006, astle_population_2009,kang_efficient_2008, kang_variance_2010, yang_gcta:_2011, zhou_genome-wide_2012, loh_efficient_2015, sul_population_2018}.
-The most commonly-used kinship estimator \citep{price_principal_2006, astle_population_2009, rakovski_kinship-based_2009, thornton_roadtrips:_2010, yang_common_2010, yang_gcta:_2011, zhou_genome-wide_2012, speed_improved_2012, speed_relatedness_2015, loh_efficient_2015, wang_efficient_2017, sul_population_2018} was recently determined to have a complex bias \citep{weir_unified_2017, ochoa_estimating_2021}.
+Kinship is utilized in principal components analyses and linear-mixed effects models to correct for structure in Genome-Wide Association Studies (GWAS) \citep{xie_combining_1998,yu_unified_2006, aulchenko_genomewide_2007, price_principal_2006, astle_population_2009,kang_efficient_2008, kang_variance_2010, yang_gcta:_2011, zhou_genome-wide_2012, yang_advantages_2014, loh_efficient_2015, sul_population_2018}.
+The most commonly-used kinship estimator \citep{price_principal_2006, astle_population_2009, rakovski_kinship-based_2009, thornton_roadtrips:_2010, yang_common_2010, yang_gcta:_2011, zhou_genome-wide_2012, speed_improved_2012, yang_advantages_2014, speed_relatedness_2015, loh_efficient_2015, wang_efficient_2017, sul_population_2018} was recently determined to have a complex bias \citep{weir_unified_2017, ochoa_estimating_2021}.
 
 WG has a simpler, uniform bias \citep{weir_unified_2017, ochoa_estimating_2021}.
 
@@ -123,12 +124,11 @@ In this work, to simplify notation, we omit cumbersome notation that marks this 
 
 \subsubsection{Standard kinship estimator}
 
-The ``standard'' kinship estimator is the most common estimator employed across various applications for population structure \citep{astle_population_2009, speed_relatedness_2015, wang_efficient_2017}, including
-heritability estimation \citep{speed_improved_2012, speed_relatedness_2015, speed_reevaluation_2017}
+The ``standard'' kinship estimator is the most common estimator employed across various applications for population structure \citep{astle_population_2009, yang_advantages_2014, speed_relatedness_2015, wang_efficient_2017}, including
+heritability estimation \citep{speed_improved_2012, yang_advantages_2014, speed_relatedness_2015, speed_reevaluation_2017}
 and genetic association tests based on PCA \citep{price_principal_2006},
-LMMs \citep{astle_population_2009, zhou_genome-wide_2012, loh_efficient_2015, sul_population_2018}
+LMMs \citep{astle_population_2009, zhou_genome-wide_2012, yang_advantages_2014, loh_efficient_2015, sul_population_2018}
 and other models \citep{rakovski_kinship-based_2009, thornton_roadtrips:_2010}.
-GCTA \citep{yang_common_2010, yang_gcta:_2011} employs a variant of this estimator detailed in the next subsection.
 
 There are two versions of this standard kinship estimator, namely the mean-of-ratios (MOR) and ratio-of-means (ROM) version \citep{ochoa_estimating_2021}.
 Most approaches implement the MOR version.
@@ -173,51 +173,6 @@ Such weighted \pith estimates encompass the best unbiased linear estimator \cite
 $
 \mathbf{w} = ( \mathbf{1}^\intercal \kinMat^{-1} \mathbf{1} )^{-1} \mathbf{1}^\intercal \kinMat^{-1}.
 $
-
-\subsubsection{GCTA kinship estimator}
-
-The GCTA software \citep{yang_gcta:_2011} estimate what they refer to as a Genetic Relatedness Matrix (GRM), which is evidently twice a kinship matrix estimate due to the similarity to the Standard MOR kinship estimator \cref{eq:kinship_std_mor}.
-In fact, the GCTA kinship estimates for two different individuals is identical to \cref{eq:kinship_std_mor} (after taking into account the factor of 2):
-$$
-\ktHatNamed{GCTA} = \ktHatNamed{std-mor} \quad\quad \text{for} \quad\quad j \ne k.
-$$
-The GCTA kinship estimator differs from the standard estimator only for $j=k$ \citep{yang_gcta:_2011}, where the estimator and its limit are instead given by \citep{ochoa_estimating_2021}:
-% % copy from Part II:
-% The limits of the ratio-of-means versions of two more \ft estimators \citep{yang_gcta:_2011} are
-% \begin{equation}
-%   \label{eq:fHatsGcta}
-%   \begin{split}
-%     \ftHatStdII
-%     &= 1 - \frac{\sum\limits_{i=1}^m \xij(2-\xij)}{2 \sum\limits_{i=1}^m \pith \left( 1-\pith \right)}
-%     \toas \frac{\ft - \bar{\varphi}^T}{1 - \bar{\varphi}^T} , \\
-%     %%     
-%     \ftHatStdIII
-%     &= \frac{\sum\limits_{i=1}^m \xij^2 - \left( 1 + 2\pith \right) \xij + 2\left(\pith \right)^2}{2 \sum\limits_{i=1}^m \pith \left( 1-\pith \right)}
-%     \toas \frac{ \ft + \bar{\varphi}^T - 2 \bar{\varphi}_j^T }{1 - \bar{\varphi}^T}.
-%   \end{split}
-% \end{equation}
-% GCTA uses version III.
-% \begin{equation}
-%   \label{eq:kjjHatGctaROM}
-%   \begin{split}
-%     \ktHatNamed{GCTA}
-%     &= \frac{1}{2} + \frac{\sum\limits_{i=1}^m \xij^2 - \left( 1 + 2\pith \right) \xij + 2\left(\pith \right)^2}{4 \sum\limits_{i=1}^m \pith \left( 1-\pith \right)}
-%     \toas
-%     \frac{ \kt - \bar{\varphi}_j^T }{1 - \bar{\varphi}^T}.
-%   \end{split}
-% \end{equation}
-% This is the real MOR version, removed $T$s:
-\begin{align}
-  \label{eq:kinship_gcta_self}
-  \ktHatNamed[j]{GCTA}
-  &=
-    \frac{1}{2} + \frac{1}{m} \sum_{i=1}^m \frac{\xij^2 - \left( 1 + 2\pith \right) \xij + 2 \pith^2}{4 \pith \left( 1-\pith \right)}
-  \\
-  \label{eq:kinship_gcta_self_lim}
-  &\toasNM
-    \frac{ \kt[j] - \bar{\varphi}_j }{1 - \bar{\varphi}}
-    .
-\end{align}
 
 \subsubsection{Popkin kinship estimator}
 
@@ -280,7 +235,7 @@ where \Ajk is as in \cref{eq:popkin}, and
     .
   \end{split}
 \end{equation}
-Thus, the WG estimator resembles the popkin estimator in \cref{eq:popkin}, except it replaces \AMinHat with \AAvgHat and that results in a uniform downward bias given by $\tilde{\varphi}$, which is the mean kinship between all different individual pairs (it excludes the diagonal, or self-kinship values, compared to the $\bar{\varphi}$ that appears in the standard and GCTA estimators).
+Thus, the WG estimator resembles the popkin estimator in \cref{eq:popkin}, except it replaces \AMinHat with \AAvgHat and that results in a uniform downward bias given by $\tilde{\varphi}$, which is the mean kinship between all different individual pairs (it excludes the diagonal, or self-kinship values, compared to the $\bar{\varphi}$ that appears in the standard estimator).
 In \cref{sec:mean_kinship_ineqs} we prove that
 $$
 0 \le \tilde{\varphi} \le \bar{\varphi} \le \bar{d} \le 1,
@@ -446,8 +401,8 @@ Describe 1000 Genomes.
 
 TODO: state versions, download links, etc.
 
-GCTA \citep{yang_gcta:_2011}.
-Used to calculate GCTA kinship estimates.
+GCTA \citep{yang_gcta:_2011, yang_advantages_2014}.
+Used to calculate standard kinship estimates, run all LMM associations.
 We pass $2 \kinMat$ for all kinship matrices tested.
 
 PCA: implemented regression in R (function lm).
@@ -470,7 +425,7 @@ This high-dimensinal admixed family scenario results in a large difference in pe
 To further differentiate methods, we increase noise in kinship estimation by purposefully simulating a small number of loci: $m=10,000$.
 
 % path for figures
-\graphicspath{ {../data/sim-admix-n1000-m10000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/} }
+\graphicspath{ {../data/sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/} }
 
 \begin{figure}[bp!]
   \centering
@@ -478,22 +433,31 @@ To further differentiate methods, we increase noise in kinship estimation by pur
   \caption{
     {\bf Kinship estimates and their limits on the admixed family simulation.}
     Each panel represents a kinship matrix as a heatmap, with each of the $n=1000$ individuals along both x and y axes, and the kinship value presented as color: positive estimates are in red, negative estimates in blue.
-    The estimators considered are Popkin, Standard, GCTA, and Weir-Goudet.
+    The estimators considered are Popkin, Standard, and Weir-Goudet.
     Each estimator has its limit in the first column (the limit of Popkin is Truth).
     Standard has two variants: ROM (ratio of means) and MOR (mean of ratios).
     Standard MOR does not have a closed-form limit, but in practice matches that of Standard ROM.
   }
-  \label{fig:kinship}
+  \label{fig:kinship_sim}
 \end{figure}
 
-The kinship estimates on this simulation, and the theoretical limits of these estimators, are shown in \cref{fig:kinship}.
-The true kinship matrix (\cref{fig:kinship}A) shows the family relatedness as high values concentrated near the diagonal and the ancestry-driven population structure as the broad patterns off-diagonal.
+The kinship estimates on this simulation, and the theoretical limits of these estimators, are shown in \cref{fig:kinship_sim}.
+The true kinship matrix (\cref{fig:kinship_sim}A) shows the family relatedness as high values concentrated near the diagonal and the ancestry-driven population structure as the broad patterns off-diagonal.
 This simulation illustrates the severity of the biases of these estimators, which were previously characterized theoretically \citep{ochoa_estimating_2021}.
-Only the Popkin estimator is unbiased (\cref{fig:kinship}B), the rest presenting large negative biases which in turn result in abundant negative estimates.
-The Standard kinship estimator (the mean-of-ratios, or MOR, version; \cref{fig:kinship}E), which is the most common estimator in these applications, and the closely related ratio-of-means (ROM) estimator (\cref{fig:kinship}D), both have severe biases that are not only overall downwardly biased, but these biases also vary for every pair of individuals.
-The limit of the Standard ROM estimator (\cref{fig:kinship}C), calculated from the true kinship matrix and its known functional form (see Methods), closely matches the previously mentioned estimates obtained from genotypes.
-The GCTA estimator equals the Standard MOR estimator except for the diagonal values, which also have a different bias (\cref{fig:kinship}F-G).
-Lastly, the Weir-Goudet estimator has a uniform downward bias (\cref{fig:kinship}H-I).
+Only the Popkin estimator is unbiased (\cref{fig:kinship_sim}B), the rest presenting large negative biases which in turn result in abundant negative estimates.
+The Standard kinship estimator (the mean-of-ratios, or MOR, version; \cref{fig:kinship_sim}E), which is the most common estimator in these applications, and the closely related ratio-of-means (ROM) estimator (\cref{fig:kinship_sim}D), both have severe biases that are not only overall downwardly biased, but these biases also vary for every pair of individuals.
+The limit of the Standard ROM estimator (\cref{fig:kinship_sim}C), calculated from the true kinship matrix and its known functional form (see Methods), closely matches the previously mentioned estimates obtained from genotypes.
+Lastly, the Weir-Goudet estimator has a uniform downward bias (\cref{fig:kinship_sim}H-I).
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{rmsd.pdf}
+  \caption{
+    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate.}
+    This should be a supplementary figure, if we show it at all.
+  }
+  \label{fig:rmsd_sim}
+\end{figure}
 
 \begin{figure}[bp!]
   \centering
@@ -503,16 +467,16 @@ Lastly, the Weir-Goudet estimator has a uniform downward bias (\cref{fig:kinship
     Results based on a single replicate of the random genotype matrix and trait vector.
     Approaches appear to cluster primarily by association model (LMM vs PCA) and whether a kinship estimate was used or not, and do not depend much at all on the form of the bias.
   }
-  \label{fig:auc}
+  \label{fig:auc_sim}
 \end{figure}
 
 We then performed both LMM and PCA association tests in order to determine if the kinship biases carry over to association biases.
-Surprisingly, we found that none of these kinship biases have discernible effects on association performance, as summarized by the Area Under the Precision-Recall Curve ($\auc$; \cref{fig:auc}).
+Surprisingly, we found that none of these kinship biases have discernible effects on association performance, as summarized by the Area Under the Precision-Recall Curve ($\auc$; \cref{fig:auc_sim}).
 The largest difference in performance is explained by the association model used (LMM vs PCA), as expected due to our use of a family simulation, where PCA is expected to perform less well than LMM.
 For PCA only, there are no clear differences between the performance of any of the kinship matrices.
 In contrast, the LMM results are relatively more sensitive to the use of noisy kinship estimates versus the (noiseless) limits of these estimates, a difference certainly increased by our deliberate use of a small number of simulated loci.
-Among the kinship estimator limits, use of the true kinship matrix, the limit of the Weir-Goudet estimator, or the limit of the Standard ROM estimator all result in practically the same performance, while the limit of the GCTA estimator shows a difference in performance.
-Similarly, among the estimates, the popkin, Weir-Goudet, and Standard ROM estimates result in the same performance, whereas the Standard MOR and GCTA estimates (which equals Standard MOR off-diagonal) have a slightly different performance.
+Among the kinship estimator limits, use of the true kinship matrix, the limit of the Weir-Goudet estimator, or the limit of the Standard ROM estimator all result in practically the same performance.
+Similarly, among the estimates, the popkin, Weir-Goudet, and Standard ROM estimates result in the same performance, whereas the Standard MOR estimates have a slightly different performance.
 
 \begin{figure}[bp!]
   \centering
@@ -522,25 +486,70 @@ Similarly, among the estimates, the popkin, Weir-Goudet, and Standard ROM estima
     The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute Pearson correlations (color).
     P-values between all kinship matrices using the same association model (PCA or LMM) are highly correlated (including biased and unbiased estimates), and often the maximum correlation of 1 is achieved.
   }
-  \label{fig:pvals_cor}
+  \label{fig:pvals_cor_sim}
 \end{figure}
 
-To better understand the degree of agreement between the association results of the various kinship matrices, we next measured the agreement between methods at the level of the individual association p-values, summarized using pearson correlation coefficients ($\rho$; \cref{fig:pvals_cor}).
+To better understand the degree of agreement between the association results of the various kinship matrices, we next measured the agreement between methods at the level of the individual association p-values, summarized using pearson correlation coefficients ($\rho$; \cref{fig:pvals_cor_sim}).
 We found that all the kinship matrices yield highly correlated p-values when applied to the same association model (LMM vs PCA), and otherwise mirroring our previous observations based on $\auc$.
 The minimum correlation among PCA methods was $0.86$, and among LMMs it was $0.84$.
 Within PCA, the cluster that excludes the true kinship matrix and the popkin estimate has nearly identical p-values ($\rho > 0.99$), and inclusion of popkin lowers the minimum correlation to $\rho > 0.93$.
-Among LMMs, the cluster that includes the true kinship and the Weir-Goudet and Standard ROM limits also results in practically identical p-values ($\rho \approx 1$), while including the GCTA limit lowers that to $\rho > 0.97$.
-The LMM cluster that includes the Popkin, Weir-Goudet, and Standard ROM estimators also has $\rho \approx 1$, and separately the cluster with the Standard MOR and GCTA estimators has $\rho \approx 1$, while the LMM cluster that includes all estimates has $\rho > 0.96$.
+Among LMMs, the cluster that includes the true kinship and the Weir-Goudet and Standard ROM limits also results in practically identical p-values ($\rho \approx 1$).
+The LMM cluster that includes the Popkin, Weir-Goudet, and Standard ROM estimators also has $\rho \approx 1$, and separately the cluster with the Standard MOR estimators has $\rho \approx 1$, while the LMM cluster that includes all estimates has $\rho > 0.96$.
 Thus, several sets of kinship matrices with different biases result in identical association statistics, within both LMMs and PCA models, while differences are largely driven by the association model used and whether the kinship matrices were estimates or not.
 
-% \begin{figure}[bp!]
-%   \centering
-%   \includegraphics[width=3in]{betas_cor.pdf}
-%   \caption{
-%     {\bf Heatmap and dendrogram for $\hat{\mathbf{\beta}}$ of GCTA and PCA with different kinship matrices ($m=10,000$).}
-%   }
-%   \label{fig:betas_cor}
-% \end{figure}
+\subsection{Results using 1000 Genomes Project real genotypes}
+
+[To fill in, and update figure captions.]
+
+% path for figures
+\graphicspath{ {../data/tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/} }
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[height=0.8\textheight]{kinship.pdf}
+  \caption{
+    {\bf Kinship estimates and their limits on the admixed family simulation.}
+    Each panel represents a kinship matrix as a heatmap, with each of the $n=1000$ individuals along both x and y axes, and the kinship value presented as color: positive estimates are in red, negative estimates in blue.
+    The estimators considered are Popkin, Standard, and Weir-Goudet.
+    Each estimator has its limit in the first column (the limit of Popkin is Truth).
+    Standard has two variants: ROM (ratio of means) and MOR (mean of ratios).
+    Standard MOR does not have a closed-form limit, but in practice matches that of Standard ROM.
+  }
+  \label{fig:kinship_real}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{rmsd.pdf}
+  \caption{
+    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate.}
+    This should be a supplementary figure, if we show it at all.
+  }
+  \label{fig:rmsd_real}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{auc.pdf}
+  \caption{
+    {\bf Area Under the Precision-Recall Curves ($\auc$) for every combination of association model and kinship estimate.}
+    Results based on a single replicate of the random genotype matrix and trait vector.
+    Approaches appear to cluster primarily by association model (LMM vs PCA) and whether a kinship estimate was used or not, and do not depend much at all on the form of the bias.
+  }
+  \label{fig:auc_real}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{pvals_cor.pdf}
+  \caption{
+    {\bf Correlation between p-values of different association models and kinship estimates.}
+    The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute Pearson correlations (color).
+    P-values between all kinship matrices using the same association model (PCA or LMM) are highly correlated (including biased and unbiased estimates), and often the maximum correlation of 1 is achieved.
+  }
+  \label{fig:pvals_cor_real}
+\end{figure}
+
 
 \subsection{Theoretical justification of empirical observations under standard kinship bias}
 
@@ -1039,7 +1048,6 @@ As before, these results imply that the association statistics are invariant to 
 
 The biased kinship matrix may be more desireable in PCA, from the standoint of numerical stability, as the resulting eigenvectors are not only orthogonal to each other but also to the intercept (whereas the eigenvectors of the true kinship matrix are not orthogonal to the intercept).
 
-The GCTA kinship estimator was not analyzed theoretically, but it is very similar to the standard kinship estimator, so we expect an approximately similar performance between those two and using the true kinship matrix.
 
 
 
@@ -1056,7 +1064,7 @@ The GCTA kinship estimator was not analyzed theoretically, but it is very simila
   \label{sec:popkin_w_justif}
 
   The popkin estimator in \cref{eq:popkin} has been generalized in this work to include locus weights $w_i$.
-  The original formulation had $w_i=1$ \citep{ochoa_estimating_2021}.
+  The original formulation had $w_i=1$ for all loci $i$ \citep{ochoa_estimating_2021}.
   Recalling from that original work that
   $$
   \E[ (\xij-1)(\xij[k]-1) - 1 ] = 4 \pit ( 1 - \pit ) ( \kt - 1 ),
@@ -1072,7 +1080,7 @@ The GCTA kinship estimator was not analyzed theoretically, but it is very simila
       \frac{4}{m} \sum_{i=1}^m w_i \pit ( 1 - \pit )
       .
   \end{align*}
-  Therefore, as before all the unknowns \pit and now also the weights $w_i$ collapse into a single parameter $v_m$, which is estimated under the original assumption that the minimum kinship is zero, giving $\AMinHat = -v_m$, so that
+  Therefore, as before all the unknowns \pit and now also the (known) weights $w_i$ collapse into a single parameter $v_m$, which is estimated under the original assumption that the minimum kinship is zero, giving $\AMinHat = -v_m$, so that
   $$
   \ktHatNamed{popkin-ROM}
   =
@@ -1097,7 +1105,7 @@ The GCTA kinship estimator was not analyzed theoretically, but it is very simila
       \frac{ 4 ( \kt - 1 ) }{ 1 - \bar{\varphi} }
   ,
   \end{align*}
-  where the expectation for $\pith (1-\pith)$ was also calculated previously \citep{ochoa_estimating_2021}.
+  where the expectation of $\pith (1-\pith)$ was calculated previously \citep{ochoa_estimating_2021}.
   In this case the expectation of \Ajk, summing across loci, is also approximated by
   $$
   \E[ \Ajk ]
@@ -1186,7 +1194,7 @@ The GCTA kinship estimator was not analyzed theoretically, but it is very simila
       - I_{ik} \left( \frac{n_i}{n} - I_{ij} \right) \xij[k] 2 \pith
       .
   \end{align*}
-  To arrive at the desired result of $I_{ij} I_{ik} (\xij - 2 \pith) (\xij[k] - 2 \pith )$, it is necessary for the rest of the terms to vanish for arbitrary values of \pith, \xij, and \xij[k].
+  To arrive at the desired result of $I_{ij} I_{ik} (\xij - 2 \pith) (\xij[k] - 2 \pith )$, which is the first term above, it is necessary for the rest of the terms to vanish for arbitrary values of \pith, \xij, and \xij[k].
   Since $n_i > 0$ (there is at least one non-missing individual at every locus), the term $\frac{n_i}{n} ( I_{ij} - \frac{n_i}{n} ) 4 \pith$ vanishes if and only if $I_{ij} = \frac{n_i}{n}$, and since $I_{jk}=0$ does not solve this equation (because $n_i > 0$) the only other case is $I_{jk}=1$, which requires $n_i=n$, so no individuals can have missing data at this locus.
   Thus,
   $$
