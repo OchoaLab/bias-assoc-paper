@@ -57,6 +57,23 @@
 % spacing smaller than double
 \renewcommand{\baselinestretch}{1.2}
 
+% cool automatic supplemental figures/tables!
+% http://bytesizebio.net/2013/03/11/adding-supplementary-tables-and-figures-in-latex/
+% with some additions
+\newcommand{\beginsupplement}{%
+  \setcounter{table}{0}
+  \renewcommand{\thetable}{S\arabic{table}}%
+  \setcounter{figure}{0}
+  \renewcommand{\thefigure}{S\arabic{figure}}%
+  \setcounter{section}{0}
+  \renewcommand{\thesection}{S\arabic{section}}%
+  \setcounter{equation}{0}
+  \renewcommand{\theequation}{S\arabic{equation}}%
+  \setcounter{page}{1}
+  \renewcommand{\thepage}{S\arabic{page}}%
+}
+
+
 \title{\Large \textbf{Fixed and mixed-effect genetic association models are robust to common population kinship estimation biases}}
 \author{Zhuoran Hou$^1$, Alejandro Ochoa$^{1,2,*}$}
 \date{}
@@ -244,9 +261,41 @@ where $\bar{d} = \frac{1}{n} \sum_{j=1}^n \kt[j]$, and equalities are achieved i
 
 \subsection{Simulations}
 
+\subsubsection{Admixture simulation for genotype matrices}
+
+An admixed family was simulated following previous work \citep{yao_limitations_2022}, except here only $K=3$ ancestries were simulated and $F_{ST}=0.3$ for the admixed individuals, which more closely resembles the parameters of recently-admixed individuals such as Hispanics and African-Americans.
+Briefly, our admixture model first simulates $n=1000$ founder individuals with the number of loci $m=100,000$.
+Random ancestral allele frequencies \pit, subpopulation allele frequencies $p_i^{S_u}$, individual-specific allele frequencies $\pi_{ij}$, and genotypes \xij are drawn from this hierarchical model:
+\begin{align*}
+  \pit
+  &\sim
+    \text{Uniform}( 0.01, 0.5 )
+    , \\
+  p_i^{S_u} | \pit
+  &\sim
+    \text{Beta} \left(
+    \pit \left( \frac{1}{ \ft[S_u] } - 1 \right),
+    \left( 1 - \pit \right) \left( \frac{1}{ \ft[S_u] } - 1 \right)
+    \right)
+    , \\
+  \pi_{ij}
+  &=
+    \sum_{u = 1}^K q_{ju} p_i^{S_u}
+    , \\
+  \xij | \pi_{ij}
+  &\sim
+    \text{Binomial}(2, \pi_{ij})
+    ,
+\end{align*}
+where this Beta is the Balding-Nichols distribution \citep{balding_method_1995} with mean \pit and variance $\pit \left( 1 - \pit \right) \ft[S_u]$.
+This is implemented in the R package \texttt{bnpsd}.
+
+We also include family structure in the simulation. 20 generations are generated iteratively. To preserve admixture structure mentioned above, individuals in the first generation ($n=1000$) are ordered by 1D geography, locally unrelated and randomly assigned sex. 
+From the next generation, individuals are paired iteratively: randomly choosing males from the pool and pairing them with the nearest available female with local kinship $<1/4^3$ until no available males or females. Family sizes are drawn randomly ensuring every family has at least one child. Children are reordered by the average coordinates of their parents, their sex are assigned randomly, and their alleles are drawn from parents independently per locus. The simulation is implemented in the R package \texttt{simfam}.
+
 \subsubsection{Trait simulation algorithm}
 
-Given a desired number of causal loci $m_1$ and heritability $h^2$, the goal is to choose causal coefficients $\boldsymbol{\beta}$ and the intercept $\alpha$ that result in zero mean and the desired trait heritability.
+Given a desired number of causal loci $m_1$ and heritability $h^2=0.8$, the goal is to choose causal coefficients $\boldsymbol{\beta}$ and the intercept $\alpha$ that result in zero mean and the desired trait heritability.
 Here, we use the ``fixed effect sizes'' trait simulation model described in \citep{yao_limitations_2022}.
 Briefly, first $m_1$ causal loci are randomly selected.
 For known \pit, causal coefficients are constructed as:
@@ -291,39 +340,26 @@ When \pit are unknown, to avoid covariance distortions, the intercept coefficien
 where $\mathbf{1}_{m_1}$ is a length-$m_1$ column vector of ones.
 
 \textbf{Trait simulation based on the real dataset.}
-To compare the results from different kinship estimators on a real dataset, we use genotypes from the 1000 Genomes Project \citep{the_1000_genomes_project_consortium_map_2010, 1000_genomes_project_consortium_integrated_2012} but simulate traits based on the real genotypes. The number of causal loci is 250 and and the heritability is 0.8.
+To compare the results from different kinship estimators on a real dataset, we use genotypes from the 1000 Genomes Project \citep{the_1000_genomes_project_consortium_map_2010, 1000_genomes_project_consortium_integrated_2012} but simulate traits based on the real genotypes with the number of causal loci equals to 250. The dataset was processed with \texttt{plink2} \citep{chang_second-generation_2015} and R packages \texttt{genio} and \texttt{BEDMatrix} \citep{grueneberg_bgdata_2019}. Only data with autosomal biallelic SNP loci filter ``PASS'' are included in the analysis.
+Moreover, we use \texttt{plink2} parameters ``\texttt{-{}-indep-pairwise 1000kb 0.3}'' to further iteratively removes loci that have a greater than 0.3 correlation coefficient with another locus that is within 1000kb. We also remove all loci with $\text{MAF} < 0.01$ in this real dataset.
 
-\subsubsection{Admixture simulation for genotype matrices}
+\subsection{Evaluation of performance}
 
-An admixed family was simulated following previous work \citep{yao_limitations_2022}, except here only $K=3$ ancestries were simulated and $F_{ST}=0.3$ for the admixed individuals, which more closely resembles the parameters of recently-admixed individuals such as Hispanics and African-Americans.
-Briefly, our admixture model first simulates $n=1000$ founder individuals with the number of loci $m=100,000$.
-Random ancestral allele frequencies \pit, subpopulation allele frequencies $p_i^{S_u}$, individual-specific allele frequencies $\pi_{ij}$, and genotypes \xij are drawn from this hierarchical model:
-\begin{align*}
-  \pit
-  &\sim
-    \text{Uniform}( 0.01, 0.5 )
-    , \\
-  p_i^{S_u} | \pit
-  &\sim
-    \text{Beta} \left(
-    \pit \left( \frac{1}{ \ft[S_u] } - 1 \right),
-    \left( 1 - \pit \right) \left( \frac{1}{ \ft[S_u] } - 1 \right)
-    \right)
-    , \\
-  \pi_{ij}
-  &=
-    \sum_{u = 1}^K q_{ju} p_i^{S_u}
-    , \\
-  \xij | \pi_{ij}
-  &\sim
-    \text{Binomial}(2, \pi_{ij})
-    ,
-\end{align*}
-where this Beta is the Balding-Nichols distribution \citep{balding_method_1995} with mean \pit and variance $\pit \left( 1 - \pit \right) \ft[S_u]$.
-This is implemented in the R package \texttt{bnpsd}.
-
-We also include family structure in the simulation. 20 generations are generated iteratively. To preserve admixture structure mentioned above, individuals in the first generation ($n=1000$) are ordered by 1D geography, locally unrelated and randomly assigned sex. 
-From the next generation, individuals are paired iteratively: randomly choosing males from the pool and pairing them with the nearest available female with local kinship $<1/4^3$ until no available males or females. Family sizes are drawn randomly ensuring every family has at least one child. Children are reordered by the average coordinates of their parents, their sex are assigned randomly, and their alleles are drawn from parents independently per locus. The simulation is implemented in the R package \texttt{simfam}.
+$\auc$ and $\rmsd$ are used to evaluate each approaches. For the later one, $\rmsd$ (Signed Root Mean Square Deviation) is used to measure the difference between the observed null p-value quantiles and the expected uniform quantiles (p-values of continuous test statistics follow a uniform distribution under the null). The expression for $\rmsd$ is:
+$$
+\rmsd
+=
+\text{sgn}(u_\text{median} - p_\text{median} ) \sqrt{ \frac{1}{m_0} \sum_{i = 1}^{m_0} \left( u_i - p_{(i)} \right)^2 },
+$$
+where
+$m_0 = m - m_1$ is the number of null (non-causal) loci,
+$i$ indexes null loci only,
+$p_{(i)}$ is the $i$th ordered null p-value,
+$u_i = ( i - 0.5 ) / m_0$ is its expectation,
+$p_\text{median}$ is the median observed null p-value,
+$u_\text{median} = \frac{1}{2}$ is its expectation,
+and $\text{sgn}$ is the sign function (1 if $u_\text{median} \ge p_\text{median}$, -1 otherwise).
+$\rmsd = 0$ corresponds to calibrated p-values, $\rmsd > 0$ indicate anti-conservative p-values, and $\rmsd < 0$ are conservative p-values.
 
 \subsection{Software}
 
@@ -384,12 +420,14 @@ Lastly, the Weir-Goudet estimator has a uniform downward bias (\cref{fig:kinship
 \end{figure}
 
 We then performed both LMM and PCA association tests in order to determine if the kinship biases carry over to association biases.
-Surprisingly, we found that none of these kinship biases have discernible effects on association performance, as summarized by the Area Under the Precision-Recall Curve ($\auc$; \cref{fig:auc_sim}).
+Surprisingly, we found that none of these kinship biases have discernible effects on association performance, as summarized by the Area Under the Precision-Recall Curve ($\auc$; \cref{fig:auc_sim}) and $\rmsd$ (\cref{fig:rmsd_sim}).
 The largest difference in performance is explained by the association model used (LMM vs PCA), as expected due to our use of a family simulation, where PCA is expected to perform less well than LMM.
 For PCA only, there are no clear differences between the performance of any of the kinship matrices.
 In contrast, the LMM results are relatively more sensitive to the use of noisy kinship estimates versus the (noiseless) limits of these estimates, a difference certainly increased by our deliberate use of a small number of simulated loci.
-Among the kinship estimator limits, use of the true kinship matrix, the limit of the Weir-Goudet estimator, or the limit of the Standard ROM estimator all result in practically the same performance.
+For $\auc$, among the kinship estimator limits, use of the true kinship matrix, the limit of the Weir-Goudet estimator, or the limit of the Standard ROM estimator all result in practically the same performance.
 Similarly, among the estimates, the popkin, Weir-Goudet, and Standard ROM estimates result in the same performance, whereas the Standard MOR estimates have a slightly different performance.
+For $\rmsd$, all estimates perform similarly except the popkin ROM estimates perform slightly different with a larger variance.
+
 
 \begin{figure}[bp!]
   \centering
@@ -412,9 +450,10 @@ Thus, several sets of kinship matrices with different biases result in identical
 
 \subsection{Results using 1000 Genomes Project real genotypes}
 
-[To fill in, and update figure captions.]
+To compare performance of different estimates on a real dataset, we use the genotype from the 1000 Genomes Project but simulate traits using 250 causal loci. The kinship estimates are shown in \cref{fig:kinship_real}. The popkin ROM estimates shows a tree structure that is aligned with relationships of different subpopulations in the 1000 Genomes Project (\cref{fig:kinship_real}A), while the popkin MOR estimates provide similar patterns but do not have such tree structure (\cref{fig:kinship_real}B). The standard kinship estimators (ROM and MOR) generally downwardly biased especially among EUR,SAS,EAS and AMR subpopulations (\cref{fig:kinship_real}C-D). For the Weir-Goudet estimates, they uniformally provide a smaller values (\cref{fig:kinship_real}E-F).
 
-
+When we perform PCA and LMM association test using these kinship estimators, the results are similar to our simulation study with higher variances: LMM perform better than PCA while there are not much difference among kinship estimators used within the same association model (\cref{fig:auc_real}, \cref{fig:rmsd_real}). The MOR estimates using LMM slightly outperform ROM estimates using LMM for both $\auc$ and$\rmsd$.
+We also measure the correlation between p-values of different association models and kinship estimates. They are all strongly correlated based on this 1000 Genomes Project real dataset with most achieved correlation of 1 (\cref{fig:pvals_cor_real}).
 
 % path for figures
 \graphicspath{ {../data/tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/} }
@@ -946,6 +985,27 @@ As before, these results imply that the association statistics are invariant to 
 The biased kinship matrix may be more desireable in PCA, from the standoint of numerical stability, as the resulting eigenvectors are not only orthogonal to each other but also to the intercept (whereas the eigenvectors of the true kinship matrix are not orthogonal to the intercept).
 
 
+\section*{Declaration of interests}
+The authors declare no competing interests.
+
+\section*{Acknowledgments}
+This work was funded in part by the Duke University School of Medicine Whitehead Scholars Program, a gift from the Whitehead Charitable Foundation.
+The 1000 Genomes data were generated at the New York Genome Center with funds provided by NHGRI Grant 3UM1HG008901-03S1.
+
+\section*{Web resources}
+plink2, \url{https://www.cog-genomics.org/plink/2.0/}\\
+GCTA, \url{https://yanglab.westlake.edu.cn/software/gcta/}\\
+bnpsd, \url{https://cran.r-project.org/package=bnpsd}\\
+simfam, \url{https://cran.r-project.org/package=simfam}\\
+simtrait, \url{https://cran.r-project.org/package=simtrait}\\
+genio, \url{https://cran.r-project.org/package=genio}\\
+popkin, \url{https://cran.r-project.org/package=popkin}\\
+PRROC, \url{https://cran.r-project.org/package=PRROC}\\
+BEDMatrix, \url{https://cran.r-project.org/package=BEDMatrix}
+
+\section*{Data and code availability}
+The data and code generated during this study are available on GitHub at \url{https://github.com/OchoaLab/bias-assoc-paper}.
+The high-coverage version of the 1000 Genomes Project was downloaded from \url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20190425_NYGC_GATK/}.
 
 
 \printbibliography
@@ -1229,17 +1289,25 @@ The biased kinship matrix may be more desireable in PCA, from the standoint of n
 \end{appendices}
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% SUPPLEMENTARY INFORMATION %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \clearpage
 
-\section{Supplementary figures}
+\beginsupplement
+
+\section*{Supplemental figures}
+
+
 
 \begin{figure}[bp!]
   \centering
   \includegraphics[width=\textwidth]{rmsd.pdf}
   \caption{
     {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate.}
-    This should be a supplementary figure, if we show it at all.
-  }
+    }
   \label{fig:rmsd_sim}
 \end{figure}
 
@@ -1248,7 +1316,6 @@ The biased kinship matrix may be more desireable in PCA, from the standoint of n
   \includegraphics[width=\textwidth]{rmsd.pdf}
   \caption{
     {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate.}
-    This should be a supplementary figure, if we show it at all.
   }
   \label{fig:rmsd_real}
 \end{figure}
