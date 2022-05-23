@@ -63,10 +63,10 @@ data <- lapply( codes, function ( name ) {
     return( inbr_diag( kinship ) )
 })
 
-# the real kinship matrix generally has higher values, we want to preserve that range
+# the popkin MOR kinship matrix generally has higher values, we want to preserve that range
 # the biased kinship matrice have usually lower values but the diagonal has much larger values, those are the ones we want to cap
 alpha <- 0.01
-kinship_max <- quantile( diag( data[[1]] ), probs = 1 - alpha )
+kinship_max <- quantile( diag( data[[2]] ), probs = 1 - alpha )
 #kinship_max <- max( data[[1]] )
 cap_kinship <- function( x ) {
     x[ x > kinship_max ] <- kinship_max
