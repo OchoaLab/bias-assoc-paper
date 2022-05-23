@@ -14,7 +14,7 @@
 % import biblatex with prefered settings
 % reuse code and library from LIGERA paper in the same repository
 \input{headerBiblatexHarvard.tex}
-\bibliography{zotero, dummy} % biblatex wants this in the preamble...
+\bibliography{zotero} % biblatex wants this in the preamble...
 
 % copied from PCA-GWAS paper
 \newcommand{\rmsd}{\text{SRMSD}_p}
@@ -112,6 +112,9 @@ WG has a simpler, uniform bias \citep{weir_unified_2017, ochoa_estimating_2021}.
 
 popkin is unbiased  \citep{ochoa_estimating_2021}.
 
+We demonstrate our findings using an admixed family simulation \citep{yao_limitations_2022} as well as real genotypes from the 1000 Genomes project \citep{the_1000_genomes_project_consortium_map_2010, 1000_genomes_project_consortium_integrated_2012, fairley_international_2020}.
+
+
 \section{Methods}
 
 \subsection{Genetic model}
@@ -121,7 +124,7 @@ The following genetic model justifies the use of kinship matrices in association
 Suppose there are $m$ biallelic loci and $n$ diploid individuals.
 The genotype $\xij \in \{0,1,2\}$ at a locus $i$ of individual $j$ is encoded as the number of reference alleles, for a preselected but otherwise arbitrary reference allele per locus.
 These genotypes can be treated as random variables structured according to relatedness.
-If \kt is the kinship coefficient of two individuals $j$ and $k$, and \pit is the ancestral allele frequency at locus $i$, then under the kinship model \citep{ochoa_fst1,ochoa_estimating_2021} the expectation and covariance are given by
+If \kt is the kinship coefficient of two individuals $j$ and $k$, and \pit is the ancestral allele frequency at locus $i$, then under the kinship model \citep{ochoa_estimating_2021} the expectation and covariance are given by
 \begin{align*}
   \E[\mathbf{X}]
   =
@@ -134,7 +137,7 @@ If \kt is the kinship coefficient of two individuals $j$ and $k$, and \pit is th
     ,
 \end{align*}
 where $\mathbf{x}_i$ is the length-$n$ column vector of genotypes at locus $i$, $\mathbf{X} = (\mathbf{x}_i^\intercal)$ is the complete $m \times n$ genotype matrix, $\kinMat = (\kt)$ is the $n \times n$ kinship matrix, $\mathbf{p} = (\pit)$ is a length-$m$ column vector of ancestral allele frequencies, $\mathbf{1} = (1)$ is a length-$n$ column vector where every element is 1, and the $\intercal$ superscript denotes matrix transposition.
-Both kinship ($\kinMat$) and ancestral allele frequencies ($\mathbf{p}$) are parameters that depend on the choice of ancestral population, for which the Most Recent Common Ancestor (MRCA) population is the most sensible choice \citep{ochoa_fst1,ochoa_estimating_2021}.
+Both kinship ($\kinMat$) and ancestral allele frequencies ($\mathbf{p}$) are parameters that depend on the choice of ancestral population, for which the Most Recent Common Ancestor (MRCA) population is the most sensible choice \citep{ochoa_estimating_2021}.
 In this work, to simplify notation, we omit cumbersome notation that marks this dependence of parameters on the choice of ancestral population, nor do we explicitly condition on the ancestral population (it is done implicitly) when calculating expectations and covariances as done in previous work.
 
 \subsection{Kinship estimation}
@@ -261,7 +264,7 @@ where $\bar{d} = \frac{1}{n} \sum_{j=1}^n \kt[j]$, and equalities are achieved i
 
 \subsection{Simulations}
 
-\subsubsection{Admixture simulation for genotype matrices}
+\subsubsection{Admixed family genotype simulation}
 
 An admixed family was simulated following previous work \citep{yao_limitations_2022}, except here only $K=3$ ancestries were simulated and $F_{ST}=0.3$ for the admixed individuals, which more closely resembles the parameters of recently-admixed individuals such as Hispanics and African-Americans.
 Briefly, our admixture model first simulates $n=1000$ founder individuals with the number of loci $m=100,000$.
@@ -295,7 +298,7 @@ From the next generation, individuals are paired iteratively: randomly choosing 
 
 \subsubsection{Trait simulation algorithm}
 
-Given a desired number of causal loci $m_1$ and heritability $h^2=0.8$, the goal is to choose causal coefficients $\boldsymbol{\beta}$ and the intercept $\alpha$ that result in zero mean and the desired trait heritability.
+Given a desired number of causal loci $m_1 = n/10$ and heritability $h^2=0.8$, the goal is to choose causal coefficients $\boldsymbol{\beta}$ and the intercept $\alpha$ that result in zero mean and the desired trait heritability.
 Here, we use the ``fixed effect sizes'' trait simulation model described in \citep{yao_limitations_2022}.
 Briefly, first $m_1$ causal loci are randomly selected.
 For known \pit, causal coefficients are constructed as:
@@ -339,13 +342,17 @@ When \pit are unknown, to avoid covariance distortions, the intercept coefficien
 \end{align*}
 where $\mathbf{1}_{m_1}$ is a length-$m_1$ column vector of ones.
 
-\textbf{Trait simulation based on the real dataset.}
-To compare the results from different kinship estimators on a real dataset, we use genotypes from the 1000 Genomes Project \citep{the_1000_genomes_project_consortium_map_2010, 1000_genomes_project_consortium_integrated_2012} but simulate traits based on the real genotypes with the number of causal loci equals to 250. The dataset was processed with \texttt{plink2} \citep{chang_second-generation_2015} and R packages \texttt{genio} and \texttt{BEDMatrix} \citep{grueneberg_bgdata_2019}. Only data with autosomal biallelic SNP loci filter ``PASS'' are included in the analysis.
-Moreover, we use \texttt{plink2} parameters ``\texttt{-{}-indep-pairwise 1000kb 0.3}'' to further iteratively removes loci that have a greater than 0.3 correlation coefficient with another locus that is within 1000kb. We also remove all loci with $\text{MAF} < 0.01$ in this real dataset.
+\subsection{Real genotype data processing}
+
+To compare the results from different kinship estimators on a real dataset, we use the high-coverage NYGC version of the 1000 Genomes Project \citep{fairley_international_2020}, which were processed as before \citep{yao_limitations_2022}.
+Briefly, using \texttt{plink2} \citep{chang_second-generation_2015} we kept only autosomal biallelic SNP loci with filter ``PASS'', LD-pruned with parameters ``\texttt{-{}-indep-pairwise 1000kb 0.3}'' to remove loci that have a greater than 0.3 correlation coefficient with other loci within 1000kb, and lastly remove loci with $\text{MAF} < 0.01$.
+The resulting data has $m=1,111,266$ loci and $n=2,504$ individuals.
+Traits were simulated for this dataset with $m_1 = n/10 = 250$ causal loci.
 
 \subsection{Evaluation of performance}
 
-$\auc$ and $\rmsd$ are used to evaluate each approaches. For the later one, $\rmsd$ (Signed Root Mean Square Deviation) is used to measure the difference between the observed null p-value quantiles and the expected uniform quantiles (p-values of continuous test statistics follow a uniform distribution under the null). The expression for $\rmsd$ is:
+$\auc$ and $\rmsd$ are used to evaluate approaches as before \citep{yao_limitations_2022}.
+Briefly, $\rmsd$ (Signed Root Mean Square Deviation) is used to measure the difference between the observed null p-value quantiles and the expected uniform quantiles (p-values of continuous test statistics follow a uniform distribution under the null):
 $$
 \rmsd
 =
@@ -360,6 +367,22 @@ $p_\text{median}$ is the median observed null p-value,
 $u_\text{median} = \frac{1}{2}$ is its expectation,
 and $\text{sgn}$ is the sign function (1 if $u_\text{median} \ge p_\text{median}$, -1 otherwise).
 $\rmsd = 0$ corresponds to calibrated p-values, $\rmsd > 0$ indicate anti-conservative p-values, and $\rmsd < 0$ are conservative p-values.
+
+$\auc$ (Area Under the Precision and Recall Curve) is a binary classification measure calculated from the total numbers of true positives (TP), false positives (FP) and false negatives (FN) at some threshold or parameter $t$:
+\begin{align*}
+  \text{Precision}(t)
+  &=
+    \frac{ \text{TP}(t) }{ \text{TP}(t) + \text{FP}(t) }
+    , \\
+  \text{Recall}(t)
+  &=
+    \frac{ \text{TP}(t) }{ \text{TP}(t) + \text{FN}(t) }
+    ,
+\end{align*}
+followed by calculating the area under the curve traced as $t$ varies recall from zero to one.
+Higher $\auc$ is better, with best performance at $\auc = 1$ for a perfect classifier, while worst performance at $\auc = \frac{m_1}{m}$ (overall proportion of causal loci) is for random classifiers.
+
+
 
 \subsection{Software}
 
@@ -376,18 +399,18 @@ We used $r=k-1=2$ for the admixed family simulations, and $r=10$ for 1000 Genome
 
 \section{Results}
 
+% path for figures
+\graphicspath{ {../data/} }
+
 \subsection{Empirical demonstration of robustness to kinship bias in PCA and LMM genetic association studies}
 
 To quantify the effect of the various kinship matrix estimators, and their limiting biases, we simulated genotypes and a trait, and calculated association p-values for all kinship variants of the PCA and LMM methods.
 We first simulated an admixed population with $K=3$ ancestries, then simulated a 20-generation random pedigree from the admixed population as founders.
 This high-dimensional admixed family scenario results in a large difference in performance between PCA and LMM approaches \citep{yao_limitations_2022}.
 
-% path for figures
-\graphicspath{ {../data/sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/} }
-
 \begin{figure}[bp!]
   \centering
-  \includegraphics[height=0.8\textheight]{kinship.pdf}
+  \includegraphics[height=0.8\textheight]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/kinship.pdf}
   \caption{
     {\bf Kinship estimates and their limits on the admixed family simulation.}
     Each panel represents a kinship matrix as a heatmap, with each of the $n=1000$ individuals along both x and y axes, and the kinship value presented as color: positive estimates are in red, negative estimates in blue.
@@ -410,9 +433,9 @@ Lastly, the Weir-Goudet estimator has a uniform downward bias (\cref{fig:kinship
 
 \begin{figure}[bp!]
   \centering
-  \includegraphics[width=\textwidth]{auc.pdf}
+  \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/auc.pdf}
   \caption{
-    {\bf Area Under the Precision-Recall Curves ($\auc$) for every combination of association model and kinship estimate.}
+    {\bf Area Under the Precision-Recall Curves ($\auc$) for every combination of association model and kinship estimate on the admixed family simulation.}
     Results based on a single replicate of the random genotype matrix and trait vector.
     Approaches appear to cluster primarily by association model (LMM vs PCA) and whether a kinship estimate was used or not, and do not depend much at all on the form of the bias.
   }
@@ -431,9 +454,9 @@ For $\rmsd$, all estimates perform similarly except the popkin ROM estimates per
 
 \begin{figure}[bp!]
   \centering
-  \includegraphics[width=\textwidth]{pvals_cor.pdf}
+  \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/pvals_cor.pdf}
   \caption{
-    {\bf Correlation between p-values of different association models and kinship estimates.}
+    {\bf Correlation between p-values of different association models and kinship estimates on the admixed family simulation.}
     The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute Pearson correlations (color).
     Within same type of association model (LMM or PCA), methods are strongly correlated with correlation close to 1 regardless of kinship matrix used.
     }
@@ -450,36 +473,38 @@ Thus, several sets of kinship matrices with different biases result in identical
 
 \subsection{Results using 1000 Genomes Project real genotypes}
 
-To compare performance of different estimates on a real dataset, we use the genotype from the 1000 Genomes Project but simulate traits using 250 causal loci. The kinship estimates are shown in \cref{fig:kinship_real}. The popkin ROM estimates shows a tree structure that is aligned with relationships of different subpopulations in the 1000 Genomes Project (\cref{fig:kinship_real}A), while the popkin MOR estimates provide similar patterns but do not have such tree structure (\cref{fig:kinship_real}B). The standard kinship estimators (ROM and MOR) generally downwardly biased especially among EUR,SAS,EAS and AMR subpopulations (\cref{fig:kinship_real}C-D). For the Weir-Goudet estimates, they uniformally provide a smaller values (\cref{fig:kinship_real}E-F).
-
-When we perform PCA and LMM association test using these kinship estimators, the results are similar to our simulation study with higher variances: LMM perform better than PCA while there are not much difference among kinship estimators used within the same association model (\cref{fig:auc_real}, \cref{fig:rmsd_real}). The MOR estimates using LMM slightly outperform ROM estimates using LMM for both $\auc$ and$\rmsd$.
-We also measure the correlation between p-values of different association models and kinship estimates. They are all strongly correlated based on this 1000 Genomes Project real dataset with most achieved correlation of 1 (\cref{fig:pvals_cor_real}).
-
-% path for figures
-\graphicspath{ {../data/tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/} }
+Now we replicate our previous findings using the real genotypes of 1000 Genomes.
+Kinship estimates are shown in \cref{fig:kinship_real}.
+Popkin ROM estimates display an approximate nested block structure that arises from the tree relationships between subpopulations (\cref{fig:kinship_real}A; trees were explicitly fit to this data in previous work \citep{yao_limitations_2022}).
+However, popkin MOR estimates attain higher values and do not follow the nested blocks tree structure, since kinship between African and non-African populations is higher than kinship within African populations (\cref{fig:kinship_real}B).
+Standard estimates have values are closer to zero, and a different bias for each pair of individuals, resulting in higher relative kinship for African compared to non-African populations (\cref{fig:kinship_real}C-D).
+Lastly, Weir-Goudet estimates are uniformly smaller than popkin's and attain large negative values (\cref{fig:kinship_real}E-F).
 
 \begin{figure}[bp!]
   \centering
-  \includegraphics[height=0.8\textheight]{kinship.pdf}
+  \includegraphics[height=0.8\textheight]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/kinship.pdf}
   \caption{
-    {\bf Kinship estimates and their limits on the admixed family simulation.}
-    Each panel represents a kinship matrix as a heatmap, with each of the $n=1000$ individuals along both x and y axes, and the kinship value presented as color: positive estimates are in red, negative estimates in blue.
-    The estimators considered are Popkin, Standard, and Weir-Goudet.
-    Each estimator has its limit in the first column (the limit of Popkin is Truth).
-    Standard has two variants: ROM (ratio of means) and MOR (mean of ratios).
-    Standard MOR does not have a closed-form limit, but in practice matches that of Standard ROM.
+    {\bf Kinship estimates and their limits on 1000 Genomes.}
+    Each panel represents a kinship matrix as a heatmap, with each individual along both x and y axes, and the kinship value presented as color: positive estimates are in red, negative estimates in blue.
+    Superpopulation codes: AFR = African, EUR = European, SAS = South Asian, EAS = East Asian, AMR = Admixed Americans (Hispanics).
+    Each estimator (Popkin, Standard, and Weir-Goudet) has two variants: ROM (ratio of means) and MOR (mean of ratios).
+    In this visualization the upper range of all panels was capped to the 99 percentile of the diagonal (population inbreeding values) of the popkin MOR estimates.
   }
   \label{fig:kinship_real}
 \end{figure}
 
 
+When we perform PCA and LMM association tests using simulated traits and these kinship estimates, the results are similar to our simulation study: there are no differences between kinship estimators with different biases but of the same type (MOR or ROM) and association model (\cref{fig:auc_real}, \cref{fig:rmsd_real}), with the sole exception of popkin ROM.
+However, unlike the admixed family simulation results, here the MOR estimates greatly outperform ROM estimates (both using LMM) for both $\auc$ and $\rmsd$.
+We also measured correlations of one between p-values from the same association model and estimator type (MOR or ROM), regardless of bias type (\cref{fig:pvals_cor_real}).
+
 \begin{figure}[bp!]
   \centering
-  \includegraphics[width=\textwidth]{auc.pdf}
+  \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/auc.pdf}
   \caption{
-    {\bf Area Under the Precision-Recall Curves ($\auc$) for every combination of association model and kinship estimate.}
-    Results based on a single replicate of the random genotype matrix and trait vector.
-    Approaches appear to cluster primarily by association model (LMM vs PCA) and whether a kinship estimate was used or not, and do not depend much at all on the form of the bias.
+    {\bf Area Under the Precision-Recall Curves ($\auc$) for every combination of association model and kinship estimate on 1000 Genomes.}
+    Results based on 10 simulated trait replicates (real genotype matrix is fixed).
+    Approaches cluster primarily by association model (LMM vs PCA) and whether a kinship estimate was used or not, and do not depend much at all on the form of the bias.
   }
   \label{fig:auc_real}
 \end{figure}
@@ -998,10 +1023,8 @@ GCTA, \url{https://yanglab.westlake.edu.cn/software/gcta/}\\
 bnpsd, \url{https://cran.r-project.org/package=bnpsd}\\
 simfam, \url{https://cran.r-project.org/package=simfam}\\
 simtrait, \url{https://cran.r-project.org/package=simtrait}\\
-genio, \url{https://cran.r-project.org/package=genio}\\
 popkin, \url{https://cran.r-project.org/package=popkin}\\
-PRROC, \url{https://cran.r-project.org/package=PRROC}\\
-BEDMatrix, \url{https://cran.r-project.org/package=BEDMatrix}
+popkinsuppl, \url{https://github.com/OchoaLab/popkinsuppl}
 
 \section*{Data and code availability}
 The data and code generated during this study are available on GitHub at \url{https://github.com/OchoaLab/bias-assoc-paper}.
@@ -1300,31 +1323,29 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
 
 \section*{Supplemental figures}
 
-
-
-\begin{figure}[bp!]
+\begin{figure}[hp!]
   \centering
-  \includegraphics[width=\textwidth]{rmsd.pdf}
+  \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/rmsd.pdf}
   \caption{
-    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate.}
+    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate on the admixed family simulation.}
     }
   \label{fig:rmsd_sim}
 \end{figure}
 
-\begin{figure}[bp!]
+\begin{figure}[hp!]
   \centering
-  \includegraphics[width=\textwidth]{rmsd.pdf}
+  \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/rmsd.pdf}
   \caption{
-    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate.}
+    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate on 1000 Genomes.}
   }
   \label{fig:rmsd_real}
 \end{figure}
 
-\begin{figure}[bp!]
+\begin{figure}[hp!]
   \centering
-  \includegraphics[width=\textwidth]{pvals_cor.pdf}
+  \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pvals_cor.pdf}
   \caption{
-    {\bf Correlation between p-values of different association models and kinship estimates.}
+    {\bf Correlation between p-values of different association models and kinship estimates on 1000 Genomes.}
     The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute Pearson correlations (color).
     P-values between all kinship matrices or association model (PCA or LMM) are highly correlated (including biased and unbiased estimates), and often the maximum correlation of 1 is achieved.
   }
