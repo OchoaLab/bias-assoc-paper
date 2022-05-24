@@ -1007,8 +1007,34 @@ As before, these results imply that the association statistics are invariant to 
 
 \section{Discussion}
 
-The biased kinship matrix may be more desireable in PCA, from the standoint of numerical stability, as the resulting eigenvectors are not only orthogonal to each other but also to the intercept (whereas the eigenvectors of the true kinship matrix are not orthogonal to the intercept).
+% association robust to bias type (empirical and theory / summary)
+Common kinship estimators are biased, biases can be very large \citep{ochoa_estimating_2021} and \cref{fig:kinship_sim}.
+Hypothesized that bias would affect association testing.
+Surprisingly found that this is not the case.
+We found that intercept and population structure covariate (random effect or PCs) coefficients compensate for the bias, and result in identical genetic effect coefficients and significance statistics.
 
+% popkin is less numerically stable
+Given that kinship bias type is not important for association studies, we are free to chose a kinship estimator based on other properties.
+The biased standard kinship matrix may be more desireable than the popkin estimator based on the numerical stability we observed in our simulations.
+The standard kinship matrix is orthogonal to the intercept, because of the centering operation applied to obtain it in our theoretical results, whereas the popkin and true kinship matrix are not orthogonal to the intercept.
+Thus, PCA regression with the eigenvectors of the standard kinship matrix is more numerically stable (because more covariates are linearly independent) than the popkin counterpart.
+We also observed instability in LMM association with popkin MOR (admixed family simulation) and popkin ROM (1000 Genomes) [add fig links].
+
+% MOR weirdness
+We also found that all MOR estimators perform better in the LMM association (and overall) compared to the ROM versions in the 1000 Genomes evaluation.
+Perhaps this is expected because out trait simulation follows the ``fixed effect sizes'' model, in which rare variants have larger coefficients, and the MOR estimators also weigh rare variants more highly in estimating kinship coefficients.
+This effect was not observed in the admixed family simulation, where MOR and ROM versions gave similar kinship estimates and performed similarly, compared to the real data evaluation, where kinship estimates were also strikingly different.
+However, only the popkin ROM estimator is unbiased [point to new fig for simulation], so it is unclear why the biased popkin MOR estimator performs better in this setting.
+One potential explanation is that our kinship model assumes that all variants were preexisting in the MRCA population, whereas rare variants in human data are known to be very recent mutations, and thus their effective kinship matrix is different than that of ancestral variants.
+Therefore, despite its biases, it is possible that the popkin MOR estimator is more accurately capturing the kinship matrix of these rare variants and thus modeling them better in association tests, particularly in LMMs where the effect is most pronounced.
+
+% future work / implication beyond this work
+Related models with the same features, such as intercept and population structure with coefficients that are nuisance variables, will also be robust to the kinship bias types we characterized.
+However, problems such as heritability estimation are affected by this bias because the random effect coefficient ($\sigma^2$ above [check]) is the focal parameter of this problem and not a nuisance variable, and we showed above it is estimated with bias.
+Nevertheless, heritability estimation is a complex problem and its study is beyond the scope of this paper.
+
+% conclusion / take away
+...
 
 \section*{Declaration of interests}
 The authors declare no competing interests.
