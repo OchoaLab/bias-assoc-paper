@@ -12,7 +12,6 @@
 \usepackage[utf8]{inputenc}
 
 % import biblatex with prefered settings
-% reuse code and library from LIGERA paper in the same repository
 \input{headerBiblatexHarvard.tex}
 \bibliography{zotero} % biblatex wants this in the preamble...
 
@@ -105,25 +104,37 @@ $^*$ Corresponding author: \texttt{alejandro.ochoa@duke.edu}
 \section{Introduction}
 
 % GWAS, LMM and PCA
-Genome-Wide Association Studies (GWAS) are commonly used to detect loci that are related specific traits. 
-For GWAS based on a structured population, which includes admixed individuals and multiethnic cohorts, controlling for population structure is crucial. If the population structure is not properly taken into account, the analysis will lead to spurious associations and lack of power \citep{devlin_genomic_1999, voight_confounding_2005, astle_population_2009}.
-Linear mixed models (LMM) and Principal component analysis (PCA) are two popular approaches for GWAS in a structured population.
-These two models are closely related, and the main difference is that LMM use random effects whereas PCA use fixed effects \citep{astle_population_2009, hoffman_correcting_2013}. 
+The goal of genetic association is to detect loci that are related to a specific trait, either causally or by proximity to causal loci.
+When applied to structured populations with admixed individuals, multiethnic cohorts, or close relatives, controlling for relatedness is crucial to avoid spurious associations and loss of power \citep{devlin_genomic_1999, voight_confounding_2005, astle_population_2009, yao_limitations_2022}.
+The most popular association models for structured populations are Linear Mixed-effects Models (LMM) and Principal Component Analysis (PCA), which are closely related except LMM is capable of modeling high-dimensional structures whereas PCA is strictly a low-dimensional model \citep{astle_population_2009, hoffman_correcting_2013, yao_limitations_2022}.
 
-% Kinship and kinship estimator
-Kinship is utilized in PCA and LMM to correct for structure in GWAS \citep{xie_combining_1998,yu_unified_2006, aulchenko_genomewide_2007, price_principal_2006, astle_population_2009,kang_efficient_2008, kang_variance_2010, yang_gcta:_2011, zhou_genome-wide_2012, yang_advantages_2014, loh_efficient_2015, sul_population_2018}.
-LMM incorporates kinship matrix in its random effect term, while for PCA, the PCs are the eigenvectors of the kinship matrix.
+% Kinship in models
+Various association models, including both PCA and LMM, parametrize relatedness using kinship matrices, also known as Genetic Relatedness Matrices or ``GRMs''.
+Kinship coefficients are well suited for this task since they model the covariance structure of genotypes \citep{malecot_mathematiques_1948, jacquard_structures_1970}.
+Kinship is often encountered in family studies, where they reflect recent relatedness and can be calculated from pedigrees \citep{wright_coefficients_1922, emik_systematic_1949, garcia-cortes_novel_2015}.
+However, as kinship is defined as a probability of identity by descent, it may also capture ancient population relatedness \citep{malecot_mathematiques_1948, astle_population_2009}, and common non-parametric kinship estimators from genotypes indeed include population structure in their estimates \citep{ochoa_estimating_2021}.
+In LMMs, the kinship matrix is an explicit parameter determining the random effect covariance structure \citep{xie_combining_1998,yu_unified_2006, aulchenko_genomewide_2007, astle_population_2009, kang_efficient_2008, kang_variance_2010, zhou_genome-wide_2012, yang_advantages_2014, loh_efficient_2015, sul_population_2018}.
+In PCA, the principal components (PCs) are in practice the eigenvectors of an empirical genetic covariance matrix that is equivalent to the most common kinship estimator \citep{price_principal_2006, astle_population_2009, hoffman_correcting_2013, yao_limitations_2022}.
 
-The most commonly-used kinship estimator \citep{price_principal_2006, astle_population_2009, rakovski_kinship-based_2009, thornton_roadtrips:_2010, yang_common_2010, yang_gcta:_2011, zhou_genome-wide_2012, speed_improved_2012, yang_advantages_2014, speed_relatedness_2015, loh_efficient_2015, wang_efficient_2017, sul_population_2018} (standard kinship estimator) was recently determined to have a complex bias \citep{weir_unified_2017, ochoa_estimating_2021}. The bias could vary for every pairs of individual and may cause issues for the downstream analysis that is based on kinship estimation. 
-Weir-Goudet kinship estimator was proposed recently and also has a uniformly downward bias \citep{weir_unified_2017, ochoa_estimating_2021}.
-We previously proposed an unbiased estimator called the popkin estimator \citep{ochoa_estimating_2021}. The popkin estimator could be generalized by assigning different weights for loci, and connected to the standard kinship estimator.
+% kinship estimators
+Although several kinship estimators have been used with LMMs in the past, work from the last 15 years has converged on what we call the ``standard'' kinship estimator, which is the same estimator used in PCA and other related models \citep{price_principal_2006, astle_population_2009, rakovski_kinship-based_2009, thornton_roadtrips:_2010, yang_common_2010, yang_gcta:_2011, zhou_genome-wide_2012, speed_improved_2012, yang_advantages_2014, speed_relatedness_2015, loh_efficient_2015, wang_efficient_2017, sul_population_2018}.
+The impetus of our work is the recent characterization of a complex bias for this standard estimator, which varies for every pair of individuals \citep{weir_unified_2017, ochoa_estimating_2021}.
+This recent work also produced two new kinship estimators, which we are interested in characterizing in the context of association.
+The Weir-Goudet (WG) estimator constitutes a key improvement in that it has a uniformly downward bias \citep{weir_unified_2017, ochoa_estimating_2021}.
+Lastly, the popkin estimator is the only unbiased estimator under arbitrary relatedness \citep{ochoa_estimating_2021}.
+To the best of our knowledge, the new WG and popkin estimators have not been used in association studies before, but represent potential improvements over the use of the standard estimator for association.
 
-% This paper summary
-In this paper, we originally hypothesized that the bias from kinship estimation affect association testing.   
-We explore our findings using an admixed family simulation \citep{yao_limitations_2022} as well as real genotypes from the 1000 Genomes project \citep{the_1000_genomes_project_consortium_map_2010, 1000_genomes_project_consortium_integrated_2012, fairley_international_2020}, evaluate the performance of different kinship estimator using $\auc$ and $\rmsd$, and plot correlation between p-values of different approaches.
-Furthermore, we provide theoretical justification of the simulation results for two association models (LMM and PCA) and two biased kinship estimators (the standard estimator and Weir-Goudet estimator).
-Overall, we found that the intercept and population structure coefficients compensate for the kinship bias, leading to a unbiased association testing statistics estimation.
+% MOR vs ROM
+One potential confounder when comparing the above kinship estimators is that the standard estimator upweights rare variants in a formulation previously called ``mean-of-ratios'' (MOR), whereas WG and popkin do not, instead following a ``ratio-of-means'' (ROM) estimation strategy \citep{bhatia_estimating_2013, ochoa_estimating_2021}.
+Recent work also formulated a ROM version of the standard estimator, which has a more predictable bias than the widely used MOR version \citep{ochoa_estimating_2021}.
+Following a locus weight formulation that allows the standard estimator to weigh loci in both ways \citep{wang_efficient_2017}, here we generalized the popkin and WG estimators to have both MOR and ROM versions as well, in order to test for the effect of estimator bias without confounding by locus weighing strategy.
 
+% This work summary
+In this work, we originally hypothesized that kinship estimation bias would affect association testing.
+We perform evaluations using an admixed family simulation \citep{yao_limitations_2022} as well as real genotypes from the 1000 Genomes project \citep{the_1000_genomes_project_consortium_map_2010, 1000_genomes_project_consortium_integrated_2012, fairley_international_2020}, in both cases with simulated traits in order to characterize type I error control and power using robust statistics.
+Surprisingly, we found that both LMM and PCA association are robust to kinship estimation bias to an extent that most association statistics are invariant to these biases.
+Lastly, we theoretically characterize the conditions under which these kinship biases result in invariant association statistics.
+Overall, we found that long-used association approaches are robust to the most common kinship estimation biases, and developed theoretical results that may help improve association and related approaches such as heritability estimation.
 
 
 \section{Methods}
@@ -199,10 +210,10 @@ The MOR version of the standard estimator, which again is the most common form o
 This estimator does not have closed-form limit, but it is well approximated by \cref{eq:kinship_std_lim} in practice, especially when loci with small minor allele frequencies are excluded prior to calculating this estimate.
 
 Variants of this approach that weigh loci according to linkage disequilibrium \citep{speed_reevaluation_2017, wang_efficient_2017} do not alter the bias calculated in \cref{eq:kinship_std_lim}, since the same bias is present in each individual locus \citep{ochoa_estimating_2021}.
-Our previous work also considered a more general form where the ancestral allele frequency estimator $\pith = \frac{1}{2} \sum_{j=1}^n w_j \xij$ is calculated with weights $w_j$ per individual $j$ (such that $\sum_{j=1}^n w_j = 1$), and found that these weights alter the values of the bias terms $\bar{\varphi}_j$ and $\bar{\varphi}$ to be weighted averages, but no choice of weights eliminates these biases \citep{ochoa_estimating_2021}.
-Such weighted \pith estimates encompass the best unbiased linear estimator \citep{astle_population_2009, thornton_roadtrips:_2010}, with weights corresponding to
+Our previous work also considered a more general form where the ancestral allele frequency estimator \pith is calculated with weights for individuals, and found that these weights alter the values of the bias terms $\bar{\varphi}_j$ and $\bar{\varphi}$ to be weighted averages, but no choice of weights eliminates these biases \citep{ochoa_estimating_2021}.
+Such weighted \pith estimates encompass the best unbiased linear estimator \citep{astle_population_2009, thornton_roadtrips:_2010}, with weight vector corresponding to
 $
-\mathbf{w} = ( \mathbf{1}^\intercal \kinMat^{-1} \mathbf{1} )^{-1} \mathbf{1}^\intercal \kinMat^{-1}.
+( \mathbf{1}^\intercal \kinMat^{-1} \mathbf{1} )^{-1} \mathbf{1}^\intercal \kinMat^{-1}.
 $
 
 \subsubsection{Popkin kinship estimator}
