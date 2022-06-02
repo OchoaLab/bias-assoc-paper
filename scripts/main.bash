@@ -2,7 +2,7 @@
 
 #m_loci=10000 # original
 m_loci=100000 # bigger, matches pca-assoc
-n_rep=10
+n_rep=100
 gen=20
 
 # dir output name for this run, which gets passed to other scripts

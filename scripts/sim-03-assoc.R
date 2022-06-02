@@ -5,6 +5,13 @@ library(genio)       # to write BED files for external software
 library(genbin)      # gcta and plink binary wrappers
 library(tibble)
 
+# increase default VIF threshold to this much, for true K and popkin only, admix-fam-sim only
+vif_true_popkin <- 550
+vif_true_popkin_real <- NA # 150
+max_corr_true_popkin <- 1
+# max_corr_true_popkin_real is NA (set through if/else logic below)
+# --max-corr default 0.999, actual 0.9990483 (rep-24, the bad one), -0.9856413 (rep-1), 0.9282595 for same sim w/ G=1
+
 # a name for temporary BED/etc data, under project dir
 name <- 'data'
 # same name for all cases! (gets overwritten serially, removed in the end)
@@ -90,9 +97,11 @@ assoc_all <- function( name_method ) {
     write_eigenvec( name, eigenvectors, fam, plink2 = TRUE )
     # set maximum VIF for two special cases where near-collinearity is otherwise a problem for plink with defaults
     # Actual error message: "  Error: Cannot proceed with --glm regression on phenotype 'PHENO1', since variance inflation factor for covariate 'PC1' is too high (VIF_TOO_HIGH). You may want to remove redundant covariates and try again."
-    vif <- if ( name_method == 'true' || grepl( 'popkin', name_method ) ) 150 else NA
+    vif <- if ( name_method == 'true' || grepl( 'popkin', name_method ) ) { if (is_sim) vif_true_popkin else vif_true_popkin_real } else NA
+    # ditto maximum correlation, observed for true/popkin in admix-fam-sim only
+    max_corr <- if ( is_sim && ( name_method == 'true' || grepl( 'popkin', name_method ) ) ) max_corr_true_popkin else NA
     # association
-    data <- plink_glm( name, name_phen = name_phen, file_covar = file_covar, vif = vif )
+    data <- plink_glm( name, name_phen = name_phen, file_covar = file_covar, vif = vif, max_corr = max_corr )
     # cleanup
     unlink( file_covar )
     delete_files_plink_glm( name )
