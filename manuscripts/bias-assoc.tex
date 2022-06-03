@@ -447,7 +447,8 @@ This high-dimensional admixed family scenario results in a large difference in p
 The kinship estimates on this simulation, and the theoretical limits of these estimators, are shown in \cref{fig:kinship_sim}.
 The true kinship matrix (\cref{fig:kinship_sim}A) shows the family relatedness as high values concentrated near the diagonal and the ancestry-driven population structure as the broad patterns off-diagonal.
 This simulation illustrates the severity of the biases of these estimators, which were previously characterized theoretically \citep{ochoa_estimating_2021}.
-Only the Popkin estimator is unbiased (\cref{fig:kinship_sim}B), the rest presenting large negative biases which in turn result in abundant negative estimates.
+Only the Popkin ROM estimator is unbiased (\cref{fig:kinship_sim}B), the rest presenting large negative biases which in turn result in abundant negative estimates.
+It is also clear by comparing to the true kinship that popkin MOR is biased (\cref{fig:popkin-rom-mor}A).
 The Standard kinship estimator (the mean-of-ratios, or MOR, version; \cref{fig:kinship_sim}E), which is the most common estimator in these applications, and the closely related ratio-of-means (ROM) estimator (\cref{fig:kinship_sim}D), both have severe biases that are not only overall downwardly biased, but these biases also vary for every pair of individuals.
 The limit of the Standard ROM estimator (\cref{fig:kinship_sim}C), calculated from the true kinship matrix and its known functional form (see Methods), closely matches the previously mentioned estimates obtained from genotypes.
 Lastly, the Weir-Goudet estimator has a uniform downward bias (\cref{fig:kinship_sim}H-I).
@@ -498,7 +499,7 @@ Thus, several sets of kinship matrices with different biases result in identical
 Now we replicate our previous findings using the real genotypes of 1000 Genomes.
 Kinship estimates are shown in \cref{fig:kinship_real}.
 Popkin ROM estimates display an approximate nested block structure that arises from the tree relationships between subpopulations (\cref{fig:kinship_real}A; trees were explicitly fit to this data in previous work \citep{yao_limitations_2022}).
-However, popkin MOR estimates attain higher values and do not follow the nested blocks tree structure, since kinship between African and non-African populations is higher than kinship within African populations (\cref{fig:kinship_real}B).
+However, popkin MOR estimates attain higher values and do not follow the nested blocks tree structure, since kinship between African and non-African populations is higher than kinship within African populations (\cref{fig:kinship_real}B, \cref{fig:popkin-rom-mor}B).
 Standard estimates have values are closer to zero, and a different bias for each pair of individuals, resulting in higher relative kinship for African compared to non-African populations (\cref{fig:kinship_real}C-D).
 Lastly, Weir-Goudet estimates are uniformly smaller than popkin's and attain large negative values (\cref{fig:kinship_real}E-F).
 
@@ -1046,7 +1047,7 @@ We believe that the observed popkin disagreemnts in LMMs are due to poor converg
 We also found that all MOR estimators perform better in the LMM association (and overall) compared to the ROM versions in the 1000 Genomes evaluation.
 Perhaps this is expected because out trait simulation follows the ``fixed effect sizes'' model, in which rare variants have larger coefficients, and the MOR estimators also weigh rare variants more highly in estimating kinship coefficients.
 This effect was not observed in the admixed family simulation, where MOR and ROM versions gave similar kinship estimates and performed similarly, compared to the real data evaluation, where kinship estimates were also strikingly different.
-However, only the popkin ROM estimator is unbiased (\cref{fig:kinship_sim}B), so it is unclear why the biased popkin MOR estimator performs better in this setting.
+However, only the popkin ROM estimator is unbiased (\cref{fig:kinship_sim}B, \cref{fig:popkin-rom-mor}), so it is unclear why the biased popkin MOR estimator performs better in this setting.
 One potential explanation is that our kinship model assumes that all variants were preexisting in the MRCA population, whereas rare variants in human data are known to be very recent mutations, and thus their effective kinship matrix is different than that of ancestral variants.
 Therefore, despite its biases, it is possible that the popkin MOR estimator is more accurately capturing the kinship matrix of these rare variants and thus modeling them better in association tests, particularly in LMMs where the effect is most pronounced.
 
@@ -1372,6 +1373,23 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
 \beginsupplement
 
 \section*{Supplemental figures}
+
+\begin{figure}[hp!]
+  \centering
+  \includegraphics[width=\textwidth]{popkin-mor-rom-bias.png}
+  \caption{
+    {\bf Comparison of popkin ROM and MOR estimates.}
+    Kinship (off-diagonal of matrix) and inbreeding (transformed diagonal) are plotted in different colors, which shows that the biases (if any) for both types of coefficients overlap.
+    \textbf{A.}
+    In admixed family simulation, both estimates are compared against the true kinship values.
+    Popkin ROM has a negligible bias due to the fact that the minimum true kinship of the simulation is not exactly zero.
+    Popkin MOR has considerable biases, tending to have upward biases although in some cases they are downward.
+    \textbf{B.}
+    In 1000 Genomes, since the true kinship matrix is not known, popkin ROM takes its place as it is the least biased estimator.
+    Popkin MOR biases take on a similar shape as observed in the earlier simulation.
+    }
+  \label{fig:popkin-rom-mor}
+\end{figure}
 
 \begin{figure}[hp!]
   \centering
