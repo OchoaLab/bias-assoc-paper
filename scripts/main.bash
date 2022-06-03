@@ -98,7 +98,18 @@ time Rscript sim-06-stats-corr.R --bfile $name -r 1
 
 
 
+### COMBINED ###
 
+# compare popkin ROM/MOR (and true, in sim) in sim and TGP
+time Rscript all-popkin-mor-rom-bias.R
+# 0m17.224s ideapad
+# remove earlier version if redoing
+rm ../data/popkin-mor-rom-bias.png
+# flatten huge output PDF into PNG
+time pdf2png ../data/popkin-mor-rom-bias.pdf 
+# 0m56.145s ideapad
+# remove redundant PDF if done
+rm ../data/popkin-mor-rom-bias.pdf
 
 
 ### THEORY/OBSOLETE ###
