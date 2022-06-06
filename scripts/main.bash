@@ -37,9 +37,9 @@ time Rscript sim-02-kinship-plot.R --bfile $name -r 1
 # plot AUCs and SRMSDs (all reps)
 time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 
-# statistic correlation heatmaps (rep-1 only)
-time Rscript sim-06-stats-corr.R --bfile $name -r 1
-# 0m0.649s
+# statistic correlation heatmaps (all reps)
+time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
+# 1m7.825s
 
 
 
@@ -90,10 +90,9 @@ done
 time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 # 0m6.258s
 
-# statistic correlation heatmaps (rep-1 only)
-# NOTE: extremely high correlation for all (even PCA-LMM) compared to sim
-time Rscript sim-06-stats-corr.R --bfile $name -r 1
-# 0m2.957s
+# statistic correlation heatmaps (all reps)
+time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
+# 8m32.654s
 # NOTE: beta fig fails every time (betas are extremely correlated) 
 
 

@@ -2,7 +2,10 @@ library(optparse) # for terminal options
 library(readr)    # to read tables
 library(popkin)   # to plot
 library(ochoalabtools) # for nice PDF
-library(tibble)
+
+# constants
+tolp <- 1e-2
+tolb <- 1e-3
 
 ############
 ### ARGV ###
@@ -12,8 +15,8 @@ library(tibble)
 option_list = list(
     make_option("--bfile", type = "character", default = NA, 
                 help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
-    make_option(c("-r", "--rep"), type = "integer", default = 1, 
-                help = "Replicate number", metavar = "int")
+    make_option("--n_rep", type = "integer", default = NA, 
+                help = "Total number of replicates", metavar = "int")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -21,7 +24,9 @@ opt <- parse_args(opt_parser)
 
 # get values
 dir_out <- opt$bfile
-rep <- opt$rep
+n_rep <- opt$n_rep
+if ( is.na( n_rep ) )
+    stop( 'Option `--n_rep` is required!' )
 
 # before switching away from "scripts", load a table located there
 kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cccc' )
@@ -32,9 +37,6 @@ setwd( dir_out )
 
 # if this directory exists here, this is real data
 is_sim <- !file.exists( 'kinship' )
-
-dir_rep <- paste0( 'rep-', rep )
-setwd( dir_rep )
 
 # in real data the oracle methods (truth and biased limits) are missing, exclude from `kinship_methods`
 if ( !is_sim )
@@ -57,17 +59,101 @@ labs_model <- c(
     rep.int( 'LMM', n_kinship )
 )
 
-# load tibbles
-pvals <- read_tsv( 'pvals.txt.gz', col_types = cols( ) )
-betas <- read_tsv( 'betas.txt.gz', col_types = cols( ) )
+# compute sum of equal elements for every pair of columns (like a correlation), but up to a given tolerance
+pair_identical <- function( X, tol ) {
+    n <- ncol( X )
+    Y <- matrix( 0, n, n )
+    # can't think of a better way than actually navigating all pairs
+    for ( i in 2 : n ) {
+        xi <- X[ , i ]
+        # diagonal that makes sense is number of self non-misisng elements
+        Y[ i, i ] <- sum( !is.na( xi ) )
+        for ( j in 1 : (i-1) ) {
+            xj <- X[ , j ]
+            # this is the calculation we were interested in
+            Y[ i, j ] <- sum( abs( xi - xj ) < tol, na.rm = TRUE )
+            # copy both ways
+            Y[ j, i ] <- Y[ i, j ]
+        }
+    }
+    # above loop skips i=1, do now
+    Y[ 1, 1 ] <- sum( !is.na( X[,1] ) )
+    return( Y )
+}
 
-plot_cor <- function( data, name ) {
+
+process_tables <- function( name, tol ) {
+    # read files
+    file <- paste0( name, '.txt.gz' )
+    data <- read_tsv( file, col_types = cols( ) )
     # reorder columns of data to be a manually-selected order
     data <- data[ method_codes ]
     # replace original codes with nice names
     colnames( data ) <- labs_short
+    # rest makes most sense as matrix
+    data <- as.matrix( data )
     # compute correlation matrix
-    cor_data <- cor( data, use = 'pairwise.complete.obs' )
+    C <- cor( data, use = 'pairwise.complete.obs' )
+
+    # replicate calculation but with the equality comparisons
+    # denominator first, sum of non-missing cases
+    M <- crossprod( !is.na( data ) )
+    # numerator is more complicated...
+    E <- pair_identical( data, tol = tol )
+
+    # return all three parts
+    return( list(
+        C = C,
+        M = M,
+        E = E
+    ) )
+}
+
+# get data from each replicate
+# add to various running sums
+for ( rep in 1 : n_rep ) {
+    setwd( paste0( 'rep-', rep ) )
+
+    message( 'rep-', rep, ': pvals' )
+    data <- process_tables( 'pvals', tol = tolp )
+    if ( rep == 1 ) {
+        Cp <- data$C
+        Mp <- data$M
+        Ep <- data$E
+    } else {
+        Cp <- Cp + data$C
+        Mp <- Mp + data$M
+        Ep <- Ep + data$E
+    }
+
+    # repeat for betas
+    message( 'rep-', rep, ': betas' )
+    data <- process_tables( 'betas', tol = tolb )
+    if ( rep == 1 ) {
+        Cb <- data$C
+        Mb <- data$M
+        Eb <- data$E
+    } else {
+        Cb <- Cb + data$C
+        Mb <- Mb + data$M
+        Eb <- Eb + data$E
+    }
+
+    setwd( '..' )
+}
+
+# complete averages
+# for correlations it's a naive average (wrong considering missingess, but meh)
+Cp <- Cp / n_rep
+Cb <- Cb / n_rep
+# for equality, properly consider missingness
+Ep <- Ep / Mp
+Eb <- Eb / Mb
+
+# will also save in addition to plot
+plot_cor <- function( cor_data, name, eq = FALSE, tol ) {
+    # save values for later analysis
+    write_tsv( as.data.frame( cor_data ), paste0( name, '.txt' ) )
     
     # get nice max width for a journal
     dim <- fig_width()
@@ -87,59 +173,14 @@ plot_cor <- function( data, name ) {
         mar = 7,
         ylab = 'Association Model, Kinship Estimate',
         ylab_adj = 0.75,
-        leg_title = expression(bold(paste("Pearson Correlation ", (rho)))),
+        leg_title = if (eq) paste0( 'Fraction |diff| < ', tol ) else 'Pearson Correlation',
         leg_width = 0.15
     )
     fig_end()
-
-    # return in same order, etc
-    return( cor_data )
 }
 
-# save figure in lower level
-setwd( '..' )
-
-cor_pvals <- plot_cor( pvals, 'pvals_cor' )
-# plot of betas fail in TGP (min correlations are much too high), just skip
-if ( is_sim )
-    cor_betas <- plot_cor( betas, 'betas_cor' )
-
-# we'll see which of these subsets are of interest in real data (were manually picked for sim data only)
-if ( is_sim ) {
-    # pick out some values of particular importance
-    # p-values only
-    range_subset <- function( indexes ) {
-        # take subset
-        cor_pvals <- cor_pvals[ indexes, indexes ]
-        # return row, to grow a tibble with data
-        tibble(
-            subset = toString( method_codes[ indexes ] ),
-            min = min( cor_pvals ),
-            max = max( cor_pvals )
-        )
-    }
-
-    data <- NULL
-    # these should be all PCA methods except for True and Popkin
-    data <- rbind( data, range_subset( c( 2:4, 6:9 ) ) )
-    # include Popkin too
-    data <- rbind( data, range_subset( 2:9 ) )
-    # include True too
-    data <- rbind( data, range_subset( 1:9 ) )
-    # now LMM subsets
-    # limits only except GCTA
-    data <- rbind( data, range_subset( 10:12 ) )
-    # all limits only
-    data <- rbind( data, range_subset( 10:13 ) )
-    # estimates ROM: popkin-wg-std
-    data <- rbind( data, range_subset( 14:16 ) )
-    # estimates MOR: std-gcta
-    data <- rbind( data, range_subset( 17:18 ) )
-    # all estimators only
-    data <- rbind( data, range_subset( 14:18 ) )
-    # all LMM
-    data <- rbind( data, range_subset( 10:18 ) )
-
-    # save report
-    write_tsv( data, 'pvals_cor_report.txt'  )
-}
+plot_cor( Cp, 'pvals_cor' )
+plot_cor( Ep, 'pvals_eq', eq = TRUE, tol = tolp )
+plot_cor( Eb, 'betas_eq', eq = TRUE, tol = tolb )
+# plot of betas fail in TGP (min correlations are much too high), but run to save table anyway
+plot_cor( Cb, 'betas_cor' )
