@@ -92,7 +92,7 @@ time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 
 # statistic correlation heatmaps (all reps)
 time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
-# 8m32.654s
+# 6m12.550s
 # NOTE: beta fig fails every time (betas are extremely correlated) 
 
 

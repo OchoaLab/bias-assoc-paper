@@ -17,7 +17,6 @@ data/tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pops-annot.txt
 
 # other intermediate data
 betas.txt.gz
-betas_cor.pdf
 pvals.txt.gz
 eval.txt.gz
 pvals_cor_report.txt
