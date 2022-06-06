@@ -477,22 +477,22 @@ For $\rmsd$, all estimates perform similarly except the popkin ROM estimates per
 
 \begin{figure}[bp!]
   \centering
-  \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/pvals_cor.pdf}
+  \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/pvals_eq.pdf}
   \caption{
-    {\bf Correlation between p-values of different association models and kinship estimates on the admixed family simulation.}
-    The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute Pearson correlations (color).
-    Within same type of association model (LMM or PCA), methods are strongly correlated with correlation close to 1 regardless of kinship matrix used.
+    {\bf Approximate agreement between p-values of approaches on the admixed family simulation.}
+    The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute fractions of loci with absolute differences under 0.01 (color).
+    All replicates were used.
+    Methods of all bias types (matched for association model and locus weight type) have large proportions of nearly identical p-values.
     }
-  \label{fig:pvals_cor_sim}
+  \label{fig:pvals_eq_sim}
 \end{figure}
 
-To better understand the degree of agreement between the association results of the various kinship matrices, we next measured the agreement between methods at the level of the individual association p-values, summarized using pearson correlation coefficients ($\rho$; \cref{fig:pvals_cor_sim}).
-We found that all the kinship matrices yield highly correlated p-values when applied to the same association model (LMM vs PCA), and otherwise mirroring our previous observations based on $\auc$.
-The minimum correlation among PCA methods was $0.86$, and among LMMs it was $0.84$.
-Within PCA, the cluster that excludes the true kinship matrix and the popkin estimate has nearly identical p-values ($\rho > 0.99$), and inclusion of popkin lowers the minimum correlation to $\rho > 0.93$.
-Among LMMs, the cluster that includes the true kinship and the Weir-Goudet and Standard ROM limits also results in practically identical p-values ($\rho \approx 1$).
-The LMM cluster that includes the Popkin, Weir-Goudet, and Standard ROM estimators also has $\rho \approx 1$, and separately the cluster with the Standard MOR estimators has $\rho \approx 1$, while the LMM cluster that includes all estimates has $\rho > 0.96$.
-Thus, several sets of kinship matrices with different biases result in identical association statistics, within both LMMs and PCA models, while differences are largely driven by the association model used and whether the kinship matrices were estimates or not.
+To better understand the degree of agreement between the association results of the various kinship matrices, we next measured the agreement between methods across replicates at the level of the individual association p-values.
+We find high correlations overall (\cref{fig:pvals_cor_sim}), which is telling, but does not distinguish between estimators beyond the association model used (LMM vs PCA).
+A more stringent criterion is the fraction of loci with p-values within 0.01 of each other, which is an approximate measure of agreement, and reveals few such agreements with LMMs except between estimators of the same type (\cref{fig:pvals_eq_sim}).
+The fractions of agreement mirror our previous observations based on $\auc$, generally showing more agreement between all PCA p-values except for popkin MOR, for example.
+Surprisingly, we find fractions at or near 1 for many estimators of different bias types (matched otherwise), particularly in LMMs.
+Thus, several sets of kinship matrices with different biases result in approximately the same association statistics, within both LMMs and PCA models, while differences are largely driven by the association model used and whether the kinship matrices were estimates or not.
 
 \subsection{Results using 1000 Genomes Project real genotypes}
 
@@ -519,7 +519,8 @@ Lastly, Weir-Goudet estimates are uniformly smaller than popkin's and attain lar
 
 When we perform PCA and LMM association tests using simulated traits and these kinship estimates, the results are similar to our simulation study: there are no differences between kinship estimators with different biases but of the same type (MOR or ROM) and association model (\cref{fig:auc_real}, \cref{fig:rmsd_real}), with the sole exception of popkin ROM.
 However, unlike the admixed family simulation results, here the MOR estimates greatly outperform ROM estimates (both using LMM) for both $\auc$ and $\rmsd$.
-We also measured correlations of one between p-values from the same association model and estimator type (MOR or ROM), regardless of bias type (\cref{fig:pvals_cor_real}).
+We measured extremely high correlations between the p-values of all approaches (\cref{fig:pvals_cor_real}).
+In contrast, p-values reveals again high approximate agreement for the same association model and estimator type (MOR or ROM), regardless of bias type, and low agreements otherwise (\cref{fig:pvals_eq_real}).
 
 \begin{figure}[bp!]
   \centering
@@ -1400,6 +1401,17 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   \label{fig:rmsd_sim}
 \end{figure}
 
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/pvals_cor.pdf}
+  \caption{
+    {\bf Correlation between p-values of different association models and kinship estimates on the admixed family simulation.}
+    The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute Pearson correlations (color).
+    Within same type of association model (LMM or PCA), methods are strongly correlated with correlation close to 1 regardless of kinship matrix used.
+    }
+  \label{fig:pvals_cor_sim}
+\end{figure}
+
 \begin{figure}[hp!]
   \centering
   \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/rmsd.pdf}
@@ -1419,5 +1431,17 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   }
   \label{fig:pvals_cor_real}
 \end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pvals_eq.pdf}
+  \caption{
+    {\bf Approximate agreement between p-values of approaches on 1000 Genomes.}
+    See \cref{fig:pvals_eq_sim} for more details.
+  }
+  \label{fig:pvals_eq_real}
+\end{figure}
+
+
 
 \end{document}
