@@ -173,7 +173,7 @@ plot_cor <- function( cor_data, name, eq = FALSE, tol ) {
         mar = 7,
         ylab = 'Association Model, Kinship Estimate',
         ylab_adj = 0.75,
-        leg_title = if (eq) paste0( 'Fraction |diff| < ', tol ) else 'Pearson Correlation',
+        leg_title = if (eq) paste0( 'Proportion |diff| < ', tol ) else 'Pearson Correlation',
         leg_width = 0.15
     )
     fig_end()
