@@ -154,12 +154,12 @@ In this work, to simplify notation, we omit cumbersome notation that marks this 
 
 \subsection{Kinship estimators}
 
-All kinship estimators have two locus-weighing versions, some introduced in this work, called \textit{ratio-of-means} (ROM) and \textit{mean-of-ratios} (MOR), a terminology that follows previous convention for these and related estimators \citep{bhatia_estimating_2013, ochoa_estimating_2021}.
+Each subsection below corresponds to a kinship estimator bias type: Popkin is unbiased, while Standard and WG have different bias functions (defined shortly).
+Each estimator bias type has two locus-weight versions, some introduced in this work, called \textit{ratio-of-means} (ROM) and \textit{mean-of-ratios} (MOR), a terminology that follows previous convention for these and related estimators \citep{bhatia_estimating_2013, ochoa_estimating_2021}.
+Only ROM estimators have closed-form limits.
 Below
 $
 \pith
-% =
-% \frac{1}{2n} \sum_{j=1}^n \xij
 =
 \frac{1}{2n} \mathbf{x}_i^\intercal \mathbf{1}
 $
@@ -169,7 +169,7 @@ $\kinMatEstNamed{name} = (\ktHatNamed{name})$
 relates the scalar and matrix formulas of each named kinship estimator.
 
 
-\subsubsection{Popkin kinship estimator}
+\subsubsection{Popkin estimator}
 
 The popkin (population kinship) estimator \citep{ochoa_estimating_2021}, generalized here to include locus weights $w_i$, is given by
 \begin{equation}
@@ -190,11 +190,11 @@ $$
 \kinMatEstNamed{popkin-ROM} \toas \kinMat,
 % \ktHatNamed{popkin-ROM} \toas \kt,
 $$
-under the assumption that the pair with the minimum kinship value has a zero true kinship.
-The MOR version, introduced here, upweighs rare variants by using $w_i = (\pith (1-\pith))^{-1}$; although it has no closed-form limit, it is approximately unbiased as well (\cref{sec:popkin_w_justif}) and it is connected to the most common standard estimator (\cref{sec:conn_popkin_std}). 
+under the assumption that the true minimum kinship is zero.
+The MOR version, introduced here, upweighs rare variants by using $w_i = (\pith (1-\pith))^{-1}$; although it has no closed-form limit, it is approximately unbiased as well (\cref{sec:popkin_w_justif}) and it is connected to the most common estimator, Standard MOR (\cref{sec:conn_popkin_std}). 
 The use of locus weights here is inspired by previous calculations relating the standard ROM and MOR estimators \citep{wang_efficient_2017}.
 
-\subsubsection{Standard kinship estimator}
+\subsubsection{Standard estimator}
 
 The ROM and MOR versions of the standard kinship estimator are, respectively,
 \begin{align}
@@ -241,7 +241,7 @@ In \cref{sec:conn_popkin_std} we prove that the two standard kinship estimators 
                              .
 \end{align*}
 
-\subsubsection{Weir-Goudet kinship estimator}
+\subsubsection{Weir-Goudet estimator}
 
 The ROM version of the Weir-Goudet (WG) kinship estimator is given by \citep{weir_unified_2017, ochoa_estimating_2021}
 \begin{equation}
@@ -438,113 +438,105 @@ We used $r=k-1=2$ for the admixed family simulations, and $r=10$ for 1000 Genome
 % path for figures
 \graphicspath{ {../data/} }
 
-\subsection{Empirical demonstration of robustness to kinship bias in PCA and LMM genetic association studies}
+\subsection{Empirical analysis using admixed family simulation}
 
-To quantify the effect of the various kinship matrix estimators, and their limiting biases, we simulated genotypes and a trait, and calculated association p-values for all kinship variants of the PCA and LMM methods.
+% overview of sim results
+To quantify the effect of kinship estimation bias, we simulated genotypes and traits, and calculated association p-values using a factorial design that tests all kinship matrix (3 bias types, times two locus weight versions and one limit) and association model (PCA and LMM) combinations.
 We first simulated an admixed population with $K=3$ ancestries, then simulated a 20-generation random pedigree from the admixed population as founders.
-This high-dimensional admixed family scenario results in a large difference in performance between PCA and LMM approaches \citep{yao_limitations_2022}.
+This high-dimensional admixed family scenario yields a large difference in performance between PCA and LMM \citep{yao_limitations_2022}.
 
 \begin{figure}[bp!]
   \centering
   \includegraphics[height=0.8\textheight]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/kinship.pdf}
   \caption{
-    {\bf Kinship estimates and their limits on the admixed family simulation.}
-    Each panel represents a kinship matrix as a heatmap, with each of the $n=1000$ individuals along both x and y axes, and the kinship value presented as color: positive estimates are in red, negative estimates in blue.
+    {\bf Kinship estimates and limits on the admixed family simulation.}
+    Each panel shows a kinship matrix as a heatmap, with each of the $n=1000$ individuals along both x and y axes, color represents kinship: positive estimates in red, negative in blue.
     Diagonal contains inbreeding estimates.
-    The estimators considered are Popkin, Standard, and Weir-Goudet.
-    Each estimator has its limit in the first column (the limit of Popkin is Truth).
-    Standard has two variants: ROM (ratio of means) and MOR (mean of ratios).
-    Standard MOR does not have a closed-form limit, but in practice matches that of Standard ROM.
+    Each estimator bias type (Popkin, Standard, and Weir-Goudet; rows) has three matrices (columns): two locus-weight versions (ROM (ratio of means) and MOR (mean of ratios)) and limit of ROM.
   }
   \label{fig:kinship_sim}
 \end{figure}
 
-The kinship estimates on this simulation, and the theoretical limits of these estimators, are shown in \cref{fig:kinship_sim}.
-The true kinship matrix (\cref{fig:kinship_sim}A) shows the family relatedness as high values concentrated near the diagonal and the ancestry-driven population structure as the broad patterns off-diagonal.
-This simulation illustrates the severity of the biases of these estimators, which were previously characterized theoretically \citep{ochoa_estimating_2021}.
-Only the Popkin ROM estimator is unbiased (\cref{fig:kinship_sim}B), the rest presenting large negative biases which in turn result in abundant negative estimates.
-It is also clear by comparing to the true kinship that popkin MOR is biased (\cref{fig:popkin-rom-mor}A).
-The Standard kinship estimator (the mean-of-ratios, or MOR, version; \cref{fig:kinship_sim}E), which is the most common estimator in these applications, and the closely related ratio-of-means (ROM) estimator (\cref{fig:kinship_sim}D), both have severe biases that are not only overall downwardly biased, but these biases also vary for every pair of individuals.
-The limit of the Standard ROM estimator (\cref{fig:kinship_sim}C), calculated from the true kinship matrix and its known functional form (see Methods), closely matches the previously mentioned estimates obtained from genotypes.
-Lastly, the Weir-Goudet estimator has a uniform downward bias (\cref{fig:kinship_sim}H-I).
-
+% kinship matrices
+Kinship estimates and available limits on this simulation are shown in \cref{fig:kinship_sim}.
+The true kinship matrix shows the family relatedness as high values concentrated near the diagonal and the ancestry-driven population structure as the broad patterns off-diagonal.
+Only Popkin ROM is unbiased, while popkin MOR has a slight upward bias that varies across the matrix (\cref{fig:popkin-rom-mor}A).
+In contrast, the Standard and Weir-Goudet (WG) estimates have large downward biases overall, resulting in abundant negative values; for Standard these biases vary for every pair of individuals whereas for WG they are uniform.
 
 \begin{figure}[bp!]
   \centering
   \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/auc.pdf}
   \caption{
-    {\bf Area Under the Precision-Recall Curves ($\auc$) for every combination of association model and kinship estimate on the admixed family simulation.}
-    Results based on a single replicate of the random genotype matrix and trait vector.
-    Approaches appear to cluster primarily by association model (LMM vs PCA) and whether a kinship estimate was used or not, and do not depend much at all on the form of the bias.
+    {\bf Distributions of Area Under the Precision-Recall Curve ($\auc$) on the admixed family simulation.}
+    Higher $\auc$ is better performance.
+    Results for 100 replicates (each a random genotype matrix and trait vector).
+    Approaches cluster primarily by association model (LMM or PCA), and do not depend much at all on the bias type.
   }
   \label{fig:auc_sim}
 \end{figure}
 
-We then performed both LMM and PCA association tests in order to determine if the kinship biases carry over to association biases.
-Surprisingly, we found that none of these kinship biases have discernible effects on association performance, as summarized by the Area Under the Precision-Recall Curve ($\auc$; \cref{fig:auc_sim}) and $\rmsd$ (\cref{fig:rmsd_sim}).
-The largest difference in performance is explained by the association model used (LMM vs PCA), as expected due to our use of a family simulation, where PCA is expected to perform less well than LMM.
-For PCA only, there are no clear differences between the performance of any of the kinship matrices.
-In contrast, the LMM results are relatively more sensitive to the use of noisy kinship estimates versus the (noiseless) limits of these estimates, a difference certainly increased by our deliberate use of a small number of simulated loci.
-For $\auc$, among the kinship estimator limits, use of the true kinship matrix, the limit of the Weir-Goudet estimator, or the limit of the Standard ROM estimator all result in practically the same performance.
-Similarly, among the estimates, the popkin, Weir-Goudet, and Standard ROM estimates result in the same performance, whereas the Standard MOR estimates have a slightly different performance.
-For $\rmsd$, all estimates perform similarly except the popkin ROM estimates perform slightly different with a larger variance.
-
+% performance
+We performed LMM and PCA association tests to determine how kinship biases affect association performance.
+Surprisingly, we found that kinship bias type does not have a discernible effect on association performance, as summarized by $\auc$ (a robust proxy for power; \cref{fig:auc_sim}) and $\rmsd$ (measure null statistic calibration; \cref{fig:rmsd_sim}).
+The largest differences in performance are explained by the association model used (LMM vs PCA), as expected due to our use of a family simulation, where PCA performs poorly.
+Within association models, there are no clear differences between the performance of any of the kinship matrices, in fact many appear to have identical distributions (both statistics), the only clear exception being LMM popkin MOR, which has a few outlier replicates where performance was exceedingly poor.
 
 \begin{figure}[bp!]
   \centering
   \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/pvals_eq.pdf}
   \caption{
-    {\bf Approximate agreement between p-values of approaches on the admixed family simulation.}
+    {\bf Approximate agreement between p-values on the admixed family simulation.}
     The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute proportions of loci with absolute differences under 0.01 (color).
-    All replicates were used.
+    All 100 replicates were used.
     Methods of all bias types (matched for association model and locus weight type) have large proportions of nearly identical p-values.
     }
   \label{fig:pvals_eq_sim}
 \end{figure}
 
-To better understand the degree of agreement between the association results of the various kinship matrices, we next measured the agreement between methods across replicates at the level of the individual association p-values.
-We find high correlations overall (\cref{fig:pvals_cor_sim}), which is telling, but does not distinguish between estimators beyond the association model used (LMM vs PCA).
-A more stringent criterion is the proportion of loci with p-values within 0.01 of each other, which is an approximate measure of agreement, and reveals few such agreements with LMMs except between estimators of the same type (\cref{fig:pvals_eq_sim}).
-The proportions of agreement mirror our previous observations based on $\auc$, generally showing more agreement between all PCA p-values except for popkin MOR, for example.
-Surprisingly, we find proportions at or near 1 for many estimators of different bias types (matched otherwise), particularly in LMMs.
-Thus, several sets of kinship matrices with different biases result in approximately the same association statistics, within both LMMs and PCA models, while differences are largely driven by the association model used and whether the kinship matrices were estimates or not.
+% approximate agreement
+To better characterize the nearly-identical performance distribution just observed, we next measured the agreement between individual association p-values.
+We calculated the proportion of loci between two methods with p-values within 0.01 of each other, which is an approximate measure of agreement, and found a remarkably high agreement between estimators of diferent bias types after matching association model and locus-weight version or limit (\cref{fig:pvals_eq_sim}).
+This is in contrast to the low amounts of agreement across PCA and LMM statistics, and even across LMM statistics with different locus-weight or between those and the ROM limits.
+Minimum agreements tended to be higher across PCA methods, though here use of the true kinship or either popkin estimates resulted in more disagreements than between Standard and WG estimates or limits.
+Overall, sets of matched kinship matrices except for different bias types result in nearly identical association statistics.
 
-\subsection{Results using 1000 Genomes Project real genotypes}
+\subsection{Empirical analysis using 1000 Genomes}
 
-Now we replicate our previous findings using the real genotypes of 1000 Genomes.
-Kinship estimates are shown in \cref{fig:kinship_real}.
+% kinship
+Now we repeat our analysis using the real genotypes of 1000 Genomes.
+Kinship estimates are shown in \cref{fig:kinship_real} (note real data has no true kinship or estimator limits).
 Popkin ROM estimates display an approximate nested block structure that arises from the tree relationships between subpopulations (\cref{fig:kinship_real}A; trees were explicitly fit to this data in previous work \citep{yao_limitations_2022}).
-However, popkin MOR estimates attain higher values and do not follow the nested blocks tree structure, since kinship between African and non-African populations is higher than kinship within African populations (\cref{fig:kinship_real}B, \cref{fig:popkin-rom-mor}B).
+However, popkin MOR estimates do not follow the nested blocks tree structure, since kinship between African and non-African populations is higher than kinship within African populations (\cref{fig:kinship_real}B).
 Standard estimates have values are closer to zero, and a different bias for each pair of individuals, resulting in higher relative kinship for African compared to non-African populations (\cref{fig:kinship_real}C-D).
-Lastly, Weir-Goudet estimates are uniformly smaller than popkin's and attain large negative values (\cref{fig:kinship_real}E-F).
+Lastly, WG estimates are uniformly smaller than popkin's and attain large negative values (\cref{fig:kinship_real}E-F).
 
 \begin{figure}[bp!]
   \centering
   \includegraphics[height=0.8\textheight]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/kinship.pdf}
   \caption{
-    {\bf Kinship estimates and their limits on 1000 Genomes.}
-    Each panel represents a kinship matrix as a heatmap, with each individual along both x and y axes, and the kinship value presented as color: positive estimates are in red, negative estimates in blue.
-    Diagonal contains inbreeding estimates.
+    {\bf Kinship estimates on 1000 Genomes.}
+    Each panel represents a kinship matrix as a heatmap, as in \cref{fig:kinship_sim}.
     Superpopulation codes: AFR = African, EUR = European, SAS = South Asian, EAS = East Asian, AMR = Admixed Americans (Hispanics).
-    Each estimator (Popkin, Standard, and Weir-Goudet) has two variants: ROM (ratio of means) and MOR (mean of ratios).
+    Each estimator bias type (Popkin, Standard, and Weir-Goudet; rows) has two locus-weight versions (columns): ROM (ratio of means) and MOR (mean of ratios).
     In this visualization the upper range of all panels was capped to the 99 percentile of the diagonal (population inbreeding values) of the popkin MOR estimates.
   }
   \label{fig:kinship_real}
 \end{figure}
 
-
-When we perform PCA and LMM association tests using simulated traits and these kinship estimates, the results are similar to our simulation study: there are no differences between kinship estimators with different biases but of the same type (MOR or ROM) and association model (\cref{fig:auc_real}, \cref{fig:rmsd_real}), with the sole exception of popkin ROM.
-However, unlike the admixed family simulation results, here the MOR estimates greatly outperform ROM estimates (both using LMM) for both $\auc$ and $\rmsd$.
-We measured extremely high correlations between the p-values of all approaches (\cref{fig:pvals_cor_real}).
-In contrast, p-values reveals again high approximate agreement for the same association model and estimator type (MOR or ROM), regardless of bias type, and low agreements otherwise (\cref{fig:pvals_eq_real}).
+% performance
+Our association test conclusion are similar to our simulation study: $\auc$ and $\rmsd$ distributions are nearly identical for estimators of different bias types but same locus-weight version (ROM or MOR) and association model (\cref{fig:auc_real,fig:rmsd_real}).
+However, unlike the simulation, here the MOR estimates greatly outperform ROM estimates (LMM only), on terms of both $\auc$ and $\rmsd$.
+% agreement
+P-values are again nearly identical at a large proportion of loci between approaches with matched association model and locus-weight version (MOR or ROM), regardless of bias type (\cref{fig:pvals_eq_real}).
 
 \begin{figure}[bp!]
   \centering
   \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/auc.pdf}
   \caption{
-    {\bf Area Under the Precision-Recall Curves ($\auc$) for every combination of association model and kinship estimate on 1000 Genomes.}
-    Results based on 10 simulated trait replicates (real genotype matrix is fixed).
-    Approaches cluster primarily by association model (LMM vs PCA) and whether a kinship estimate was used or not, and do not depend much at all on the form of the bias.
+    {\bf Distributions of Area Under the Precision-Recall Curve ($\auc$) on 1000 Genomes.}
+    Higher $\auc$ is better performance.
+    Results based on 100 simulated trait replicates (real genotype matrix is fixed).
+    Approaches cluster primarily by association model (LMM or PCA) and locus-weight version (ROM or MOR), and do not depend much at all on the bias type.
   }
   \label{fig:auc_real}
 \end{figure}
@@ -1406,14 +1398,14 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   \includegraphics[width=\textwidth]{popkin-mor-rom-bias.png}
   \caption{
     {\bf Comparison of popkin ROM and MOR estimates.}
-    Kinship (off-diagonal of matrix) and inbreeding (transformed diagonal) are plotted in different colors, which shows that the biases (if any) for both types of coefficients overlap.
+    Kinship (off-diagonal of matrix) and inbreeding (transformed diagonal) are plotted in different colors, which shows that their biases (if any) overlap.
     \textbf{A.}
-    In admixed family simulation, both estimates are compared against the true kinship values.
-    Popkin ROM has a negligible bias due to the fact that the minimum true kinship of the simulation is not exactly zero.
-    Popkin MOR has considerable biases, tending to have upward biases although in some cases they are downward.
+    In admixed family simulation, both estimates are compared against true kinship.
+    Popkin ROM has a negligible bias, due to the minimum true kinship of the simulation being slightly larger than zero.
+    Popkin MOR has considerable biases, tending to be upward though not always.
     \textbf{B.}
-    In 1000 Genomes, since the true kinship matrix is not known, popkin ROM takes its place as it is the least biased estimator.
-    Popkin MOR biases take on a similar shape as observed in the earlier simulation.
+    In 1000 Genomes, since true kinship is unknown, popkin ROM takes its place.
+    Popkin MOR biases take on a similar shape as panel A.
     }
   \label{fig:popkin-rom-mor}
 \end{figure}
@@ -1422,47 +1414,29 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   \centering
   \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/rmsd.pdf}
   \caption{
-    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate on the admixed family simulation.}
+    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) on the admixed family simulation.}
+    Same methods and simulation as \cref{fig:auc_sim}, see that for more information.
+    $|\rmsd| < 0.01$ (area between gray dashed lines) is considered calibrated.
+    All PCA runs are miscalibrated by similar amounts, whereas most LMM runs are calibrated with few exceptions.
     }
   \label{fig:rmsd_sim}
-\end{figure}
-
-\begin{figure}[bp!]
-  \centering
-  \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/pvals_cor.pdf}
-  \caption{
-    {\bf Correlation between p-values of different association models and kinship estimates on the admixed family simulation.}
-    The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute Pearson correlations (color).
-    Within same type of association model (LMM or PCA), methods are strongly correlated with correlation close to 1 regardless of kinship matrix used.
-    }
-  \label{fig:pvals_cor_sim}
 \end{figure}
 
 \begin{figure}[hp!]
   \centering
   \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/rmsd.pdf}
   \caption{
-    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) for every combination of association model and kinship estimate on 1000 Genomes.}
+    {\bf Signed Root Mean Square Deviation of null p-values ($\rmsd$) on 1000 Genomes.}
+    Same methods and simulation as \cref{fig:auc_real}, and y-axis statistic and conclusions of \cref{fig:rmsd_sim}, see those for more information.
   }
   \label{fig:rmsd_real}
-\end{figure}
-
-\begin{figure}[hp!]
-  \centering
-  \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pvals_cor.pdf}
-  \caption{
-    {\bf Correlation between p-values of different association models and kinship estimates on 1000 Genomes.}
-    The association p-value vector (one value per tested locus) produced by each combination of association model (LMM vs PCA) and kinship matrix (x and y axes) was used to compute Pearson correlations (color).
-    P-values between all kinship matrices or association model (PCA or LMM) are highly correlated (including biased and unbiased estimates), and often the maximum correlation of 1 is achieved.
-  }
-  \label{fig:pvals_cor_real}
 \end{figure}
 
 \begin{figure}[bp!]
   \centering
   \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pvals_eq.pdf}
   \caption{
-    {\bf Approximate agreement between p-values of approaches on 1000 Genomes.}
+    {\bf Approximate agreement between p-values on 1000 Genomes.}
     See \cref{fig:pvals_eq_sim} for more details.
   }
   \label{fig:pvals_eq_real}
