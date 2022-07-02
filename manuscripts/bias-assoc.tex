@@ -19,19 +19,25 @@
 \newcommand{\rmsd}{\text{SRMSD}_p}
 \newcommand{\auc}{\text{AUC}_\text{PR}}
 
-\usepackage[noT]{kinshipsymbols}
+\usepackage{kinshipsymbols}
 % % copy of \Fst from package `kinshipsymbols`
 
 % some more definitions
 \newcommand{\kinMat}{%
   \ensuremath{%
-    \mathbf{\Phi}
+    \mathbf{\Phi}^T
+  }%
+  \xspace%
+}%
+\newcommand{\kinMatPrime}{%
+  \ensuremath{%
+    \mathbf{\Phi}^{T\prime}
   }%
   \xspace%
 }%
 \newcommand{\kinMatEstNamed}[1]{%
   \ensuremath{%
-    \mathbf{\hat{\Phi}}^\text{#1}
+    \mathbf{\hat{\Phi}}^{T,\text{#1}}
   }%
   \xspace%
 }%
@@ -130,21 +136,21 @@ The following genetic model justifies the use of kinship matrices in association
 Suppose there are $m$ biallelic loci and $n$ diploid individuals.
 The genotype $\xij \in \{0,1,2\}$ at a locus $i$ of individual $j$ is encoded as the number of reference alleles, for a preselected but otherwise arbitrary reference allele per locus.
 These genotypes can be treated as random variables structured according to relatedness.
-If \kt is the kinship coefficient of two individuals $j$ and $k$, and \pit is the ancestral allele frequency at locus $i$, then under the kinship model \citep{ochoa_estimating_2021} the expectation and covariance are given by
+If $T$ is the ancestral population on which allele frequencies are being conditioned, \kt is the kinship coefficient of two individuals $j$ and $k$, and \pit is the ancestral allele frequency at locus $i$, then under the kinship model \citep{ochoa_estimating_2021} the expectation and covariance are given by
 \begin{align*}
-  \E[ \mathbf{x}_i ]
+  \E \left[ \mathbf{x}_i \middle| T \right]
   =
     2 \pit \mathbf{1}
   ,
   \quad\quad
-  \Cov(\mathbf{x}_i)
+  \Cov \left(\mathbf{x}_i \middle| T \right)
   =
-    4 \pit (1-\pit) \kinMat
+    4 \pit \left( 1 - \pit \right) \kinMat
     ,
 \end{align*}
-where $\mathbf{x}_i = (\xij)$ is the length-$n$ column vector of genotypes at locus $i$, $\kinMat = (\kt)$ is the $n \times n$ kinship matrix, $\mathbf{1}$ is a length-$n$ column vector of ones, and the $\intercal$ superscript denotes matrix transposition.
-Both $\kinMat$ and \pit are parameters that depend on the choice of ancestral population, for which the Most Recent Common Ancestor (MRCA) population is the most sensible choice \citep{ochoa_estimating_2021}.
-In this work, to simplify notation, we omit cumbersome notation that marks this dependence of parameters on the choice of ancestral population, nor do we explicitly condition on the ancestral population (it is done implicitly) when calculating expectations and covariances as done in previous work.
+where $\mathbf{x}_i = (\xij)$ is the length-$n$ column vector of genotypes at locus $i$, $\kinMat = (\kt)$ is the $n \times n$ kinship matrix, $\mathbf{1}$ is a length-$n$ column vector of ones, and the $\intercal$ superscript denotes matrix transposition (do not confuse with ancestral population superscript $T$).
+Both \kinMat and \pit are parameters that depend on the choice of ancestral population, for which the Most Recent Common Ancestor (MRCA) population is the most sensible choice \citep{ochoa_estimating_2021}.
+However, one of the results of this work is proof that the choice of ancestral population does not affect association testing.
 
 \subsection{Kinship estimators}
 
@@ -185,7 +191,7 @@ $$
 % \ktHatNamed{popkin-ROM} \toas \kt,
 $$
 under the assumption that the true minimum kinship is zero.
-The MOR version, introduced here, upweighs rare variants by using $w_i = (\pith (1-\pith))^{-1}$; although it has no closed-form limit, it is approximately unbiased as well (\cref{sec:popkin_w_justif}) and it is connected to the most common estimator, Standard MOR (\cref{sec:conn_popkin_std}). 
+The MOR version, introduced here, upweighs rare variants by using $w_i = \left( \pith \left( 1 - \pith \right) \right)^{-1}$; although it has no closed-form limit, it is approximately unbiased as well (\cref{sec:popkin_w_justif}) and it is connected to the most common estimator, Standard MOR (\cref{sec:conn_popkin_std}). 
 The use of locus weights here is inspired by previous calculations relating the standard ROM and MOR estimators \citep{wang_efficient_2017}.
 
 \subsubsection{Standard estimator}
@@ -212,27 +218,32 @@ The ROM estimator has a biased limit, which is a function of the true kinship ma
   \label{eq:kinship_std_lim}
   \kinMatEstNamed{std-ROM}
   \toas
-  F^\text{std}( \kinMat )
+  F^\text{std} \left( \kinMat \right)
   =
-  \frac{1}{1 - \bar{\varphi}}
+  \frac{1}{1 - \bar{\varphi}^T}
   \left(
     \kinMat
-    + \bar{\varphi} \mathbf{J}
-    - \boldsymbol{\varphi} \mathbf{1}^\intercal 
-    - \mathbf{1} \boldsymbol{\varphi}^\intercal 
+    + \bar{\varphi}^T \mathbf{J}
+    - \boldsymbol{\varphi}^T \mathbf{1}^\intercal 
+    - \mathbf{1} \left( \boldsymbol{\varphi}^T \right)^\intercal 
   \right)
   ,
 \end{equation}
 where
 $\mathbf{J} = \mathbf{1} \mathbf{1}^\intercal$ is the $n \times n$ matrix of ones,
-$\boldsymbol{\varphi} = \frac{1}{n} \kinMat \mathbf{1}$ is a length-$n$ vector of per-row mean kinship values, and
-$\bar{\varphi} = \frac{1}{n^2} \mathbf{1}^\intercal \kinMat \mathbf{1}$ is the scalar overall mean kinship.
+$\boldsymbol{\varphi}^T = \frac{1}{n} \kinMat \mathbf{1}$ is a length-$n$ vector of per-row mean kinship values, and
+$\bar{\varphi}^T = \frac{1}{n^2} \mathbf{1}^\intercal \kinMat \mathbf{1}$ is the scalar overall mean kinship.
 The MOR estimator does not have closed-form limit, but it is well approximated by \cref{eq:kinship_std_lim} in practice, especially when loci with small minor allele frequencies are excluded prior to calculating this estimate.
 In \cref{sec:conn_popkin_std} we prove that the two standard estimators are functions of the corresponding popkin estimators, given by the bias function $F^\text{std}$:
 \begin{align*}
-  \kinMatEstNamed{std-ROM} &= F^\text{std}( \kinMatEstNamed{popkin-ROM} ), \\
-  \kinMatEstNamed{std-MOR} &= F^\text{std}( \kinMatEstNamed{popkin-MOR} )
-                             .
+  \kinMatEstNamed{std-ROM}
+  &=
+    F^\text{std} \left( \kinMatEstNamed{popkin-ROM} \right)
+    , \\
+  \kinMatEstNamed{std-MOR}
+  &=
+    F^\text{std} \left( \kinMatEstNamed{popkin-MOR} \right)
+    .
 \end{align*}
 
 \subsubsection{Weir-Goudet estimator}
@@ -258,20 +269,17 @@ Its biased limit is also a function of the true kinship matrix:
   \label{eq:wg_lim}
   \kinMatEstNamed{WG-ROM}
   \toas
-  F^\text{WG}( \kinMat )
+  F^\text{WG} \left( \kinMat \right)
   =
-  \frac{1}{1 - \tilde{\varphi}}
-  \left(
-    \kinMat
-    - \tilde{\varphi} \mathbf{J}
-  \right)
+  \frac{1}{1 - \tilde{\varphi}^T}
+  \left( \kinMat - \tilde{\varphi}^T \mathbf{J} \right)
   ,
 \end{equation}
-where $\tilde{\varphi}$ is the mean kinship excluding the matrix diagonal:
+where $\tilde{\varphi}^T$ is the mean kinship excluding the matrix diagonal:
 \begin{equation}
   \label{eq:wg_tilde}
   \begin{split}
-    \tilde{\varphi}
+    \tilde{\varphi}^T
     &=
     \frac{2}{n(n-1)}
     \sum_{j=2}^n
@@ -280,16 +288,21 @@ where $\tilde{\varphi}$ is the mean kinship excluding the matrix diagonal:
     .
   \end{split}
 \end{equation}
-In \cref{sec:wg_posdef} we prove that $F^\text{WG}( \kinMat )$ is positive definite if \kinMat also is.
+In \cref{sec:wg_posdef} we prove that $F^\text{WG} \left( \kinMat \right)$ is positive definite if \kinMat also is.
 In \cref{sec:mean_kinship_ineqs} we prove that
 $$
-0 \le \tilde{\varphi} \le \bar{\varphi} \le \bar{d} \le 1,
+0 \le \tilde{\varphi}^T \le \bar{\varphi}^T \le \bar{\delta}^T \le 1,
 $$
-where $\bar{d} = \frac{1}{n} \sum_{j=1}^n \kt[j]$, and equalities are achieved if and only if all kinship values are equal.
+where $\bar{\delta}^T = \frac{1}{n} \sum_{j=1}^n \kt[j]$, and equalities are achieved if and only if all kinship values are equal.
 Since the WG-ROM estimator closely resembles the popkin estimator in \cref{eq:popkin}, it follows more straightforwardly that they are related by the bias function $F^\text{WG}$, while WG-MOR is introduced here and defined by the below formula:
 \begin{align*}
-  \kinMatEstNamed{WG-ROM} &= F^\text{WG}( \kinMatEstNamed{popkin-ROM} ), \\
-  \kinMatEstNamed{WG-MOR} &= F^\text{WG}( \kinMatEstNamed{popkin-MOR} )
+  \kinMatEstNamed{WG-ROM}
+  &=
+    F^\text{WG} \left( \kinMatEstNamed{popkin-ROM} \right)
+    , \\
+  \kinMatEstNamed{WG-MOR}
+  &=
+    F^\text{WG} \left( \kinMatEstNamed{popkin-MOR} \right)
   .
 \end{align*}
 
@@ -306,7 +319,7 @@ LMM and PCA are closely-related association models \citep{astle_population_2009,
   \label{eq:lmm_rand_eff}
   \mathbf{s}
   &\sim
-    \text{Normal} \left( \mathbf{0}, \sigma^2 \kinMat \right), \\
+    \text{Normal} \left( \mathbf{0}, 2 \sigma^2 \kinMat \right), \\
   \label{eq:pca_gwas}
   \text{PCA:}\quad
   \mathbf{y}
@@ -381,7 +394,7 @@ $$
 $$
 Given a desired number of causal loci $m_1 = n/10$ and heritability $h^2=0.8$, the goal is to choose causal coefficients $\boldsymbol{\beta}$ and the intercept $\alpha$ that result in zero mean and the desired trait heritability.
 Here, we use the ``fixed effect sizes'' trait simulation model described in \citep{yao_limitations_2022}.
-Briefly, first $m_1$ causal loci are randomly selected, and $\mathbf{X}$ is subset to these loci and reindexed.
+Briefly, first $m_1$ causal loci are randomly selected, and for these steps only $\mathbf{X}$ is subset to these loci and reindexed.
 For known \pit, causal coefficients are constructed as:
 $$
 \beta_i = \sqrt{ \frac{h^2}{ 2 m_1 v_i^T } },
@@ -397,7 +410,7 @@ for unknown \pit,  $v_i^T$ is replaced by the unbiased estimate
 $
 \hat{v}_i^T
 =
-\pith \left( 1 - \pith \right) / ( 1 - \bar{\varphi}^T )
+\pith \left( 1 - \pith \right) / \left( 1 - \bar{\varphi}^T \right)
 ,
 $
 where $\bar{\varphi}^T$ is the mean kinship estimated from \texttt{popkin}.
@@ -406,19 +419,19 @@ For known \pit, we obtain the desired zero trait mean with
 $
 \alpha 
 =
-- 2 \mathbf{p}^\intercal \boldsymbol{\beta}
+- 2 \left( \mathbf{p}^T \right)^\intercal \boldsymbol{\beta}
 ,
 $
-where here $\mathbf{p} = (\pit)$ contains causal loci only.
+where here $\mathbf{p}^T = (\pit)$ contains causal loci only.
 When \pit are unknown, to avoid covariance distortions, the intercept coefficient is constructed as
 \begin{align*}
   \alpha 
   =
-  - 2 \hat{\bar{p}} \mathbf{1}_{m_1}^\intercal \boldsymbol{\beta}
+  - 2 \hat{\bar{p}}^T \mathbf{1}_{m_1}^\intercal \boldsymbol{\beta}
   , \quad\quad
-  \hat{\bar{p}}
+  \hat{\bar{p}}^T
   =
-  \frac{1}{m_1} \mathbf{1}_{m_1}^\intercal \mathbf{\hat{p}}
+  \frac{1}{m_1} \mathbf{1}_{m_1}^\intercal \mathbf{\hat{p}}^T
   ,
 \end{align*}
 where $\mathbf{1}_{m_1}$ is a length-$m_1$ column vector of ones.
@@ -588,16 +601,16 @@ P-values are again nearly identical at a large proportion of loci between approa
 
 \subsection{Proof of association invariability to common kinship biases}
 
-Our empirical observations suggested that replacing a kinship matrix with either the Standard- or WG-biased version does not alter association statistics; here prove a general version of these facts mathematically.
+Our empirical observations suggested that replacing a kinship matrix with either the Standard- or WG-biased version does not alter association statistics (with exceptions we attribute to numerical computation artifacts); here prove a general version of these facts mathematically.
 Our constructive proof shows that only a regression model with relatedness effects as covariates and an intercept is required, whose coefficients adapt to the bias, and no other coefficients change.
 This is fortunate, as the intercept and relatedness coefficients are nuisance parameters that usually go unreported, while the focal genetic association coefficient and its p-value are unchanged by these biases.
 
 The most general form we identified of the bias function, mapping a kinship matrix to its bias-transformed version, and for which association invariability holds, is
 \begin{equation}
   \label{eq:kin-bias-general}
-  \kinMat'
+  \kinMatPrime
   =
-  F( \kinMat )
+  F \left( \kinMat \right)
   =
   \frac{1}{c}
   \mathbf{B} \kinMat \mathbf{B}^\intercal
@@ -610,28 +623,28 @@ The most general form we identified of the bias function, mapping a kinship matr
 where $c$ is any positive scalar and $\mathbf{b}$ is any length-$n$ vector.
 
 The Standard bias function $F = F^\text{std}$ of \cref{eq:kinship_std_lim} can be written as \cref{eq:kin-bias-general} with
-$c = 1 - \bar{\varphi}$ and
+$c = 1 - \bar{\varphi}^T$ and
 $\mathbf{b} = \frac{1}{n} \mathbf{1}$, in which case $\mathbf{B}$ equals the centering matrix.
 Further, the generalized standard kinship estimator studied in \citet{ochoa_estimating_2021} instead has $\mathbf{b}$ be the vector of individual weights used in the estimator, whose elements must sums to one, so $\mathbf{b}^\intercal \mathbf{1} = 1$.
-In all these cases $\mathbf{B}$ and $\kinMat'$ are singular transformations, since $\mathbf{B} \mathbf{1} = \mathbf{0}$ and $\mathbf{B}^\intercal \mathbf{b} = \mathbf{0}$.
+In all these cases $\mathbf{B}$ and $\kinMatPrime$ are singular transformations, since $\mathbf{B} \mathbf{1} = \mathbf{0}$ and $\mathbf{B}^\intercal \mathbf{b} = \mathbf{0}$.
 
 The WG bias function $F = F^\text{WG}$ of \cref{eq:wg_lim} can be written as \cref{eq:kin-bias-general} with
-$c = 1 - \tilde{\varphi}$ and
+$c = 1 - \tilde{\varphi}^T$ and
 \begin{align*}
   \mathbf{b}
   &=
-    b \frac{ \kinMat^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \kinMat^{-1} \mathbf{1} }
+    b \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
   , \\
   b
   &=
-    1 \pm \sqrt{1 - (\mathbf{1}^\intercal \kinMat^{-1} \mathbf{1}) \tilde{\varphi}}
+    1 \pm \sqrt{1 - (\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1}) \tilde{\varphi}^T}
 .
 \end{align*}
-The determinant of $b$ is non-negative, since
+The determinant of the quadratic solution $b$ is non-negative, since
 $
-\tilde{\varphi} \le 1 / (\mathbf{1}^\intercal \kinMat^{-1} \mathbf{1})
+\tilde{\varphi}^T \le 1 / (\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1})
 $
-[TODO: prove it!], so both values of $b$ above are real and valid, the positive root being positive while the negative one is negative.
+[TODO: prove it!], so both values of $b$ above are real, the positive root being positive while the negative root is negative.
 This $\mathbf{b}$ is not a weight vector, since $\mathbf{b}^\intercal \mathbf{1} = b \ne 1$ [TODO: unless there's a degenerate case?].
 Further, we prove that WG-biased kinship matrices are invertible if the original was invertible in \cref{sec:wg_posdef}.
 
@@ -644,10 +657,10 @@ $$
 =
 \mathbf{B} \mathbf{s}
 \sim
-\text{Normal} \left( \mathbf{0}, (\sigma')^2 \kinMat' \right),
+\text{Normal} \left( \mathbf{0}, 2 (\sigma')^2 \kinMatPrime \right),
 $$
 where $(\sigma')^2 = c \sigma^2$.
-(This $\mathbf{s}'$ has a degenerate distribution for Standard bias, since $\kinMat'$ is singular, but this is not problematic as long as $\mathbf{s}' + \boldsymbol{\epsilon}$ is non-degenerate, whose total covariance $(\sigma')^2 \kinMat' + \sigma^2_\epsilon \mathbf{I}$ is invertible as long as $\sigma^2_\epsilon \ne 0$.)
+(This $\mathbf{s}'$ has a degenerate distribution for Standard bias, since $\kinMatPrime$ is singular, but this is not problematic as long as $\mathbf{s}' + \boldsymbol{\epsilon}$ is non-degenerate, whose total covariance $(\sigma')^2 \kinMatPrime + \sigma^2_\epsilon \mathbf{I}$ is invertible as long as $\sigma^2_\epsilon \ne 0$.)
 The key property that $\mathbf{B}$ must satisfy for association invariability is that
 $
 \mathbf{B} \mathbf{s}
@@ -661,7 +674,7 @@ $$
 $$
 are equal in distribution.
 Therefore, after matching the variance components $\sigma^2$ and $(\sigma')^2$ as above, the random effect $\mathbf{s}'$ of the biased kinship matrix differs from the random effect $\mathbf{s}$ of the original kinship only by $\mathbf{1} s$, a difference compensated for by adjusting the intercept coefficient in \cref{eq:lmm_gwas}: $\alpha' = \alpha + \mathbf{1} s$.
-No other regression coefficients, or the total residuals, change when \kinMat is replaced with $\kinMat'$, including the association coefficient $\beta_i$ that is the focus of the test.
+No other regression coefficients, or the total residuals, change when \kinMat is replaced with $\kinMatPrime$, including the association coefficient $\beta_i$ that is the focus of the test.
 
 The LMM association p-value does not change in several common tests, including the F-test, since it only depends on the residuals and these do not change, as well as the likelihood ratio test, because although the covariance matrices do change, their determinants cancel out in the ratio.
 [TODO: What about Score, Wald tests?  I think there can be changes in one of those cases!]
@@ -670,7 +683,7 @@ The argument holds whether the model is fit with maximum likelihood (ML) or rest
 \subsubsection{Proof for PCA case}
 
 We present a proof for the PCA case that relies on an approximation that holds well in practice.
-Based on the PCA model of \cref{eq:pca_gwas,eq:kin_evd}, let $\mathbf{U}_d$ be the top eigenvectors of \kinMat, and $\mathbf{U}_d'$ those of $\kinMat'$.
+Based on the PCA model of \cref{eq:pca_gwas,eq:kin_evd}, let $\mathbf{U}_d$ be the top eigenvectors of \kinMat, and $\mathbf{U}_d'$ those of $\kinMatPrime$.
 They key approximation is that
 $$
 \mathbf{U}_d' \approx \mathbf{B} \mathbf{U}_d,
@@ -766,20 +779,22 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   The original formulation had $w_i=1$ for all loci $i$ \citep{ochoa_estimating_2021}.
   Recalling from that original work that
   $$
-  \E[ (\xij-1)(\xij[k]-1) - 1 ] = 4 \pit ( 1 - \pit ) ( \kt - 1 ),
+  \E \left[ (\xij-1)(\xij[k]-1) - 1 \middle| T \right]
+  =
+  4 \pit \left( 1 - \pit \right) \left( \kt - 1 \right),
   $$
   then for fixed $w_i$ we get
   \begin{align*}
-    \E[ \Ajk ]
+    \E \left[ \Ajk \middle| T \right]
     &=
-      v_m ( \kt - 1 )
+      v_m^T \left( \kt - 1 \right)
       , \\
-    v_m
+    v_m^T
     &=
-      \frac{4}{m} \sum_{i=1}^m w_i \pit ( 1 - \pit )
+      \frac{4}{m} \sum_{i=1}^m w_i \pit \left( 1 - \pit \right)
       .
   \end{align*}
-  Therefore, as before all the unknowns \pit and now also the (known) weights $w_i$ collapse into a single parameter $v_m$, which is estimated under the original assumption that the minimum kinship is zero, giving $\AMinHat = -v_m$, so that
+  Therefore, as before all the unknowns \pit and now also the (known) weights $w_i$ collapse into a single parameter $v_m^T$, which is estimated under the assumption that the minimum kinship is zero, giving $\AMinHat = -v_m^T$, so that
   $$
   \ktHatNamed{popkin-ROM}
   =
@@ -789,30 +804,30 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   $$
   as desired.
 
-  The MOR case of $w_i = (\pith (1-\pith))^{-1}$ does not fit the previous case because this $w_i$ is a random variable (it is a function of the genotypes).
+  The MOR case of $w_i = \left( \pith \left( 1 - \pith \right) \right)^{-1}$ does not fit the previous case because this $w_i$ is a random variable (it is a function of the genotypes).
   The term of interest $w_i ( (\xij-1)(\xij[k]-1) - 1 )$ is a ratio of random variables whose expectation does not have a closed form.
   In this case, we rely on the first-order approximation to this expectation, namely
   \begin{align*}
-    \E \left[ \frac{ (\xij-1)(\xij[k]-1) - 1 }{ \pith (1-\pith) } \right]
+    \E \left[ \frac{ (\xij-1)(\xij[k]-1) - 1 }{ \pith \left( 1 - \pith \right) } \middle| T \right]
     &\approx
-      \frac{ \E[ (\xij-1)(\xij[k]-1) - 1 ] }{ \E[ \pith (1-\pith) ] }
+      \frac{ \E \left[ (\xij-1)(\xij[k]-1) - 1 \middle| T \right] }{ \E \left[ \pith \left( 1 - \pith \right) \middle| T \right] }
     \\
     &=
-      \frac{ 4 \pit ( 1 - \pit ) ( \kt - 1 ) }{ \pit (1-\pit) ( 1 - \bar{\varphi} ) }
+      \frac{ 4 \pit \left( 1 - \pit \right) \left( \kt - 1 \right) }{ \pit \left( 1 - \pit \right) \left( 1 - \bar{\varphi}^T \right) }
     \\
     &=
-      \frac{ 4 ( \kt - 1 ) }{ 1 - \bar{\varphi} }
+      \frac{ 4 \left( \kt - 1 \right) }{ 1 - \bar{\varphi}^T }
   ,
   \end{align*}
-  where the expectation of $\pith (1-\pith)$ was calculated previously \citep{ochoa_estimating_2021}.
+  where the expectation of $\pith \left( 1 - \pith \right)$ was calculated previously \citep{ochoa_estimating_2021}.
   In this case the expectation of \Ajk, summing across loci, is also approximated by
   $$
-  \E[ \Ajk ]
+  \E \left[ \Ajk \middle| T \right]
   \approx
-  \frac{ 4 ( \kt - 1 ) }{ 1 - \bar{\varphi} }
+  \frac{ 4 \left( \kt - 1 \right) }{ 1 - \bar{\varphi}^T }
   .
   $$
-  The same strategy as before applies to estimate the unknown factor $4 / ( 1- \bar{\varphi} )$, namely that if the minimum kinship is zero then $\AMinHat \approx - 4 / ( 1- \bar{\varphi} )$, resulting in
+  The same strategy as before applies to estimate the unknown factor $4 / \left( 1- \bar{\varphi}^T \right)$, namely that if the minimum kinship is zero then $\AMinHat \approx - 4 / \left( 1- \bar{\varphi}^T \right)$, resulting in
   $$
   \ktHatNamed{popkin-MOR}
   =
@@ -866,13 +881,13 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
     &=
       \frac{1}{n} \sum_{k=1}^n A_{ijk}
       =
-      I_{ij} \frac{n_i}{n} ( ( \xij - 1 )( 2 \pith - 1 ) - 1 )
+      I_{ij} \frac{n_i}{n} \left( ( \xij - 1 ) \left( 2 \pith - 1 \right) - 1 \right)
       , \\
     \bar{A}_i
     &=
       \frac{1}{n} \sum_{k=1}^n \bar{A}_{ij}
       =
-      - \left( \frac{n_i}{n} \right)^2 4 \pith ( 1 - \pith )
+      - \left( \frac{n_i}{n} \right)^2 4 \pith \left( 1 - \pith \right)
       .
   \end{align*}
   Therefore, the combination of interest is:
@@ -885,30 +900,29 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
     %   - I_{ik} \frac{n_i}{n} ( ( \xij[k] - 1 )( 2 \pith - 1 ) - 1 )
     % \\
     &=
-      I_{ij} I_{ik} (\xij - 2 \pith) (\xij[k] - 2 \pith )
-      \\
-    &+ \frac{n_i}{n} ( I_{ij} - \frac{n_i}{n} ) 4 \pith
-      - I_{ij} ( I_{ik} - \frac{n_i}{n} ) \xij
-      - I_{ij} ( I_{ik} - \frac{n_i}{n} ) \xij[k] \\
-    &+ \left( \left( \frac{n_i}{n} \right)^2 -  I_{ij} I_{ik} \right) 4 \pith^2
-      - I_{ij} \left( \frac{n_i}{n} - I_{ik} \right) \xij 2 \pith
-      - I_{ik} \left( \frac{n_i}{n} - I_{ij} \right) \xij[k] 2 \pith
+      I_{ij} I_{ik} \left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)
+    \\
+      &+ \frac{n_i}{n} \left( I_{ij} - \frac{n_i}{n} \right) 4 \pith
+        + \left( \left( \frac{n_i}{n} \right)^2 -  I_{ij} I_{ik} \right) 4 \left( \pith \right)^2
+    \\
+      &+ I_{ij} \left( I_{ik} - \frac{n_i}{n} \right) \xij \left( 2 \pith - 1 \right)
+      + I_{ik} \left( I_{ij} - \frac{n_i}{n} \right) \xij[k] \left( 2 \pith - 1 \right)
       .
   \end{align*}
-  To arrive at the desired result of $I_{ij} I_{ik} (\xij - 2 \pith) (\xij[k] - 2 \pith )$, which is the first term above, it is necessary for the rest of the terms to vanish for arbitrary values of \pith, \xij, and \xij[k].
+  To arrive at the desired result of $I_{ij} I_{ik} \left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)$, which is the first term above, it is necessary for the rest of the terms to vanish for arbitrary values of \pith, \xij, and \xij[k].
   Since $n_i > 0$ (there is at least one non-missing individual at every locus), the term $\frac{n_i}{n} ( I_{ij} - \frac{n_i}{n} ) 4 \pith$ vanishes if and only if $I_{ij} = \frac{n_i}{n}$, and since $I_{jk}=0$ does not solve this equation (because $n_i > 0$) the only other case is $I_{jk}=1$, which requires $n_i=n$, so no individuals can have missing data at this locus.
   Thus,
   $$
   A_{ijk} + \bar{A}_i - \bar{A}_{ij}  - \bar{A}_{ik}
   =
-  I_{ij} I_{ik} (\xij - 2 \pith) (\xij[k] - 2 \pith )
+  I_{ij} I_{ik} \left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)
   $$
   if and only if there is no missing data at locus $i$.
   The other desired result of
   $$
   \bar{A}_i
   =
-  - 4 \pith ( 1 - \pith )
+  - 4 \pith \left( 1 - \pith \right)
   $$
   also requires $n_i = n$.
 
@@ -916,11 +930,11 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   \begin{align*}
     \frac{
     \ktHatNamed{popkin}
-    + \bar{ \hat{ \varphi } }^\text{popkin}
-    - \bar{ \hat{ \varphi } }_j^\text{popkin}
-    - \bar{ \hat{ \varphi } }_k^\text{popkin}
+    + \bar{ \hat{ \varphi } }^{T,\text{popkin}}
+    - \bar{ \hat{ \varphi } }_j^{T,\text{popkin}}
+    - \bar{ \hat{ \varphi } }_k^{T,\text{popkin}}
     }{
-    1 - \bar{ \hat{ \varphi } }^\text{popkin}
+    1 - \bar{ \hat{ \varphi } }^{T,\text{popkin}}
     }
     % &=
     %   \frac{
@@ -951,82 +965,82 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
     \\
     &=
       \frac{
-      \sum_{i=1}^m w_i (\xij - 2 \pith) (\xij[k] - 2 \pith )
+      \sum_{i=1}^m w_i \left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)
       }{
-      \sum_{i=1}^m w_i 4 \pith ( 1 - \pith )
+      \sum_{i=1}^m w_i 4 \pith \left( 1 - \pith \right)
       }
       .
   \end{align*}
-  Therefore, if the ROM version of popkin is input ($w_i=1$), this transformation yields the ROM version of the standard kinship estimator.
-  On the other hand, if the MOR version of popkin is used ($w_i^{-1} = \pith ( 1 - \pith )$), the transformation yields the MOR version of the standard kinship estimator.
+  Therefore, if popkin-ROM is input ($w_i=1$), this transformation yields std-ROM.
+  On the other hand, if popkin-MOR is used ($w_i^{-1} = \pith \left( 1 - \pith \right)$), the transformation yields std-MOR.
   
   \section{Proof that WG limits are positive definite}
 
   \label{sec:wg_posdef}
 
-  Starting from a positive-definite kinship matrix \kinMat, we prove that WG-bias transformed matrix $\kinMat' = F^\text{WG}( \kinMat )$ is also positive definite (and therefore invertible), except in one degenerate case.
+  Starting from a positive-definite kinship matrix \kinMat, we prove that WG-bias transformed matrix $\kinMatPrime = F^\text{WG}( \kinMat )$ is also positive definite (and therefore invertible), except in one degenerate case.
   Recall from \cref{eq:wg_lim} that
   $
-  \kinMat'
+  \kinMatPrime
   =
-  \frac{1}{1-\tilde{\varphi}}(\kinMat-\tilde{\varphi}\boldsymbol{J})
+  \frac{1}{1-\tilde{\varphi}^T} \left( \kinMat - \tilde{\varphi}^T \boldsymbol{J} \right)
   .
   $
-  We shall not consider $\kinMat = \mathbf{J}$ as a valid kinship matrix, which therefore ensures that $\tilde{\varphi} < 1$ as there is at least one kinship value with $\kt < 1$.
-  Now consider two linear subspaces of $\mathbb{R}^n$, $S_1$ spanned by $\mathbf{1}$ and $S_2$ its complement (orthogonal to $\mathbf{1}$), and prove that $\kinMat'$ is positive definite in both subspaces, therefore it is positive-definite in the direct sum of the subspaces, which equals the entire space: $\mathbb{R}^n = S_1 \oplus S_2$.
-  (This follows since vectors $\mathbf{v}$ for which $\kinMat'$ is not positive definite, if they exist, span a linear subspace, but its intersection to $S_1$, $S_2$, and therefore $S_1 \oplus S_2$, is trivial \citep{hefferon_linear_2020}.)
-  In both subspaces we will prove that $\mathbf{v} \in S_i$ and $\mathbf{v} \ne \mathbf{0}$ implies $\mathbf{v}^\intercal \kinMat' \mathbf{v} > 0$ which proves that $\kinMat'$ is positive definite in that subspace.
+  We shall not consider $\kinMat = \mathbf{J}$ as a valid kinship matrix, which therefore ensures that $\tilde{\varphi}^T < 1$ as there is at least one kinship value with $\kt < 1$.
+  Now consider two linear subspaces of $\mathbb{R}^n$, $S_1$ spanned by $\mathbf{1}$ and $S_2$ its complement (orthogonal to $\mathbf{1}$), and prove that $\kinMatPrime$ is positive definite in both subspaces, therefore it is positive-definite in the direct sum of the subspaces, which equals the entire space: $\mathbb{R}^n = S_1 \oplus S_2$.
+  (This follows since vectors $\mathbf{v}$ for which $\kinMatPrime$ is not positive definite, if they exist, span a linear subspace, but its intersection to $S_1$, $S_2$, and therefore $S_1 \oplus S_2$, is trivial \citep{hefferon_linear_2020}.)
+  In both subspaces we will prove that $\mathbf{v} \in S_i$ and $\mathbf{v} \ne \mathbf{0}$ implies $\mathbf{v}^\intercal \kinMatPrime \mathbf{v} > 0$ which proves that $\kinMatPrime$ is positive definite in that subspace.
 
   We begin by considering $\mathbf{v} \in S_2$, which satisfy $\mathbf{1}^\intercal \mathbf{v} = \mathbf{0}$, and by hypothesis $\mathbf{v} \ne \mathbf{0}$.
   Therefore $\mathbf{v}^\intercal \mathbf{J} \mathbf{v} = 0$ in this subspace, which results in
   $$
-  \mathbf{v}^\intercal \kinMat' \mathbf{v}
+  \mathbf{v}^\intercal \kinMatPrime \mathbf{v}
   =
-  \frac{1}{1-\tilde{\varphi}} \mathbf{v}^\intercal \kinMat \mathbf{v}
+  \frac{1}{1-\tilde{\varphi}^T} \mathbf{v}^\intercal \kinMat \mathbf{v}
   >
   0
   ,
   $$
-  where the final inequality follows since the original kinship matrix is positive definite and $1-\tilde{\varphi} > 0$.
+  where the final inequality follows since the original kinship matrix is positive definite and $1-\tilde{\varphi}^T > 0$.
 
   Lastly, we consider $\mathbf{v} \in S_1$, which are necessarily of the form $\mathbf{v} = v \mathbf{1}$, and by hypothesis $v \ne 0$.
   Therefore
   $$
-  \mathbf{v}^\intercal \kinMat' \mathbf{v}
+  \mathbf{v}^\intercal \kinMatPrime \mathbf{v}
   =
-  \frac{ v^2 }{1-\tilde{\varphi}}(\boldsymbol{1^\intercal \kinMat 1} - \tilde{\varphi} n^2)
+  \frac{ v^2 }{1-\tilde{\varphi}^T}(\boldsymbol{1^\intercal \kinMat 1} - \tilde{\varphi}^T n^2)
   =
-  \frac{ v^2 n^2 }{1-\tilde{\varphi}}(\bar{\varphi}-\tilde{\varphi})
+  \frac{ v^2 n^2 }{1-\tilde{\varphi}^T} \left( \bar{\varphi}^T - \tilde{\varphi}^T \right)
   ,
   $$
-  where $\bar{\varphi}$ is the overall mean kinship value, while $\tilde{\varphi}$ is the mean of the off-diagonal kinship values only (\cref{eq:wg_tilde}).
-  Note that $v^2, n^2, 1 - \tilde{\varphi} > 0$, so the desired result follows if $\tilde{\varphi} < \bar{\varphi}$, which is proven in \cref{sec:mean_kinship_ineqs}.
-  In general it is true that $\tilde{\varphi} \le \bar{\varphi}$, and $\tilde{\varphi} = \bar{\varphi}$ occurs if and only if the kinship matrix has the degenerate form $\kinMat = \bar{\varphi} \mathbf{J}$, which is a singular matrix not expected in practice (in this case $\kinMat'$ is a matrix full of zeroes).
+  where $\bar{\varphi}^T$ is the overall mean kinship value, while $\tilde{\varphi}^T$ is the mean of the off-diagonal kinship values only (\cref{eq:wg_tilde}).
+  Note that $v^2, n^2, 1 - \tilde{\varphi}^T > 0$, so the desired result follows if $\tilde{\varphi}^T < \bar{\varphi}^T$, which is proven in \cref{sec:mean_kinship_ineqs}.
+  In general it is true that $\tilde{\varphi}^T \le \bar{\varphi}^T$, and $\tilde{\varphi}^T = \bar{\varphi}^T$ occurs if and only if the kinship matrix has the degenerate form $\kinMat = \bar{\varphi}^T \mathbf{J}$, which is a singular matrix not expected in practice (in this case $\kinMatPrime$ is a matrix full of zeroes).
 
   \section{Mean kinship inequalities}
 
   \label{sec:mean_kinship_ineqs}
 
-  Denote the mean of the diagonal kinship terms as $\bar{d} = \frac{1}{n} \sum_{j=1}^n \kt[j]$.
+  Denote the mean of the diagonal kinship terms as $\bar{\delta}^T = \frac{1}{n} \sum_{j=1}^n \kt[j]$.
   Here we prove that
   $$
-  0 \le \tilde{\varphi} \le \bar{\varphi} \le \bar{d} \le 1,
+  0 \le \tilde{\varphi}^T \le \bar{\varphi}^T \le \bar{\delta}^T \le 1,
   $$
-  with each of $\tilde{\varphi} = \bar{\varphi}$ and $\bar{\varphi}= \bar{d}$ if and only if all kinship values are equal.
+  with each of $\tilde{\varphi}^T = \bar{\varphi}^T$ and $\bar{\varphi}^T = \bar{\delta}^T$ if and only if all kinship values are equal.
 
-  The inequalities $0 \le \bar{\varphi} \le \bar{d} \le 1$ follow directly from previous work, applied to a kinship matrix rather than a coancestry matrix as done originally, as the proof required solely a covariance matrix with values between 0 and 1 \citep{ochoa_estimating_2021}.
-  Recall that $\tilde{\varphi}$ is defined in \cref{eq:wg_tilde}.
-  The lower bound $0 \le \tilde{\varphi}$ follows since every kinship value is non-negative.
-  Note that $\bar{\varphi}$ and $\tilde{\varphi}$ are related by
+  The inequalities $0 \le \bar{\varphi}^T \le \bar{\delta}^T \le 1$ follow directly from previous work, applied to a kinship matrix rather than a coancestry matrix as done originally, as the proof required solely a covariance matrix with values between 0 and 1 \citep{ochoa_estimating_2021}.
+  Recall that $\tilde{\varphi}^T$ is defined in \cref{eq:wg_tilde}.
+  The lower bound $0 \le \tilde{\varphi}^T$ follows since every kinship value is non-negative.
+  Note that $\bar{\varphi}^T$ and $\tilde{\varphi}^T$ are related by
   \begin{equation}
     \label{eq:kinship_mean_tilde}
-    \bar{\varphi}
+    \bar{\varphi}^T
     =
-    \frac{ \tilde{\varphi}(n-1) + \bar{d} }{n}.
+    \frac{ \tilde{\varphi}^T (n-1) + \bar{\delta}^T }{n}.
   \end{equation}
-  Applying $\bar{\varphi} \le \bar{d}$ to \cref{eq:kinship_mean_tilde} and simplifying yields $\tilde{\varphi} \le \bar{d}$.
-  Lastly, since $\bar{\varphi} - \tilde{\varphi} = ( \bar{d}-\tilde{\varphi} ) / n$ (from rearranging \cref{eq:kinship_mean_tilde}), it also follows that $\tilde{\varphi} \le \bar{\varphi}$, as desired.
-  Furthermore, $\tilde{\varphi} = \bar{\varphi}$ holds if and only if all $\kt = \bar{d}$, since that is necessary and sufficient for $\bar{\varphi} = \bar{d}$.
+  Applying $\bar{\varphi}^T \le \bar{\delta}^T$ to \cref{eq:kinship_mean_tilde} and simplifying yields $\tilde{\varphi}^T \le \bar{\delta}^T$.
+  Lastly, since $\bar{\varphi}^T - \tilde{\varphi}^T = \left( \bar{\delta}^T - \tilde{\varphi}^T \right) / n$ (from rearranging \cref{eq:kinship_mean_tilde}), it also follows that $\tilde{\varphi}^T \le \bar{\varphi}^T$, as desired.
+  Furthermore, $\tilde{\varphi}^T = \bar{\varphi}^T$ holds if and only if all $\kt = \bar{\delta}^T$, since that is necessary and sufficient for $\bar{\varphi}^T = \bar{\delta}^T$.
 
 \end{appendices}
 
