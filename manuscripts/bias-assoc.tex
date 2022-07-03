@@ -23,9 +23,9 @@
 % % copy of \Fst from package `kinshipsymbols`
 
 % some more definitions
-\newcommand{\kinMat}{%
+\newcommand{\kinMat}[1][T]{%
   \ensuremath{%
-    \mathbf{\Phi}^T
+    \mathbf{\Phi}^{#1}
   }%
   \xspace%
 }%
@@ -86,7 +86,8 @@ $^*$ Corresponding author: \texttt{alejandro.ochoa@duke.edu}
   Remarkably, we find nearly equal association statistics and performance for kinship matrices of different bias types (when all other features are matched).
   These empirical observations lead us to hypothesize that these association tests are invariant to these kinship biases, which using linear algebra we prove holds exactly for LMM and approximately for PCA.
   Our constructive proof shows that the intercept and relatedness (PCs in PCA, random effect in LMM) coefficients compensate for the kinship bias, so the result extends to generalized linear models as long as those coefficients are present and are nuisance parameters.
-  Overall, we find that existing association studies are robust to kinship estimation bias, and our theoretical results may help improve association methods by taking advantage of this unexpected robustness, as well as help determine the effects of kinship bias in other settings.
+  A corollary of our results is that association testing is also invariant to changing the ancestral population used to determine the kinship matrix.
+  Overall, we find that existing association studies are robust to kinship estimation bias, and our calculations may help improve association methods by taking advantage of this unexpected robustness, as well as help determine the effects of kinship bias in related problems.
 \end{abstract}
 
 \clearpage
@@ -123,7 +124,7 @@ Following a locus weight formulation that allows the standard estimator to weigh
 In this work, we originally hypothesized that kinship estimation bias would affect association testing.
 We perform evaluations using an admixed family simulation \citep{yao_limitations_2022} as well as real genotypes from the 1000 Genomes project \citep{the_1000_genomes_project_consortium_map_2010, 1000_genomes_project_consortium_integrated_2012, fairley_international_2020}, in both cases with simulated traits in order to characterize type I error control and power using robust statistics.
 Surprisingly, we found that both LMM and PCA association are robust to kinship estimation bias to an extent that most association statistics are invariant to these biases.
-Lastly, we theoretically characterize the conditions under which these kinship biases result in invariant association statistics.
+Lastly, we theoretically characterize the conditions under which these kinship biases result in invariant association statistics, which encompass changing ancestral population in the kinship matrix too.
 Overall, we found that long-used association approaches are robust to the most common kinship estimation biases, and developed theoretical results that may help improve association and related approaches such as heritability estimation.
 
 
@@ -337,7 +338,7 @@ $\mathbf{y}$ is a length-$n$ vector of continuous trait values,
 $\alpha$ is the intercept coefficient,
 $\beta_i$ is the genetic effect (association) coefficient of locus $i$,
 $\mathbf{s}$ is the (genetic) random effect,
-$\sigma^2$ is the random effect variance component factor,
+$\sigma^2$ is the random effect variance factor,
 $\mathbf{U}_d$ is the $n \times d$ matrix of top-$d$ eigenvectors of \kinMat (often refered to as ``principal components'' in genetics),
 $\boldsymbol{\gamma}_d$ is a length-$d$ vector of coefficients for each eigenvector,
 $\boldsymbol{\epsilon} \sim \text{Normal}(\mathbf{0}, \sigma^2_\epsilon \mathbf{I})$ are random independent residuals,
@@ -644,7 +645,7 @@ The determinant of the quadratic solution $b$ is non-negative, since
 $
 \tilde{\varphi}^T \le 1 / (\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1})
 $
-[TODO: prove it!], so both values of $b$ above are real, the positive root being positive while the negative root is negative.
+[TODO: prove it!], so both values of $b$ above are real.
 This $\mathbf{b}$ is not a weight vector, since $\mathbf{b}^\intercal \mathbf{1} = b \ne 1$ [TODO: unless there's a degenerate case?].
 Further, we prove that WG-biased kinship matrices are invertible if the original was invertible in \cref{sec:wg_posdef}.
 
@@ -673,7 +674,7 @@ $$
 \mathbf{s}' = \mathbf{s} - \mathbf{1} s
 $$
 are equal in distribution.
-Therefore, after matching the variance components $\sigma^2$ and $(\sigma')^2$ as above, the random effect $\mathbf{s}'$ of the biased kinship matrix differs from the random effect $\mathbf{s}$ of the original kinship only by $\mathbf{1} s$, a difference compensated for by adjusting the intercept coefficient in \cref{eq:lmm_gwas}: $\alpha' = \alpha + \mathbf{1} s$.
+Therefore, after matching the variance coefficients $\sigma^2$ and $(\sigma')^2$ as above, the random effect $\mathbf{s}'$ of the biased kinship matrix differs from the random effect $\mathbf{s}$ of the original kinship only by $\mathbf{1} s$, a difference compensated for by adjusting the intercept coefficient in \cref{eq:lmm_gwas}: $\alpha' = \alpha + s$.
 No other regression coefficients, or the total residuals, change when \kinMat is replaced with $\kinMatPrime$, including the association coefficient $\beta_i$ that is the focus of the test.
 
 The LMM association p-value does not change in several common tests, including the F-test, since it only depends on the residuals and these do not change, as well as the likelihood ratio test, because although the covariance matrices do change, their determinants cancel out in the ratio.
@@ -704,18 +705,59 @@ is a scalar.
 Therefore, the relatedness effects again differ only by $\mathbf{1} s$, which is compensated for by adjusting the intercept accordingly, so the association coefficient $\beta_i$ and the residuals are the same in both cases.
 The observations from LMMs, for how p-values change depending on the type of test used, also hold for PCA.
 
+\subsection{Proof of association invariability to change in ancestral population}
+
+The kinship matrices we have used so far have values that depend on the choice of ancestral population $T$.
+Here we consider the effect on association of changing ancestral population, and prove that it is compensated for by the relatedness and intercept coefficients, just as it was for common kinship biases.
+
+Suppose we had started with a kinship matrix \kinMat[S] in terms of ancestral population $S$, and $T$ is a population ancestral to $S$.
+If the inbreeding coefficient of $S$ when $T$ is the reference ancestral population is $\f{T}{S}$, then the kinship matrix \kinMat in terms of $T$ is given by \citep{ochoa_estimating_2021}
+$$
+\left( 1 - \kinMat \right)
+=
+\left( 1 - \kinMat[S] \right) \left( 1 - \f{T}{S} \right)
+.
+$$
+Solving for \kinMat and simplifying results in
+$$
+\kinMat
+=
+\left( 1 - \f{T}{S} \right) \kinMat[S] + \f{T}{S} \mathbf{J}
+.
+$$
+Notice that this resembles the WG bias function but in reverse: whereas WG bias reduces and rescales all kinship values by $\tilde{\varphi}^T$, changing to a more ancestral population rescales and increases all kinship values by \f{T}{S}.
+Indeed, excluding the degenerate case $\f{T}{S} = 1$, this transformation can be written as \cref{eq:kin-bias-general} with
+$c = \left( 1 - \f{T}{S} \right)^{-1}$ and
+\begin{align*}
+  \mathbf{b}
+  &=
+    b \frac{ \left( \kinMat[S] \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} }
+  , \\
+  b
+  &=
+    1 \pm \sqrt{1 + (\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1}) \f{T}{S} \left( 1 - \f{T}{S} \right)^{-1} }
+.
+\end{align*}
+The determinant of the quadratic solution $b$ above is strictly positive, since $\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} > 0$ (since \kinMat[S] is positive definite, its inverse is too) and $0 \le \f{T}{S} < 1$.
+Thus, the results of the previous section also apply to this transformation: ancestor change is also compensated for by the relatedness and intercept coefficients, which are the only coefficients that depend on the ancestor population, so the association statistics are invariant to this transformation.
+
 \section{Discussion}
 
 % association robust to bias type (empirical and theory / summary)
 Previous research showed that commonly used kinship estimators are biased, and that these biases can be large (\citet{ochoa_estimating_2021}; \cref{fig:kinship_sim}).
 We initiated the present work under the hypothesis that these kinship biases would affect association testing, but surprisingly find that association is unaffected by these kinship biases.
-We then prove theoretically that it is the intercept and population structure (random effect or PCs) coefficients that compensate for the bias, and result in identical genetic effect coefficients and significance statistics.
+We then prove theoretically that it is the intercept and relatedness (random effect or PCs) coefficients that compensate for the bias, and result in identical genetic effect coefficients and significance statistics.
+
+% ancestor population
+One previously uncomfortable fact was that kinship estimates depend on the choice of ancestral population, which conditions the distributions of allele frequencies and genotypes, but the effect of this choice of association testing was not only unknown but completely disregarded.
+A corollary of our theoretical results is that changes of ancestral population, which behave algebraically like the reverse of the WG kinship bias, are also compensated for by the relatedness and intercept coefficients, so association testing is also invariant to the choice of ancestral population.
+Thus, although a choice of ancestral population is always being made when estimating kinship, this choice is fortunately inconsequential to association testing, as it ought to be since the relatedness structure overall is being conditioned upon in these tests.
 
 % popkin is less numerically stable
 Given that kinship bias type is not important for association studies, we are free to choose a kinship estimator based on other properties.
 The biased standard kinship matrix may be more desirable than the popkin estimator based on the numerical stability we observed in our simulations.
 In particular, while theory shows that the solutions should be the same for all estimators of the same type, we find that popkin's statistics disagree more often from the standard and WG estimators, namely LMM association with popkin MOR (admixed family simulation, \cref{fig:auc_sim}, \cref{fig:rmsd_sim}) and popkin ROM (1000 Genomes, \cref{fig:rmsd_real}).
-The standard kinship matrix is orthogonal to the intercept, because of the centering operation applied to obtain it in our theoretical results, whereas the popkin and true kinship matrix are not orthogonal to the intercept.
+The standard kinship matrix is orthogonal to the intercept, because of the centering operation applied to obtain it in our theoretical results, whereas the popkin and true kinship matrices are not orthogonal to the intercept.
 Thus, PCA regression with the eigenvectors of the standard kinship matrix is more numerically stable (because more covariates are linearly independent) than the popkin counterpart.
 We believe that the observed popkin disagreemnts in LMMs are due to poor convergence of that algorithm in those cases.
 
