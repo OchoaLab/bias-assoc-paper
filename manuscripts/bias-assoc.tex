@@ -90,8 +90,6 @@ $^*$ Corresponding author: \texttt{alejandro.ochoa@duke.edu}
   Overall, we find that existing association studies are robust to kinship estimation bias, and our calculations may help improve association methods by taking advantage of this unexpected robustness, as well as help determine the effects of kinship bias in related problems.
 \end{abstract}
 
-\clearpage
-
 \section{Introduction}
 
 % GWAS, LMM and PCA
@@ -149,7 +147,7 @@ If $T$ is the ancestral population on which allele frequencies are being conditi
     4 \pit \left( 1 - \pit \right) \kinMat
     ,
 \end{align*}
-where $\mathbf{x}_i = (\xij)$ is the length-$n$ column vector of genotypes at locus $i$, $\kinMat = (\kt)$ is the $n \times n$ kinship matrix, $\mathbf{1}$ is a length-$n$ column vector of ones, and the $\intercal$ superscript denotes matrix transposition (do not confuse with ancestral population superscript $T$).
+where $\mathbf{x}_i = (\xij)$ is the length-$n$ column vector of genotypes at locus $i$, $\kinMat = (\kt)$ is the $n \times n$ kinship matrix, and $\mathbf{1}$ is a length-$n$ column vector of ones.
 Both \kinMat and \pit are parameters that depend on the choice of ancestral population, for which the Most Recent Common Ancestor (MRCA) population is the most sensible choice \citep{ochoa_estimating_2021}.
 However, one of the results of this work is proof that the choice of ancestral population does not affect association testing.
 
@@ -165,10 +163,10 @@ $
 \frac{1}{2n} \mathbf{x}_i^\intercal \mathbf{1}
 $
 is the standard ancestral allele frequency estimator,
+where the $\intercal$ superscript denotes matrix transposition (do not confuse with ancestral population superscript $T$),
 and
 $\kinMatEstNamed{name} = (\ktHatNamed{name})$
 relates the scalar and matrix formulas of each named kinship estimator.
-
 
 \subsubsection{Popkin estimator}
 
@@ -634,20 +632,20 @@ $c = 1 - \tilde{\varphi}^T$ and
 \begin{align*}
   \mathbf{b}
   &=
-    b \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+    q \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
   , \\
-  b
+  q
   &=
     1 \pm \sqrt{1 - (\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1}) \tilde{\varphi}^T}
 .
 \end{align*}
-The determinant of the quadratic solution $b$ is non-negative, since
+The determinant of the quadratic solution $q$ is non-negative, since
 $
 \tilde{\varphi}^T \le 1 / (\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1})
 $
 [TODO: prove it!], so both values of $b$ above are real.
-This $\mathbf{b}$ is not a weight vector, since $\mathbf{b}^\intercal \mathbf{1} = b \ne 1$ [TODO: unless there's a degenerate case?].
-Further, we prove that WG-biased kinship matrices are invertible if the original was invertible in \cref{sec:wg_posdef}.
+This $\mathbf{b}$ does not sum to one ($\mathbf{b}^\intercal \mathbf{1} = q \ne 1$ [TODO: unless there's a degenerate case?]), so unlike the Standard bias case, here $\mathbf{B}$ is not evidently singular.
+In fact, we prove that WG-biased kinship matrices are invertible if the original was invertible in \cref{sec:wg_posdef}.
 
 \subsubsection{Proof for LMM case}
 
@@ -666,15 +664,15 @@ The key property that $\mathbf{B}$ must satisfy for association invariability is
 $
 \mathbf{B} \mathbf{s}
 =
-\mathbf{s} - \mathbf{1} s
+\mathbf{s} - \mathbf{1} \eta
 ,
 $
-where $s = \mathbf{b}^\intercal \mathbf{s}$ is a scalar, so
+where $\eta = \mathbf{b}^\intercal \mathbf{s}$ is a scalar, so
 $$
-\mathbf{s}' = \mathbf{s} - \mathbf{1} s
+\mathbf{s}' = \mathbf{s} - \mathbf{1} \eta
 $$
 are equal in distribution.
-Therefore, after matching the variance coefficients $\sigma^2$ and $(\sigma')^2$ as above, the random effect $\mathbf{s}'$ of the biased kinship matrix differs from the random effect $\mathbf{s}$ of the original kinship only by $\mathbf{1} s$, a difference compensated for by adjusting the intercept coefficient in \cref{eq:lmm_gwas}: $\alpha' = \alpha + s$.
+Therefore, after matching the variance coefficients $\sigma^2$ and $(\sigma')^2$ as above, the random effect $\mathbf{s}'$ of the biased kinship matrix differs from the random effect $\mathbf{s}$ of the original kinship only by $\mathbf{1} \eta$, a difference compensated for by adjusting the intercept coefficient in \cref{eq:lmm_gwas}: $\alpha' = \alpha + \eta$.
 No other regression coefficients, or the total residuals, change when \kinMat is replaced with $\kinMatPrime$, including the association coefficient $\beta_i$ that is the focus of the test.
 
 The LMM association p-value does not change in several common tests, including the F-test, since it only depends on the residuals and these do not change, as well as the likelihood ratio test, because although the covariance matrices do change, their determinants cancel out in the ratio.
@@ -697,12 +695,12 @@ $$
 =
 \mathbf{B} \mathbf{U}_d \boldsymbol{\gamma}_d
 =
-\mathbf{U}_d \boldsymbol{\gamma}_d - \mathbf{1} s,
+\mathbf{U}_d \boldsymbol{\gamma}_d - \mathbf{1} \eta,
 $$
 where
-$s = \mathbf{b}^\intercal \mathbf{U}_d \boldsymbol{\gamma}_d$
+$\eta = \mathbf{b}^\intercal \mathbf{U}_d \boldsymbol{\gamma}_d$
 is a scalar.
-Therefore, the relatedness effects again differ only by $\mathbf{1} s$, which is compensated for by adjusting the intercept accordingly, so the association coefficient $\beta_i$ and the residuals are the same in both cases.
+Therefore, the relatedness effects again differ only by $\mathbf{1} \eta$, which is compensated for by adjusting the intercept accordingly, so the association coefficient $\beta_i$ and the residuals are the same in both cases.
 The observations from LMMs, for how p-values change depending on the type of test used, also hold for PCA.
 
 \subsection{Proof of association invariability to change in ancestral population}
@@ -713,9 +711,9 @@ Here we consider the effect on association of changing ancestral population, and
 Suppose we had started with a kinship matrix \kinMat[S] in terms of ancestral population $S$, and $T$ is a population ancestral to $S$.
 If the inbreeding coefficient of $S$ when $T$ is the reference ancestral population is $\f{T}{S}$, then the kinship matrix \kinMat in terms of $T$ is given by \citep{ochoa_estimating_2021}
 $$
-\left( 1 - \kinMat \right)
+\left( \mathbf{J} - \kinMat \right)
 =
-\left( 1 - \kinMat[S] \right) \left( 1 - \f{T}{S} \right)
+\left( \mathbf{J} - \kinMat[S] \right) \left( 1 - \f{T}{S} \right)
 .
 $$
 Solving for \kinMat and simplifying results in
@@ -731,14 +729,14 @@ $c = \left( 1 - \f{T}{S} \right)^{-1}$ and
 \begin{align*}
   \mathbf{b}
   &=
-    b \frac{ \left( \kinMat[S] \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} }
+    q \frac{ \left( \kinMat[S] \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} }
   , \\
-  b
+  q
   &=
     1 \pm \sqrt{1 + (\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1}) \f{T}{S} \left( 1 - \f{T}{S} \right)^{-1} }
 .
 \end{align*}
-The determinant of the quadratic solution $b$ above is strictly positive, since $\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} > 0$ (since \kinMat[S] is positive definite, its inverse is too) and $0 \le \f{T}{S} < 1$.
+The determinant of $q$ is strictly positive, since $\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} > 0$ (since \kinMat[S] is positive definite, its inverse is too) and $0 \le \f{T}{S} < 1$.
 Thus, the results of the previous section also apply to this transformation: ancestor change is also compensated for by the relatedness and intercept coefficients, which are the only coefficients that depend on the ancestor population, so the association statistics are invariant to this transformation.
 
 \section{Discussion}
