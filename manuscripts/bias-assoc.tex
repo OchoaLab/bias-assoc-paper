@@ -636,12 +636,12 @@ $c = 1 - \tilde{\varphi}^T$ and
   , \\
   q
   &=
-    1 \pm \sqrt{1 - (\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1}) \tilde{\varphi}^T}
+    1 \pm \sqrt{1 - \tilde{\varphi}^T \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) }
 .
 \end{align*}
 The determinant of the quadratic solution $q$ is non-negative, since
 $
-\tilde{\varphi}^T \le 1 / (\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1})
+\tilde{\varphi}^T \le 1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right)
 $
 [TODO: prove it!], so both values of $b$ above are real.
 This $\mathbf{b}$ does not sum to one ($\mathbf{b}^\intercal \mathbf{1} = q \ne 1$ [TODO: unless there's a degenerate case?]), so unlike the Standard bias case, here $\mathbf{B}$ is not evidently singular.
@@ -724,7 +724,7 @@ $$
 .
 $$
 Notice that this resembles the WG bias function but in reverse: whereas WG bias reduces and rescales all kinship values by $\tilde{\varphi}^T$, changing to a more ancestral population rescales and increases all kinship values by \f{T}{S}.
-Indeed, excluding the degenerate case $\f{T}{S} = 1$, this transformation can be written as \cref{eq:kin-bias-general} with
+Indeed, excluding the trivial degenerate case $\f{T}{S} = 1$, this transformation can be written as \cref{eq:kin-bias-general} with
 $c = \left( 1 - \f{T}{S} \right)^{-1}$ and
 \begin{align*}
   \mathbf{b}
@@ -733,7 +733,7 @@ $c = \left( 1 - \f{T}{S} \right)^{-1}$ and
   , \\
   q
   &=
-    1 \pm \sqrt{1 + (\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1}) \f{T}{S} \left( 1 - \f{T}{S} \right)^{-1} }
+    1 \pm \sqrt{1 + \frac{ \f{T}{S} }{ 1 - \f{T}{S} } \left( \mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} \right) }
 .
 \end{align*}
 The determinant of $q$ is strictly positive, since $\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} > 0$ (since \kinMat[S] is positive definite, its inverse is too) and $0 \le \f{T}{S} < 1$.
