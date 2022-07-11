@@ -639,6 +639,7 @@ $c = 1 - \tilde{\varphi}^T$ and
     1 \pm \sqrt{1 - \tilde{\varphi}^T \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) }
 .
 \end{align*}
+More details are shown in \cref{sec:wg_biasfunc}.
 The determinant of the quadratic solution $q$ is non-negative, since
 $
 \tilde{\varphi}^T \le 1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right)
@@ -1013,6 +1014,67 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   \end{align*}
   Therefore, if popkin-ROM is input ($w_i=1$), this transformation yields std-ROM.
   On the other hand, if popkin-MOR is used ($w_i^{-1} = \pith \left( 1 - \pith \right)$), the transformation yields std-MOR.
+  
+  \section{Derivation of WG bias function}
+
+  \label{sec:wg_biasfunc}
+  
+  It is easy to see that $c = 1 - \tilde{\varphi}^T$. Then, we want to further expand \cref{eq:kin-bias-general}:
+  \begin{align*}
+    \mathbf{B} \kinMat \mathbf{B}^\intercal
+  &= (\mathbf{I} - \mathbf{1} \mathbf{b}^\intercal)\kinMat (\mathbf{I} - \mathbf{b} \mathbf{1}^\intercal)
+  \\
+  &= \kinMat - \mathbf{1} \mathbf{b}^\intercal \kinMat - \kinMat\mathbf{b} \mathbf{1}^\intercal + \mathbf{J}(\mathbf{b}^\intercal \kinMat \mathbf{b} ),
+  \end{align*} 
+  where $\mathbf{b}^\intercal \kinMat \mathbf{b}$ is a scalar. From \cref{eq:wg_lim}, we want $\kinMat - \tilde{\varphi}^T \mathbf{J}$ equals to the equation above. Thus, we have:
+ \begin{align*}
+  \mathbf{J}(\tilde{\varphi}^T + (\mathbf{b}^\intercal \kinMat \mathbf{b} ) )
+  &= \mathbf{1} (\mathbf{b}^\intercal \kinMat) + (\kinMat\mathbf{b} ) \mathbf{1}^\intercal .
+ \end{align*}
+  Since $\tilde{\varphi}^T + (\mathbf{b}^\intercal \kinMat \mathbf{b} )$ is a scalar and $\mathbf{J} = \mathbf{1} \mathbf{1}^\intercal$, we can see that $\kinMat\mathbf{b} \propto \mathbf{1}^\intercal$. To normalize and simplify the equation, we have:
+ \begin{align*}
+ \kinMat\mathbf{b}
+   &=
+    q \frac{ \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+ \\
+ \Leftrightarrow \mathbf{b}
+   &=
+    q \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }.
+ \end{align*}
+ To solve for q, we plug in the equation above to the desired equation:
+  \begin{align*}
+  \mathbf{J}(\tilde{\varphi}^T + (\mathbf{b}^\intercal \kinMat \mathbf{b} ) )
+  &= 
+   2q \frac{ \mathbf{J} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} },
+ \end{align*}
+ where:
+\begin{align*}
+\mathbf{b}^\intercal \kinMat \mathbf{b}
+&= 
+q^2 \frac{\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }{ (\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1})^2 }= q^2 \frac{ 1 }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }.
+\end{align*}
+Thus, we could solve this quadratic equation for q:
+\begin{align*}
+\tilde{\varphi}^T + q^2 \frac{ 1 }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }=2q \frac{ 1 }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+ \\
+ \Leftrightarrow q^2 -2q+ \tilde{\varphi}^T (\mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1})=0.
+\end{align*}
+Then we get:
+  \begin{align*}
+  \mathbf{b}
+  &=
+    q \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+  , \\
+  q
+  &=
+    1 \pm \sqrt{1 - \tilde{\varphi}^T \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) }.
+\end{align*}
+  
+  
+  
+  
+  
+  
   
   \section{Proof that WG limits are positive definite}
 
