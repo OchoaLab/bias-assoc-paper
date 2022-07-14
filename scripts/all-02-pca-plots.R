@@ -1,144 +1,160 @@
-
 library(genio)       # to write BED files for external software
-
-
-
-## real dataset (1000 Genomes)
-setwd( 'D:/3.Duke/research/alex_ochoa/1215_2021_PCA/kinship-real' )
-
-
-## read data
-kinship_gcta <- read_grm( 'gcta' )$kinship
-
-kinship_popkin <- read_grm( 'popkin' )$kinship
-
-kinship_std_mor <- read_grm( 'std_mor' )$kinship
-
-kinship_std_rom <- read_grm( 'std_rom' )$kinship
-
-kinship_wg <- read_grm( 'wg' )$kinship
-
-
-
-#Calculate PCs using the eigendecomposition of the kinship matrix:
-
-pcs_gcta <- eigen( kinship_gcta )$vectors
-
-pcs_popkin <- eigen( kinship_popkin )$vectors
-
-pcs_std_mor <- eigen( kinship_std_mor )$vectors
-
-pcs_std_rom <- eigen( kinship_std_rom )$vectors
-
-pcs_wg <- eigen( kinship_wg )$vectors
-
-
-
-# PCs are the columns, so to plot the first two PCs:
-
-plot( pcs_gcta[,1], pcs_gcta[,2],xlab='PC1',ylab='PC2',main='gcta-real' , xlim=c(-0.03,0.04), ylim=c(-0.03,0.04))
-
-plot( pcs_popkin[,1], pcs_popkin[,2],xlab='PC1',ylab='PC2',main='popkin-real', xlim=c(-0.03,0.04), ylim=c(-0.03,0.04) )
-
-plot( pcs_std_mor[,1], pcs_std_mor[,2],xlab='PC1',ylab='PC2',main='std_mor-real', xlim=c(-0.03,0.04), ylim=c(-0.03,0.04) )
-
-plot( pcs_std_rom[,1], pcs_std_rom[,2],xlab='PC1',ylab='PC2',main='std_rom-real', xlim=c(-0.03,0.04), ylim=c(-0.03,0.04) )
-
-plot( pcs_wg[,1], pcs_wg[,2],xlab='PC1',ylab='PC2',main='wg-real', xlim=c(-0.03,0.04), ylim=c(-0.03,0.04) )
-
-## all on one
-
-plot( pcs_gcta[,1], pcs_gcta[,2],xlab='PC1',ylab='PC2' , xlim=c(-0.03,0.04), ylim=c(-0.03,0.04),pch = 1, col = 1)
-
-points( pcs_popkin[,1], pcs_popkin[,2],pch = 2, col = 2) 
-
-points( pcs_std_mor[,1], pcs_std_mor[,2],pch = 3, col = 3)
-
-points( pcs_std_rom[,1], pcs_std_rom[,2],pch = 4, col = 4)
-
-points( pcs_wg[,1], pcs_wg[,2],pch = 5, col = 5)
-
-legend(0.02,0.045,c("gcta","popkin","std_mor","std_rom","WG"),pch=1:5,col=1:5,bty = "n")
-
-## admixed family simulation
-
-setwd( 'D:/3.Duke/research/alex_ochoa/1215_2021_PCA/kinship-sim' )
-
-
-## read data
-kinship_gcta <- read_grm( 'gcta' )$kinship
-
-kinship_gcta_lim <- read_grm( 'gcta_lim' )$kinship
-
-kinship_popkin <- read_grm( 'popkin' )$kinship
-
-kinship_true <- read_grm( 'true' )$kinship
-
-kinship_std_mor <- read_grm( 'std_mor' )$kinship
-
-kinship_std_rom <- read_grm( 'std_rom' )$kinship
-
-kinship_std_rom_lim <- read_grm( 'std_rom_lim' )$kinship
-
-kinship_wg <- read_grm( 'wg' )$kinship
-
-kinship_wg_lim <- read_grm( 'wg_lim' )$kinship
-
-
-#Calculate PCs using the eigendecomposition of the kinship matrix:
-
-pcs_gcta <- eigen( kinship_gcta )$vectors
-pcs_gcta_lim <- eigen( kinship_gcta_lim )$vectors
-
-pcs_popkin <- eigen( kinship_popkin )$vectors
-pcs_true <- eigen( kinship_true )$vectors
-
-pcs_std_mor <- eigen( kinship_std_mor )$vectors
-pcs_std_rom <- eigen( kinship_std_rom )$vectors
-pcs_std_rom_lim <- eigen( kinship_std_rom_lim )$vectors
-
-pcs_wg <- eigen( kinship_wg )$vectors
-pcs_wg_lim <- eigen( kinship_wg_lim )$vectors
-
-
-
-# PCs are the columns, so to plot the first two PCs:
-
-plot( pcs_gcta[,1], pcs_gcta[,2],xlab='PC1',ylab='PC2',main='gcta-sim' ,xlim=c(-0.05,0.065), ylim=c(-0.06,0.065))
-plot( pcs_gcta_lim[,1], pcs_gcta_lim[,2],xlab='PC1',ylab='PC2',main='gcta-lim-sim',xlim=c(-0.05,0.065), ylim=c(-0.06,0.065) )
-
-
-plot( pcs_popkin[,1], pcs_popkin[,2],xlab='PC1',ylab='PC2',main='popkin-sim',xlim=c(-0.05,0.065), ylim=c(-0.06,0.065))
-plot( pcs_true[,1], pcs_true[,2],xlab='PC1',ylab='PC2',main='true-sim' ,xlim=c(-0.05,0.065), ylim=c(-0.06,0.065) )
-
-plot( pcs_std_mor[,1], pcs_std_mor[,2],xlab='PC1',ylab='PC2',main='std_mor-sim' ,xlim=c(-0.05,0.065), ylim=c(-0.06,0.065))
-plot( pcs_std_rom[,1], pcs_std_rom[,2],xlab='PC1',ylab='PC2',main='std_rom-sim' ,xlim=c(-0.05,0.065), ylim=c(-0.06,0.065))
-plot( pcs_std_rom_lim[,1], pcs_std_rom_lim[,2],xlab='PC1',ylab='PC2',main='std_rom_lim-sim' ,xlim=c(-0.05,0.065), ylim=c(-0.06,0.065))
-
-plot( pcs_wg[,1], pcs_wg[,2],xlab='PC1',ylab='PC2',main='wg-sim' ,xlim=c(-0.05,0.065), ylim=c(-0.06,0.065))
-plot( pcs_wg_lim[,1], pcs_wg_lim[,2],xlab='PC1',ylab='PC2',main='wg_lim-sim' ,xlim=c(-0.05,0.065), ylim=c(-0.06,0.065))
-
-## all on one
-
-plot( pcs_true[,1], pcs_true[,2],xlab='PC1',ylab='PC2' , xlim=c(-0.05,0.065), ylim=c(-0.06,0.07),pch = 1, col = 1)
-
-points( pcs_gcta[,1], pcs_gcta[,2],pch = 2, col = 2) 
-
-points( pcs_gcta_lim[,1], pcs_gcta_lim[,2],pch = 3, col = 3)
-
-points( pcs_popkin[,1], pcs_popkin[,2],pch = 4, col = 4)
-
-points( pcs_std_mor[,1], pcs_std_mor[,2],pch = 5, col = 5)
-
-points( pcs_std_rom[,1], pcs_std_rom[,2],pch = 6, col = 6)
-
-points( pcs_std_rom_lim[,1], pcs_std_rom_lim[,2],pch = 7, col = 7)
-
-points( pcs_wg[,1], pcs_wg[,2],pch = 8, col = 8)
-
-points( pcs_wg_lim[,1], pcs_wg_lim[,2],pch = 9, col =11)
-
-
-legend(0.045,0.08,c("true","gcta","gcta_lim","popkin","std_mor","std_rom","std_rom_lim","WG","wg_lim"),
-       pch=1:9,col=c(1:8,11),bty = "n")
-
+library(ochoalabtools) # for nice PDF
+library(readr)
+
+# read in all kinship matrices
+load_pcs <- function ( codes, K = 2 ) {
+    data <- lapply( codes, function ( code ) {
+        # all are 2x, scaled as GCTA wants them, halve here for plots
+        kinship <- read_grm( code )$kinship / 2
+        # calculate PCs, store only those
+        pcs <- eigen( kinship )$vectors
+        # subset further, we generally only want first two PCs
+        # however, for sim and true/popkin the first PC is weird, so keep three for all instead
+        pcs <- pcs[ , 1 : K ]
+    })
+    names( data ) <- codes
+    return( data )
+}
+
+# make sure data is in the same order (as eigenvectors have arbitrary signs)
+# apply to all together, align to the first one
+align_pcs <- function( data, K = 2 ) {
+    pcs1 <- data[[ 1 ]]
+    for ( i in 2 : length( data ) ) {
+        pcsi <- data[[ i ]]
+        for ( j in 1 : K ) {
+            # switch sign of PC if it is negatively correlated with that of first dataset
+            if ( cor( pcs1[ , j ], pcsi[ , j ] ) < 0 )
+                pcsi[ , j ] <- - pcsi[ , j ]
+        }
+        data[[ i ]] <- pcsi
+    }
+    return( data )
+}
+
+# plot PCs, several methods in a single panel
+# `codes` helps plot subsets only (makes sense as we have triplets)
+plot_pcs <- function( data, codes, xlim, ylim, colors = 1 : length( codes ), pch = '.', main = '', leg = FALSE ) {
+    # set up area
+    plot(
+        NA,
+        xlab = 'PC1',
+        ylab = 'PC2',
+        xlim = xlim,
+        ylim = ylim
+    )
+    # for consistency, set main this way (shifts up a little bit)
+    mtext( main, side = 3, line = 0.5 )
+    # add points
+    for ( code in codes ) {
+        pcs <- data[[ code ]]
+        i <- which( code == codes )
+        points( pcs[ , 1 ], pcs[ , 2 ], col = colors[ i ], pch = pch )
+    }
+    # add legend
+    if (leg ) 
+        legend(
+            'bottomright',
+            kinship_methods$short[ match( codes, kinship_methods$code ) ],
+            pch = NA,
+            text.col = colors,
+            cex = 0.8
+        )
+}
+
+#################
+### LOAD DATA ###
+#################
+
+# before switching away from "scripts", load a table located there
+kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
+# in simulation, all ROM limits were very similar to ROM estimates, so we'll just show estimates (only ones available in real data anyway)
+kinship_methods <- kinship_methods[ kinship_methods$type != 'ROM lim.', ]
+codes <- kinship_methods$code
+
+# go where the data is
+setwd( '../data/' )
+
+# simulation first, use first replicate only
+setwd( 'sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/rep-1/kinship' )
+message( 'Loading simulated data...' )
+data_sim <- load_pcs( codes, K = 3 )
+# back to base of "data"
+setwd( '../../..' )
+
+# now real data
+setwd( 'tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/kinship' )
+message( 'Loading real data...' )
+data_real <- load_pcs( codes, K = 2 )
+# back to base of "data"
+setwd( '../..' )
+
+
+##################
+### PROCESSING ###
+##################
+
+# will have to remove PC1 for popkins (and true if it were there)
+# but first want to verify reason is it's highly colinear with the intercept!
+n_sim <- nrow( data_sim$popkin_rom )
+# construct intercept normalized as eigenvector
+intercept_norm <- rep.int( 1, n_sim ) / sqrt( n_sim )
+message( 'Sim: Intercept projection to PC1 of popkin ROM: ', abs( intercept_norm %*% data_sim$popkin_rom[ , 1] ) )
+message( 'Sim: Intercept projection to PC1 of popkin MOR: ', abs( intercept_norm %*% data_sim$popkin_mor[ , 1] ) )
+
+# for comparison, repeat exactly the same but on real data (where PC1 was not problematic)
+n_real <- nrow( data_real$popkin_rom )
+# construct intercept normalized as eigenvector
+intercept_norm <- rep.int( 1, n_real ) / sqrt( n_real )
+message( 'Real: Intercept projection to PC1 of popkin ROM: ', abs( intercept_norm %*% data_real$popkin_rom[ , 1] ) )
+message( 'Real: Intercept projection to PC1 of popkin MOR: ', abs( intercept_norm %*% data_real$popkin_mor[ , 1] ) )
+
+
+# make hacky version of data with original PC1 removed for true/popkin (shift PC2-3 down)
+# this is weird for popkin MOR (PCs don't agree very well with other paired MOR bias types), but verified there's no better fit
+for ( code in c('popkin_mor', 'popkin_rom') )
+    data_sim[[ code ]] <- data_sim[[ code ]][ , -1 ]
+# now keep only PC1-2 for all (after shifting down PCs for above methods)
+data_sim <- lapply( data_sim, function( x ) x[ , 1:2 ] )
+
+# make sure data is in the same order (as eigenvectors have arbitrary signs)
+# best to align early, before calculating ranges
+data_sim <- align_pcs( data_sim )
+
+# real data only needs aligning
+data_real <- align_pcs( data_real )
+
+############
+### PLOT ###
+############
+
+width <- fig_width()
+fig_start(
+    'pcs',
+    width = width,
+    height = width,
+    mar_t = 1.5,
+    mar_l = 4.5
+)
+# fill by columns!
+par( mfcol = c(2,2) )
+
+# get common ranges
+xlim_sim <- range( sapply( data_sim, function( x ) range( x[ , 1 ] ) ) )
+ylim_sim <- range( sapply( data_sim, function( x ) range( x[ , 2 ] ) ) )
+
+plot_pcs( data_sim, kinship_methods$code[ kinship_methods$type == 'ROM est.' ], xlim_sim, ylim_sim, main = 'Admixed Family sim.', leg = TRUE )
+mtext( 'ROM est.', side = 2, line = 3.5 )
+plot_pcs( data_sim, kinship_methods$code[ kinship_methods$type == 'MOR est.' ], xlim_sim, ylim_sim )
+mtext( 'MOR est.', side = 2, line = 3.5 )
+
+# repeat for real
+# get common ranges
+xlim_real <- range( sapply( data_real, function( x ) range( x[ , 1 ] ) ) )
+ylim_real <- range( sapply( data_real, function( x ) range( x[ , 2 ] ) ) )
+
+plot_pcs( data_real, kinship_methods$code[ kinship_methods$type == 'ROM est.' ], xlim_real, ylim_real, main = '1000 Genomes' )
+plot_pcs( data_real, kinship_methods$code[ kinship_methods$type == 'MOR est.' ], xlim_real, ylim_real )
+
+fig_end()

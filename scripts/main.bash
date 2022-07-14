@@ -110,6 +110,16 @@ time pdf2png ../data/popkin-mor-rom-bias.pdf
 # remove redundant PDF if done
 rm ../data/popkin-mor-rom-bias.pdf
 
+# create plot that compares PCs across bias types
+time Rscript all-02-pca-plots.R 
+# 0m21.909s viiiaR5
+# Sim: Intercept projection to PC1 of popkin ROM: 0.903207068827175
+# Sim: Intercept projection to PC1 of popkin MOR: 0.935993017202177
+# Real: Intercept projection to PC1 of popkin ROM: 0.89979532627367
+# Real: Intercept projection to PC1 of popkin MOR: 0.955378629802353
+
+
+
 
 ### THEORY/OBSOLETE ###
 
