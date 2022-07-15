@@ -620,6 +620,16 @@ The most general form we identified of the bias function, mapping a kinship matr
   ,
 \end{equation}
 where $c$ is any positive scalar and $\mathbf{b}$ is any length-$n$ vector.
+The key property that the linear operator $\mathbf{B}$ must satisfy is that it shifts the input vector by the same scalar across its values, or
+\begin{equation}
+  \label{eq:B-shift}
+  \mathbf{B} \mathbf{s}
+  =
+  \mathbf{s} - \mathbf{1} \eta
+  ,
+\end{equation}
+where $\mathbf{s}$ is any vector and the scalar $\eta = \mathbf{b}^\intercal \mathbf{s}$ is a function of the input vector.
+$\mathbf{B}$ in \cref{eq:kin-bias-general} is the only form that results in \cref{eq:B-shift}.
 
 The Standard bias function $F = F^\text{std}$ of \cref{eq:kinship_std_lim} can be written as \cref{eq:kin-bias-general} with
 $c = 1 - \bar{\varphi}^T$ and
@@ -663,14 +673,7 @@ $$
 $$
 where $(\sigma')^2 = c \sigma^2$.
 (This $\mathbf{s}'$ has a degenerate distribution for Standard bias, since $\kinMatPrime$ is singular, but this is not problematic as long as $\mathbf{s}' + \boldsymbol{\epsilon}$ is non-degenerate, whose total covariance $(\sigma')^2 \kinMatPrime + \sigma^2_\epsilon \mathbf{I}$ is invertible as long as $\sigma^2_\epsilon \ne 0$.)
-The key property that $\mathbf{B}$ must satisfy for association invariability is that
-$
-\mathbf{B} \mathbf{s}
-=
-\mathbf{s} - \mathbf{1} \eta
-,
-$
-where $\eta = \mathbf{b}^\intercal \mathbf{s}$ is a scalar, so
+Replacing $\mathbf{B} \mathbf{s}$ with the shift form in \cref{eq:B-shift} shows that
 $$
 \mathbf{s}' = \mathbf{s} - \mathbf{1} \eta
 $$
@@ -687,12 +690,13 @@ The argument holds whether the model is fit with maximum likelihood (ML) or rest
 We present a proof for the PCA case that relies on an approximation that holds well in practice.
 Based on the PCA model of \cref{eq:pca_gwas,eq:kin_evd}, let $\mathbf{U}_d$ be the top eigenvectors of \kinMat, and $\mathbf{U}_d'$ those of $\kinMatPrime$.
 They key approximation is that
-$$
-\mathbf{U}_d' \approx \mathbf{B} \mathbf{U}_d,
-$$
+\begin{equation}
+  \label{eq:pc-shift}
+  \mathbf{U}_d' \approx \mathbf{B} \mathbf{U}_d,
+\end{equation}
 which is not strictly equal (since $\mathbf{B} \mathbf{U}$ is not generally orthogonal, as eigenvectors must be), but we have found it to be a good approximation in practice.
 In this case the eigenvector coefficients need not change, $\boldsymbol{\gamma}_d' = \boldsymbol{\gamma}_d$, since the difference in scale of the kinship matrices ($c$ in \cref{eq:kin-bias-general}) is absorbed by the eigenvalues, which are not used in the association model.
-As before, note that
+Applying the shift of \cref{eq:B-shift} shows that
 $$
 \mathbf{U}_d' \boldsymbol{\gamma}_d'
 =
@@ -705,6 +709,28 @@ $\eta = \mathbf{b}^\intercal \mathbf{U}_d \boldsymbol{\gamma}_d$
 is a scalar.
 Therefore, the relatedness effects again differ only by $\mathbf{1} \eta$, which is compensated for by adjusting the intercept accordingly, so the association coefficient $\beta_i$ and the residuals are the same in both cases.
 The observations from LMMs, for how p-values change depending on the type of test used, also hold for PCA.
+
+We visualize the top PCs of our two datasets in \cref{fig:pcs} in order to assess the validity of the appoximation in \cref{eq:pc-shift}.
+The approximation is equivalent to each biased PC (Standard or Weir-Goudet) being shifted from the unbiased PC (Popkin), as described in \cref{eq:B-shift}.
+\cref{fig:pcs} indeed shows that PC1 is shifted by noticeable amounts in each of these cases, while PC2 is less shifted.
+However, a rotation of the PCs is also noticeable, particularly in the simulated data, and other large differences between MOR estimators, as expected since we know the approximation cannot be exact.
+One last detail worth noting is that PCs can change order upon the bias transformation, which we noticed in the simulation, where PC2 and PC3 from popkin actually correspond to PC1 and PC2, respectively, in both Standard and Weir-Goudet estimates (both ROM and MOR), and were plotted as such.
+No PC reordering occured in 1000 Genomes.
+Overall, while the approximation of \cref{eq:pc-shift} can be weakened to merely require that the biased PCs plus intercept span the same subspace of the unbiased PCs plus intercept, the approximate PC shifts better explain intuitively why the result for LMM is also observed for PCA association.
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{pcs.pdf}
+  \caption{
+    {\bf Visualization of PC shift due to kinship biases.}
+    Each panel shows three estimates (bias types): Popkin, Standard, and Weir-Goudet (all same colors as first panel legend).
+    ROM estimates are shown in first row, MOR in second row.
+    (For simulation, ROM limits are not shown as they were very similar to ROM estimates.)
+    Columns show estimates from each dataset: simulation (1st replicate) and 1000 Genomes.
+    For simulation and popkin only, PC1 and PC2 are replaced with PC2 and PC3 (see text).
+  }
+  \label{fig:pcs}
+\end{figure}
 
 \subsection{Proof of association invariability to change in ancestral population}
 
