@@ -6,16 +6,16 @@ library(genbin)      # gcta and plink binary wrappers
 library(tibble)
 
 # increase default VIF threshold to this much, for true K and popkin only, admix-fam-sim only
-vif_true_popkin <- 550
+vif_true_popkin_sim <- 20000
 vif_true_popkin_real <- NA # 150
-max_corr_true_popkin <- 1
+vif_default <- NA
+max_corr_true_popkin_sim <- 1
+max_corr_default <- NA
 # max_corr_true_popkin_real is NA (set through if/else logic below)
 # --max-corr default 0.999, actual 0.9990483 (rep-24, the bad one), -0.9856413 (rep-1), 0.9282595 for same sim w/ G=1
 
 # a name for temporary BED/etc data, under project dir
 name <- 'data'
-# same name for all cases! (gets overwritten serially, removed in the end)
-file_covar <- paste0( name, '.eigenvec' )
 
 ############
 ### ARGV ###
@@ -28,7 +28,9 @@ option_list = list(
     make_option(c("-r", "--rep"), type = "integer", default = 1, 
                 help = "Replicate number", metavar = "int"),
     make_option(c("-p", "--n_pcs"), type = "integer", default = 2, 
-                help = "Number of PCs to use", metavar = "int")
+                help = "Number of PCs to use", metavar = "int"),
+    make_option(c("-t", "--threads"), type = "integer", default = 0, 
+                help = "number of threads (default use all cores)", metavar = "int")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -38,6 +40,7 @@ opt <- parse_args(opt_parser)
 dir_out <- opt$bfile
 rep <- opt$rep
 n_pcs <- opt$n_pcs
+threads <- opt$threads
 
 # indexes for PCs
 indexes <- 1 : n_pcs
@@ -56,6 +59,11 @@ if ( is_sim )
 
 # include rep dir for phenotypes if we have real data
 name_phen <- if ( is_sim ) name else paste0( dir_rep, '/', name )
+
+# to run in parallel on cluster, make sure outputs (even temporary ones) from different reps do not overlap!
+name_out <- paste0( name, '-rep-', rep )
+# same name for all cases! (gets overwritten serially, removed in the end)
+file_covar <- paste0( name_out, '.eigenvec' )
 
 #############
 ### ASSOC ###
@@ -77,10 +85,10 @@ assoc_all <- function( name_method ) {
     # LMM
     message( name_lmm_method )
     # association
-    data <- gcta_mlma( name, name_grm = name_grm, name_phen = name_phen )
+    data <- gcta_mlma( name, name_grm = name_grm, name_phen = name_phen, name_out = name_out, threads = threads )
     # cleanup
-    delete_files_gcta_mlma( name )
-    delete_files_log( name )
+    delete_files_gcta_mlma( name_out )
+    delete_files_log( name_out )
     # add to data frames
     pvals[[ name_lmm_method ]] <- data$p
     betas[[ name_lmm_method ]] <- data$beta
@@ -94,18 +102,18 @@ assoc_all <- function( name_method ) {
     eigenvectors <- eigen( kinship )$vectors
     eigenvectors <- eigenvectors[, indexes ] # subset
     # write eigenvectors to file
-    write_eigenvec( name, eigenvectors, fam, plink2 = TRUE )
+    write_eigenvec( name_out, eigenvectors, fam, plink2 = TRUE )
     # set maximum VIF for two special cases where near-collinearity is otherwise a problem for plink with defaults
     # Actual error message: "  Error: Cannot proceed with --glm regression on phenotype 'PHENO1', since variance inflation factor for covariate 'PC1' is too high (VIF_TOO_HIGH). You may want to remove redundant covariates and try again."
-    vif <- if ( name_method == 'true' || grepl( 'popkin', name_method ) ) { if (is_sim) vif_true_popkin else vif_true_popkin_real } else NA
+    vif <- if ( name_method == 'true' || grepl( 'popkin', name_method ) ) { if (is_sim) vif_true_popkin_sim else vif_true_popkin_real } else vif_default
     # ditto maximum correlation, observed for true/popkin in admix-fam-sim only
-    max_corr <- if ( is_sim && ( name_method == 'true' || grepl( 'popkin', name_method ) ) ) max_corr_true_popkin else NA
+    max_corr <- if ( is_sim && ( name_method == 'true' || grepl( 'popkin', name_method ) ) ) max_corr_true_popkin_sim else max_corr_default
     # association
-    data <- plink_glm( name, name_phen = name_phen, file_covar = file_covar, vif = vif, max_corr = max_corr )
+    data <- plink_glm( name, name_phen = name_phen, file_covar = file_covar, vif = vif, max_corr = max_corr, name_out = name_out, threads = threads )
     # cleanup
     unlink( file_covar )
-    delete_files_plink_glm( name )
-    delete_files_log( name )
+    delete_files_plink_glm( name_out )
+    delete_files_log( name_out )
     # add to data frames
     pvals[[ name_pca_method ]] <- data$p
     betas[[ name_pca_method ]] <- data$beta

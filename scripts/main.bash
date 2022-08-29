@@ -86,6 +86,29 @@ for rep in $(seq 1 $n_rep); do
     # 0m0.615s
 done
 
+# # DCC version
+# # after making traits locally (fast), run association tests on cluster
+# # first transfer data:
+# cd ../data/$name/
+# tar -chzf data.tgz data.{bed,bim,fam} pops-annot.txt kinship/ rep-*/{data.phen,simtrait.RData}
+# # transfer to DCC after creating output directory structure on DCC
+# scp data.tgz $dcc:/work/ao128/bias-assoc-paper/data/$name/
+# rm data.tgz # cleanup
+
+# # on DCC
+# cd /work/ao128/bias-assoc-paper/data/$name/
+# tar -xzf data.tgz
+# rm data.tgz
+# # when jobs are done, from this same location:
+# tar -czf pvals.tgz rep-*/{pvals,betas}.txt.gz
+# rm pvals.tgz # after transfer
+
+# # back on computer
+# cd ~/docs/ochoalab/bias-assoc-paper/data/$name/
+# scp $dcc:/work/ao128/bias-assoc-paper/data/$name/pvals.tgz
+# tar -xzf pvals.tgz
+# rm pvals.tgz
+
 # plot AUCs and SRMSDs (all reps)
 time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 # 0m6.258s
@@ -113,10 +136,10 @@ rm ../data/popkin-mor-rom-bias.pdf
 # create plot that compares PCs across bias types
 time Rscript all-02-pca-plots.R 
 # 0m21.909s viiiaR5
-# Sim: Intercept projection to PC1 of popkin ROM: 0.903207068827175
-# Sim: Intercept projection to PC1 of popkin MOR: 0.935993017202177
+# Sim: Intercept projection to PC1 of popkin ROM: 0.939904048930533
+# Sim: Intercept projection to PC1 of popkin MOR: 0.896792315879261
 # Real: Intercept projection to PC1 of popkin ROM: 0.89979532627367
-# Real: Intercept projection to PC1 of popkin MOR: 0.955378629802353
+# Real: Intercept projection to PC1 of popkin MOR: 0.955378629802354
 
 
 
