@@ -534,7 +534,7 @@ In contrast, the Standard and Weir-Goudet (WG) estimates have large downward bia
 
 % performance
 We performed LMM and PCA association tests to determine how kinship biases affect association performance.
-Surprisingly, we found that kinship bias type does not have a discernible effect on association performance, as summarized by $\auc$ (a robust proxy for power; \cref{fig:auc_sim}) and $\rmsd$ (measure null statistic calibration; \cref{fig:rmsd_sim}).
+Surprisingly, we found that kinship bias type does not have a discernible effect on association performance, as summarized by $\auc$ (a robust proxy for power; \cref{fig:auc_sim}) and $\rmsd$ (measures null statistic calibration; \cref{fig:rmsd_sim}).
 The largest differences in performance are explained by the association model used (LMM vs PCA), as expected due to our use of a family simulation, where PCA performs poorly.
 Within association models, there are no clear differences between the performance of any of the kinship matrices, in fact many appear to have identical distributions (both statistics), the only clear exception being LMM popkin MOR, which has a few outlier replicates where performance was exceedingly poor.
 
@@ -582,7 +582,7 @@ Lastly, WG estimates are uniformly smaller than popkin's and attain large negati
 
 % performance
 Our association test conclusion are similar to our simulation study: $\auc$ and $\rmsd$ distributions are nearly identical for estimators of different bias types but same locus-weight version (ROM or MOR) and association model (\cref{fig:auc_real,fig:rmsd_real}).
-However, unlike the simulation, here the MOR estimates greatly outperform ROM estimates (LMM only), on terms of both $\auc$ and $\rmsd$.
+However, unlike the simulation, here the MOR estimates greatly outperform ROM estimates (LMM only), in terms of both $\auc$ and $\rmsd$.
 % agreement
 P-values are again nearly identical at a large proportion of loci between approaches with matched association model and locus-weight version (MOR or ROM), regardless of bias type (\cref{fig:pvals_eq_real}).
 
@@ -714,7 +714,7 @@ We visualize the top PCs of our two datasets in \cref{fig:pcs} in order to asses
 The approximation is equivalent to each biased PC (Standard or Weir-Goudet) being shifted from the unbiased PC (Popkin), as described in \cref{eq:B-shift}.
 \cref{fig:pcs} indeed shows that PC1 is shifted by noticeable amounts in each of these cases, while PC2 is less shifted.
 However, a rotation of the PCs is also noticeable, particularly in the simulated data, and other large differences between MOR estimators, as expected since we know the approximation cannot be exact.
-One last detail worth noting is that PCs can change order upon the bias transformation, which we noticed in the simulation, where PC2 and PC3 from popkin actually correspond to PC1 and PC2, respectively, in both Standard and Weir-Goudet estimates (both ROM and MOR), and were plotted as such.
+One last detail worth noting is that PCs can change order upon the bias transformation, which we noticed in the simulation, where PC2 and PC3 from popkin (and true kinship) actually correspond to PC1 and PC2, respectively, in both Standard and Weir-Goudet estimates (both ROM and MOR), and were plotted as such.
 No PC reordering occured in 1000 Genomes.
 Overall, while the approximation of \cref{eq:pc-shift} can be weakened to merely require that the biased PCs plus intercept span the same subspace of the unbiased PCs plus intercept, the approximate PC shifts better explain intuitively why the result for LMM is also observed for PCA association.
 
