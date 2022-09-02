@@ -1,7 +1,6 @@
 ### SIM ###
 
-#m_loci=10000 # original
-m_loci=100000 # bigger, matches pca-assoc
+m_loci=100000
 n_rep=100
 gen=20
 
@@ -11,23 +10,19 @@ name='sim-admix-n1000-m'$m_loci'-k3-f0.3-s0.5-mc100-h0.8-g'$gen'-fes'
 for rep in $(seq 1 $n_rep); do
     # simulate genotypes and phenotypes data on standard K=3 admixture
     time Rscript sim-00-sim-gen-phen.R -g $gen --fes -r $rep -m $m_loci
-    # 0m10.618s small m viiiaR5
-    # 0m53.628s big m
+    # 0m53.628s viiiaR5
 
     # create all kinship estimates
     time Rscript sim-01-kinship.R --bfile $name -r $rep
-    # 0m3.313s small m
-    # 0m13.995s big m
+    # 0m13.995s
     
     # run association tests
     time Rscript sim-03-assoc.R --bfile $name -p 2 -r $rep
-    # 0m26.525s small m
-    # 1m29.778s big m
+    # 1m29.778s
 
     # calculate AUCs and SRMSDs
     time Rscript sim-04-auc-calc.R --bfile $name -r $rep
-    # 0m0.615s small m
-    # 0m1.487s big m
+    # 0m1.487s
 done
 
 # kinship plots (rep-1 only)
@@ -41,6 +36,9 @@ time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
 # 1m7.825s
 
+# test predictions of variance component values and positive-definiteness
+time Rscript sim-07-preds-reml.R --bfile $name --n_rep $n_rep
+# 18m7.568s/66m55.409s
 
 
 ### REAL ###
@@ -118,6 +116,9 @@ time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
 # 6m12.550s
 # NOTE: beta fig fails every time (betas are extremely correlated) 
 
+# test predictions of variance component values and positive-definiteness
+time Rscript sim-07-preds-reml.R --bfile $name --n_rep $n_rep
+# 391m54.025s/902m40.674s
 
 
 ### COMBINED ###
@@ -140,6 +141,10 @@ time Rscript all-02-pca-plots.R
 # Sim: Intercept projection to PC1 of popkin MOR: 0.896792315879261
 # Real: Intercept projection to PC1 of popkin ROM: 0.89979532627367
 # Real: Intercept projection to PC1 of popkin MOR: 0.955378629802354
+
+# plots variance component prediction errors and minimum eigenvalues of kinship matrices
+time Rscript all-03-preds-reml-plots.R
+# 0m0.808s labbyDuke
 
 
 

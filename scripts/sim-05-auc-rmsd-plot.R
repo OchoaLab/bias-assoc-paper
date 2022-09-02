@@ -2,6 +2,7 @@ library(optparse) # for terminal options
 library(readr)    # to read tables
 library(ochoalabtools) # for nice PDF
 library(dplyr)    # for bind_rows
+library(popkin)
 
 ############
 ### ARGV ###
