@@ -36,9 +36,13 @@ time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
 # 1m7.825s
 
-# test predictions of variance component values and positive-definiteness
-time Rscript sim-07-preds-reml.R --bfile $name --n_rep $n_rep
-# 18m7.568s/66m55.409s
+# obtain variance component estimates for many follow-up analyses
+time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep
+# 12m23.149s/44m13.530s
+
+# calculate V matrices for all cases, save them
+time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep
+# 3m37.934s labbyDuke
 
 
 ### REAL ###
@@ -116,15 +120,20 @@ time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
 # 6m12.550s
 # NOTE: beta fig fails every time (betas are extremely correlated) 
 
-# test predictions of variance component values and positive-definiteness
-time Rscript sim-07-preds-reml.R --bfile $name --n_rep $n_rep
-# 391m54.025s/902m40.674s
+# obtain variance component estimates for many follow-up analyses
+time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep
+# 308m42.172s/474m56.338s
+
+# calculate V matrices for all cases, save them
+time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep
+# 8m40.166s labbyDuke
+
 
 
 ### COMBINED ###
 
 # compare popkin ROM/MOR (and true, in sim) in sim and TGP
-time Rscript all-popkin-mor-rom-bias.R
+time Rscript all-01-popkin-mor-rom-bias.R
 # 0m17.224s ideapad
 # remove earlier version if redoing
 rm ../data/popkin-mor-rom-bias.png
@@ -142,9 +151,13 @@ time Rscript all-02-pca-plots.R
 # Real: Intercept projection to PC1 of popkin ROM: 0.89979532627367
 # Real: Intercept projection to PC1 of popkin MOR: 0.955378629802354
 
-# plots variance component prediction errors and minimum eigenvalues of kinship matrices
-time Rscript all-03-preds-reml-plots.R
-# 0m0.808s labbyDuke
+# plots variance component values and prediction errors
+time Rscript all-03-reml-pred-sigmas.R
+# 0m0.886s labbyDuke
+
+# # plots variance component prediction errors and minimum eigenvalues of kinship matrices
+# time Rscript all-04-preds-reml-plots.R
+# # 0m0.808s labbyDuke
 
 
 

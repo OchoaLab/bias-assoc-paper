@@ -41,7 +41,7 @@ setwd( dir_out )
 # if this directory exists here, this is real data
 is_sim <- !file.exists( 'kinship' )
 
-data_err <- NULL
+data_reml <- NULL
 
 gcta_reml_sigmas <- function( name_method, factors = FALSE ) {
     # setup paths and names for output tables
@@ -62,22 +62,13 @@ gcta_reml_sigmas <- function( name_method, factors = FALSE ) {
     stopifnot( sigma_sq_g >= 0 )
     stopifnot( sigma_sq_e >= 0 )
 
-    # load kinship for posdef test at least
-    kinship <- read_grm( name_grm )$kinship / 2
-    
-    # also want to answer the question of whether the total covariance for WG ends up being positive definite!
-    sigma_sq_p <- sigma_sq_g + sigma_sq_e
-    herit <- sigma_sq_g / sigma_sq_p
-    # most accurate fit of this matrix, with scale included
-    V <- cov_trait( kinship, herit, sigma_sq_p )
-    # use min eigenvalue as evidence of non-posdef, just return as is
-    emin_k <- min( eigen( kinship, symmetric = TRUE, only.values = TRUE )$values )
-    emin_v <- min( eigen( V, symmetric = TRUE, only.values = TRUE )$values )
-    
     # return at least these
-    data <- c( sigma_sq_g, sigma_sq_e, emin_k, emin_v )
+    data <- c( sigma_sq_g, sigma_sq_e )
 
     if ( factors ) {
+        # load kinship
+        kinship <- read_grm( name_grm )$kinship / 2
+    
         # also calculate expected factors relating the last two to the first
         # the factor is "c" from the paper, and multiplies the first to get the others
         c_st <- 1 - mean( kinship )
@@ -89,28 +80,21 @@ gcta_reml_sigmas <- function( name_method, factors = FALSE ) {
     return( data )
 }
 
-bias_pred_errors <- function( data_tr, data_st, data_wg, rep, type ) {
-    # condense the various numbers further, into errors
-    
-    # for environmental, prediction is that they are all the same
-    # for genetic variance, use factor predicted from theory
-    # also store all minimum eigenvalues, for later analysis
-    # put them directly in a table, smaller than the input!
-    data_err <<- bind_rows(
-        data_err,
+reml_tab <- function( data_tr, data_st, data_wg, rep, type ) {
+    # organize values into tibble for easy output
+    data_reml <<- bind_rows(
+        data_reml,
         tibble(
             rep = rep,
             type = type,
-            err_e_st = data_st[2] - data_tr[2],
-            err_e_wg = data_wg[2] - data_tr[2],
-            err_g_st = data_st[1] - data_tr[1] * data_tr[5],
-            err_g_wg = data_wg[1] - data_tr[1] * data_tr[6],
-            emin_k_tr = data_tr[3],
-            emin_v_tr = data_tr[4],
-            emin_k_st = data_st[3],
-            emin_v_st = data_st[4],
-            emin_k_wg = data_wg[3],
-            emin_v_wg = data_wg[4]
+            g_tr = data_tr[1],
+            e_tr = data_tr[2],
+            g_std = data_st[1],
+            e_std = data_st[2],
+            g_wg = data_wg[1],
+            e_wg = data_wg[2],
+            c_std = data_tr[3],
+            c_wg = data_tr[4]
         )
     )
 }
@@ -133,18 +117,18 @@ for ( rep in 1 : n_rep ) {
         data_tr <- gcta_reml_sigmas( 'true', factors = TRUE )
         data_st <- gcta_reml_sigmas( 'std_rom_lim' )
         data_wg <- gcta_reml_sigmas( 'wg_rom_lim' )
-        bias_pred_errors( data_tr, data_st, data_wg, rep, 'rom_lim' )
+        reml_tab( data_tr, data_st, data_wg, rep, 'rom_lim' )
     }
 
     data_tr <- gcta_reml_sigmas( 'popkin_rom', factors = TRUE )
     data_st <- gcta_reml_sigmas( 'std_rom' )
     data_wg <- gcta_reml_sigmas( 'wg_rom' )
-    bias_pred_errors( data_tr, data_st, data_wg, rep, 'rom' )
+    reml_tab( data_tr, data_st, data_wg, rep, 'rom' )
 
     data_tr <- gcta_reml_sigmas( 'popkin_mor', factors = TRUE )
     data_st <- gcta_reml_sigmas( 'std_mor' )
     data_wg <- gcta_reml_sigmas( 'wg_mor' )
-    bias_pred_errors( data_tr, data_st, data_wg, rep, 'mor' )
+    reml_tab( data_tr, data_st, data_wg, rep, 'mor' )
 
     # go back down for simulations (only case where it is needed)
     if ( is_sim ) 
@@ -152,4 +136,4 @@ for ( rep in 1 : n_rep ) {
 }
 
 # save data frame!
-write_tsv( data_err, 'preds-reml.txt.gz' )
+write_tsv( data_reml, 'reml.txt.gz' )
