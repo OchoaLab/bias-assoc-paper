@@ -115,6 +115,9 @@ done
 time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 # 0m6.258s
 
+# a hacky smaller version for grants only
+time Rscript sim-05-auc-plot_lmm-small.R --bfile $name --n_rep $n_rep
+
 # statistic correlation heatmaps (all reps)
 time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
 # 6m12.550s
