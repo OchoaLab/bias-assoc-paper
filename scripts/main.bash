@@ -29,6 +29,10 @@ done
 time Rscript sim-02-kinship-plot.R --bfile $name -r 1
 # 0m3.002s
 
+# gather AUC/RMSD data from all reps into single table
+time Rscript sim-05-auc-rmsd-table.R --bfile $name --n_rep $n_rep
+# 0m1.922s viiiaR5
+
 # plot AUCs and SRMSDs (all reps)
 time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 
@@ -110,6 +114,10 @@ done
 # scp $dcc:/work/ao128/bias-assoc-paper/data/$name/pvals.tgz
 # tar -xzf pvals.tgz
 # rm pvals.tgz
+
+# gather AUC/RMSD data from all reps into single table
+time Rscript sim-05-auc-rmsd-table.R --bfile $name --n_rep $n_rep
+# 0m2.410s viiiaR5
 
 # plot AUCs and SRMSDs (all reps)
 time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep

@@ -4,7 +4,6 @@
 library(optparse) # for terminal options
 library(readr)    # to read tables
 library(ochoalabtools) # for nice PDF
-library(dplyr)    # for bind_rows
 library(popkin)
 
 ############
@@ -40,15 +39,8 @@ kinship_methods$nice <- sub( ' est.', '', kinship_methods$nice )
 setwd( '../data/' )
 setwd( dir_out )
 
-# tibble to grow
-data <- NULL
-
-# load pre-calculated AUCs and SRMSDs
-for ( rep in 1 : n_rep ) {
-    file_rep <- paste0( 'rep-', rep, '/eval.txt.gz' )
-    data_rep <- read_tsv( file_rep, col_types = 'cid' )
-    data <- bind_rows( data, data_rep )
-}
+# load precalculated data
+data <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
 
 # get correct count of methods now
 n_kinship <- nrow( kinship_methods )

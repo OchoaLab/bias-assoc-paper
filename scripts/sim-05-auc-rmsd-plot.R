@@ -1,7 +1,6 @@
 library(optparse) # for terminal options
 library(readr)    # to read tables
 library(ochoalabtools) # for nice PDF
-library(dplyr)    # for bind_rows
 library(popkin)
 
 ############
@@ -35,15 +34,8 @@ setwd( dir_out )
 # if this directory exists here, this is real data
 is_sim <- !file.exists( 'kinship' )
 
-# tibble to grow
-data <- NULL
-
-# load pre-calculated AUCs and SRMSDs
-for ( rep in 1 : n_rep ) {
-    file_rep <- paste0( 'rep-', rep, '/eval.txt.gz' )
-    data_rep <- read_tsv( file_rep, col_types = 'cid' )
-    data <- bind_rows( data, data_rep )
-}
+# load precalculated data
+data <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
 
 # in real data the oracle methods (truth and biased limits) are missing, exclude from `kinship_methods`
 if ( !is_sim )
