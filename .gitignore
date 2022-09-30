@@ -4,6 +4,9 @@ unpub
 # a really specific file not needed for versioning
 data/tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pops-annot.txt
 
+# don't commit anything under individual replicates (this is actually quite general filter that obviates a lot of the rest)
+rep-*/
+
 # we should never commit data here, so let's forbid the bed/bim/fam/phen extensions
 *.bed
 *.bim
@@ -14,13 +17,6 @@ data/tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pops-annot.txt
 *.grm.bin
 *.grm.N.bin
 *.grm.id
-
-# other intermediate data
-betas.txt.gz
-pvals.txt.gz
-eval.txt.gz
-pvals_cor_report.txt
-simtrait.RData
 
 
 ## list trimmed from https://github.com/github/gitignore/blob/master/TeX.gitignore
