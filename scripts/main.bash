@@ -48,6 +48,10 @@ time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep
 time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep
 # 3m37.934s labbyDuke
 
+# calculate minimum eigenvalues and condition numbers for all kinship and V matrices
+time Rscript sim-09-eigen.R --bfile $name --n_rep $n_rep
+# 692m24.452s/7450m57.683s viiiaR5
+
 
 ### REAL ###
 
@@ -139,6 +143,10 @@ time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep
 time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep
 # 8m40.166s labbyDuke
 
+# calculate minimum eigenvalues and condition numbers for all kinship and V matrices
+time Rscript sim-09-eigen.R --bfile $name --n_rep $n_rep
+# 13m27.778s/77m36.703s viiiaR5
+
 
 
 ### COMBINED ###
@@ -166,9 +174,11 @@ time Rscript all-02-pca-plots.R
 time Rscript all-03-reml-pred-sigmas.R
 # 0m0.886s labbyDuke
 
-# # plots variance component prediction errors and minimum eigenvalues of kinship matrices
-# time Rscript all-04-preds-reml-plots.R
-# # 0m0.808s labbyDuke
+# plot minimum eigenvalues, non-posdef proportions, and condition number distributions
+time Rscript all-04-emin-kappa.R
+# creates: emin.pdf, emin-cut.pdf, kappa.pdf
+# 0m0.670s viiiaR5
+
 
 
 
