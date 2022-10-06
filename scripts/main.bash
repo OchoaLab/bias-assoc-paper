@@ -179,17 +179,17 @@ time Rscript all-04-emin-kappa.R
 # creates: emin.pdf, emin-cut.pdf, kappa.pdf
 # 0m0.670s viiiaR5
 
-# makes a figure that proves several things:
+# makes figures that proves several things:
 # - for admix sim
 #   - RMSD and AUC deviations form expectation (WG) are perfectly predicted by kappa
-#   - and sigma estimates are uncorrelated to kappa, so errors are restricted to assoc step
+#   - sigma errors are uncorrelated to kappa, so errors are restricted to assoc step
 # - for TGP
 #   - RMSD and AUC errors are generally smaller but still extrema are not predicted at all by kappa
 #   - sigma errors are way biggger and also not predicted by kappa
-#   - looks like sigma fitting error drives outliers here and not assoc step separately
+#   - sigma errors drive outliers here and not assoc step
 time Rscript all-05-kappa-vs-pred-err.R
-# creates: kappa-vs-pred-err.pdf
-# 0m1.209s viiiaR5
+# creates: kappa-vs-pred-err.pdf, reml-err-vs-pred-err.pdf
+# 0m0.907s viiiaR5
 
 
 

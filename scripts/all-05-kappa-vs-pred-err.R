@@ -18,19 +18,12 @@ kinship_methods <- kinship_methods[ match( code_order, kinship_methods$code ), ]
 # now assign colors to each method for plot
 kinship_methods$col = 1 : nrow( kinship_methods )
 
+# store processed data from all datasets
+data_all <- vector( 'list', length( datasets ) )
+
 # go where the data is
 # load precomputed sigmas
 setwd( '../data/' )
-
-# start figure before moving in
-fig_start(
-    'kappa-vs-pred-err',
-    width = width,
-    height = width * 3/2,
-    mar_t = 2
-)
-# 4 panels in total
-par( mfcol = c(3, 2) )
 
 # navigate datasets
 for ( i in 1L : length( datasets ) ) {
@@ -113,6 +106,28 @@ for ( i in 1L : length( datasets ) ) {
     data <- bind_rows( data_pop, data_std )
     # use same colors as legend
     data$col <- kinship_methods$col[ match( data$kinship, kinship_methods$code ) ]
+
+    # store processed data
+    data_all[[ i ]] <- data
+    
+    # go back down when done
+    setwd( '..' )
+}
+
+# start figure vs condition numbers
+fig_start(
+    'kappa-vs-pred-err',
+    width = width,
+    height = width * 3/2,
+    mar_t = 2
+)
+# 6 panels in total
+par( mfcol = c(3, 2) )
+
+# navigate datasets
+for ( i in 1L : length( data_all ) ) {
+    data <- data_all[[ i ]]
+    
     # plot data of interest!  Wow beautiful correlation!
     plot(
         data$kappa,
@@ -120,7 +135,7 @@ for ( i in 1L : length( datasets ) ) {
         col = data$col,
         log = 'x',
         xlab = 'Condition number',
-        ylab = 'Sigma^2 abs. diff. from WG pred',
+        ylab = 'Sigma_g^2 abs. diff. from WG pred',
         main = dataset_names[i]
     )
     panel_letter( toupper( letters[i] ) ) # , adj = -0.15
@@ -139,8 +154,7 @@ for ( i in 1L : length( datasets ) ) {
         col = data$col,
         log = 'x',
         xlab = 'Condition number',
-        ylab = 'RMSD abs. diff. from WG',
-        main = dataset_names[i]
+        ylab = 'RMSD abs. diff. from WG'
     )
 
     plot(
@@ -151,9 +165,52 @@ for ( i in 1L : length( datasets ) ) {
         xlab = 'Condition number',
         ylab = 'AUC abs. diff. from WG'
     )
+}
 
-    # go back down when done
-    setwd( '..' )
+fig_end()
+
+
+
+# start figure vs sigma error
+fig_start(
+    'reml-err-vs-pred-err',
+    width = width,
+    height = width,
+    mar_t = 2
+)
+# 4 panels in total
+par( mfcol = c(2, 2) )
+
+# navigate datasets
+for ( i in 1L : length( data_all ) ) {
+    data <- data_all[[ i ]]
+    
+    # plot data of interest!  Wow beautiful correlation!
+    plot(
+        data$err_g,
+        data$rmsd,
+        col = data$col,
+        xlab = 'Sigma_g^2 abs. diff. from WG pred',
+        ylab = 'RMSD abs. diff. from WG',
+        main = dataset_names[i]
+    )
+    panel_letter( toupper( letters[i] ) ) # , adj = -0.15
+    # add legend first time only
+    if ( i == 1L )
+        legend(
+            'topright',
+            kinship_methods$nice,
+            col = kinship_methods$col,
+            pch = 1
+        )
+    
+    plot(
+        data$err_g,
+        data$auc,
+        col = data$col,
+        xlab = 'Sigma_g^2 abs. diff. from WG pred',
+        ylab = 'AUC abs. diff. from WG'
+    )
 }
 
 fig_end()
