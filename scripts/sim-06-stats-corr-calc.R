@@ -42,21 +42,11 @@ is_sim <- !file.exists( 'kinship' )
 if ( !is_sim )
     kinship_methods <- kinship_methods[ kinship_methods$type != 'ROM lim.', ]
 
-# get correct count of methods now
-n_kinship <- nrow( kinship_methods )
-
 # let's plot data in the order of the `kinship_methods` table
 # also, plot PCA first, LMM second
 method_codes <- c(
     paste0( 'pca_', kinship_methods$code ),
     paste0( 'lmm_', kinship_methods$code )
-)
-# same but human-readable
-labs_short <- rep.int( kinship_methods$short, 2 )
-labs_type <- rep.int( kinship_methods$type, 2 )
-labs_model <- c(
-    rep.int( 'PCA', n_kinship ),
-    rep.int( 'LMM', n_kinship )
 )
 
 # compute sum of equal elements for every pair of columns (like a correlation), but up to a given tolerance
@@ -88,8 +78,6 @@ process_tables <- function( name, tol ) {
     data <- read_tsv( file, col_types = cols( ) )
     # reorder columns of data to be a manually-selected order
     data <- data[ method_codes ]
-    # replace original codes with nice names
-    colnames( data ) <- labs_short
     # rest makes most sense as matrix
     data <- as.matrix( data )
     # compute correlation matrix
@@ -150,37 +138,8 @@ Cb <- Cb / n_rep
 Ep <- Ep / Mp
 Eb <- Eb / Mb
 
-# will also save in addition to plot
-plot_cor <- function( cor_data, name, eq = FALSE, tol ) {
-    # save values for later analysis
-    write_tsv( as.data.frame( cor_data ), paste0( name, '.txt' ) )
-    
-    # get nice max width for a journal
-    dim <- fig_width()
-    fig_start(
-        name,
-        width = dim,
-        height = dim * 0.84
-    )
-    plot_popkin(
-        cor_data,
-        labs = cbind( labs_model, labs_type ),
-        labs_cex = c(1, 0.7),
-        labs_line = c(6, 4),
-        labs_even = TRUE,
-        names = TRUE,
-        names_cex = 0.7,
-        mar = 7,
-        ylab = 'Association Model, Kinship Estimate',
-        ylab_adj = 0.75,
-        leg_title = if (eq) paste0( 'Proportion |diff| < ', tol ) else 'Pearson Correlation',
-        leg_width = 0.15
-    )
-    fig_end()
-}
-
-plot_cor( Cp, 'pvals_cor' )
-plot_cor( Ep, 'pvals_eq', eq = TRUE, tol = tolp )
-plot_cor( Eb, 'betas_eq', eq = TRUE, tol = tolb )
-# plot of betas fail in TGP (min correlations are much too high), but run to save table anyway
-plot_cor( Cb, 'betas_cor' )
+# save all of these tables!
+write_tsv( as.data.frame( Cp ), 'pvals_cor.txt' )
+write_tsv( as.data.frame( Cb ), 'betas_cor.txt' )
+write_tsv( as.data.frame( Ep ), 'pvals_eq.txt' )
+write_tsv( as.data.frame( Eb ), 'betas_eq.txt' )

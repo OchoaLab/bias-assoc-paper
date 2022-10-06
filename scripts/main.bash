@@ -80,6 +80,8 @@ time Rscript sim-01-kinship.R --bfile $name -r 0
 # popkin plots! (no need to specify replicate)
 time Rscript real-00-kinship-plot.R --bfile $name
 # 0m9.135s
+# a version without WG better for presentations
+time Rscript real-00-kinship-plot.R --bfile $name --noWG
 
 for rep in $(seq 1 $n_rep); do
     # simulate trait now!
@@ -126,14 +128,23 @@ time Rscript sim-05-auc-rmsd-table.R --bfile $name --n_rep $n_rep
 # plot AUCs and SRMSDs (all reps)
 time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
 # 0m6.258s
+# a version without WG better for presentations
+time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep --noWG
 
 # a hacky smaller version for grants only
 time Rscript sim-05-auc-plot_lmm-small.R --bfile $name --n_rep $n_rep
 
 # statistic correlation heatmaps (all reps)
-time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
+# first calculate, save tables
+time Rscript sim-06-stats-corr-calc.R --bfile $name --n_rep $n_rep
 # 6m12.550s
+# now plot!
+time Rscript sim-06-stats-corr-plot.R --bfile $name
+# 0m0.896s
 # NOTE: beta fig fails every time (betas are extremely correlated) 
+# a version without WG better for presentations
+time Rscript sim-06-stats-corr-plot.R --bfile $name --noWG
+# 0m0.863s
 
 # obtain variance component estimates for many follow-up analyses
 time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep

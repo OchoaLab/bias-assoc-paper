@@ -158,3 +158,22 @@ plot_pcs( data_real, kinship_methods$code[ kinship_methods$type == 'ROM est.' ],
 plot_pcs( data_real, kinship_methods$code[ kinship_methods$type == 'MOR est.' ], xlim_real, ylim_real )
 
 fig_end()
+
+
+
+
+### make a simplified version for TGP only and excluding WG, for presentations
+# exclude WG here!
+kinship_methods <- kinship_methods[ grep( '^wg_', kinship_methods$code, invert = TRUE ), ]
+fig_start(
+    'pcs-real-noWG',
+    width = width,
+    height = width / 2,
+    mar_t = 1.5
+#    mar_l = 4.5
+)
+# fill by rows!
+par( mfrow = c(1,2) )
+plot_pcs( data_real, kinship_methods$code[ kinship_methods$type == 'ROM est.' ], xlim_real, ylim_real, main = 'ROM est.', leg = TRUE )
+plot_pcs( data_real, kinship_methods$code[ kinship_methods$type == 'MOR est.' ], xlim_real, ylim_real, main = 'MOR est.' )
+fig_end()

@@ -11,7 +11,9 @@ library(readr)
 # define options
 option_list = list(
     make_option("--bfile", type = "character", default = NA, 
-                help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character")
+                help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
+    make_option("--noWG", action = "store_true", default = FALSE, 
+                help = "Create plot version that excludes WG, for some presentations")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -19,6 +21,7 @@ opt <- parse_args(opt_parser)
 
 # get values
 dir_out <- opt$bfile
+noWG <- opt$noWG
 
 # before switching away from "scripts", load a table located there
 kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cc' )
@@ -50,6 +53,9 @@ codes <- c(
     'wg_rom',
     'wg_mor'
 )
+# exclude WG here!
+if ( noWG )
+    codes <- codes[ grep( '^wg_', codes, invert = TRUE ) ]
 # map to human-readable names from table
 titles <- kinship_methods$nice[ match( codes, kinship_methods$code ) ]
 
@@ -77,10 +83,20 @@ data <- lapply( data, cap_kinship )
 # save figure in lower level
 setwd( '..' )
 
+# other tweaks for noWG
+name_out <- 'kinship'
+ratio <- 2.1/3 # w/h
+leg_width <- 0.25
+if ( noWG ) {
+    name_out <- paste0( name_out, '-noWG' )
+    ratio <- 2.1/2
+    leg_width <- 0.2
+}
+
 # visualize all matrices for test
-dims <- fig_scale( ratio = 2.2/3 ) # w/h
+dims <- fig_scale( ratio = ratio )
 fig_start(
-    'kinship',
+    name_out,
     width = dims[1],
     height = dims[2] # hack
 )
@@ -91,7 +107,8 @@ plot_popkin(
     labs_line = 0.2,
     labs_cex = 0.7,
     layout_rows = 3,
-    mar = c(2, 2)
+    mar = c(2, 2),
+    leg_width = leg_width
 #    panel_letters_adj = 0 # old default, works better here because there's no labels
 )
 fig_end()

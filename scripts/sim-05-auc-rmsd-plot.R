@@ -12,7 +12,9 @@ option_list = list(
     make_option("--bfile", type = "character", default = NA, 
                 help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
     make_option("--n_rep", type = "integer", default = NA, 
-                help = "Total number of replicates", metavar = "int")
+                help = "Total number of replicates", metavar = "int"),
+    make_option("--noWG", action = "store_true", default = FALSE, 
+                help = "Create plot version that excludes WG, for some presentations")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -21,6 +23,7 @@ opt <- parse_args(opt_parser)
 # get values
 dir_out <- opt$bfile
 n_rep <- opt$n_rep
+noWG <- opt$noWG
 if ( is.na( n_rep ) )
     stop( 'Option `--n_rep` is required!' )
 
@@ -40,6 +43,10 @@ data <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
 # in real data the oracle methods (truth and biased limits) are missing, exclude from `kinship_methods`
 if ( !is_sim )
     kinship_methods <- kinship_methods[ kinship_methods$type != 'ROM lim.', ]
+
+# exclude WG here!
+if ( noWG )
+    kinship_methods <- kinship_methods[ grep( '^wg_', kinship_methods$code, invert = TRUE ), ]
 
 # get correct count of methods now
 n_kinship <- nrow( kinship_methods )
@@ -77,10 +84,20 @@ plot_measure <- function( name = 'auc' ) {
         return( auc_x[[ name ]] )
     })
 
-    # now make plot of data
+    # for noWG make output path different
+    name_out <- name
     dims <- fig_scale( 1.5 ) # w/h
+    if ( noWG ) {
+        name_out <- paste0( name_out, '-noWG' )
+        # don't want these to be full width, so approach this way instead
+        width <- fig_width() / 2
+        height <- width
+        dims <- c( width, height )
+    }
+    
+    # now make plot of data
     fig_start(
-        name,
+        name_out,
         width = dims[1],
         height = dims[2],
         mar_b = 8
