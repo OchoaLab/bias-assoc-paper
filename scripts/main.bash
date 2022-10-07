@@ -52,6 +52,14 @@ time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep
 time Rscript sim-09-eigen.R --bfile $name --n_rep $n_rep
 # 692m24.452s/7450m57.683s viiiaR5
 
+# generate refitted intercepts to test what happens to them
+time Rscript sim-10-lmm-intercept-test.R --bfile $name -r 1
+# 54m34.021s/136m14.469s ideapad
+# plot non-trivial results!
+time Rscript sim-11-lmm-intercept-test-plot.R --bfile $name -r 1
+# creates: lmm-intercept-test.pdf
+# 0m1.688s viiiaR5
+
 
 ### REAL ###
 
