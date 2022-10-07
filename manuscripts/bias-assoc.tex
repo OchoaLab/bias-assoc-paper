@@ -287,7 +287,6 @@ where $\tilde{\varphi}^T$ is the mean kinship excluding the matrix diagonal:
     .
   \end{split}
 \end{equation}
-In \cref{sec:wg_posdef} we prove that $F^\text{WG} \left( \kinMat \right)$ is positive definite if \kinMat also is.
 In \cref{sec:mean_kinship_ineqs} we prove that
 $$
 0 \le \tilde{\varphi}^T \le \bar{\varphi}^T \le \bar{\delta}^T \le 1,
@@ -438,7 +437,7 @@ where $\mathbf{1}_{m_1}$ is a length-$m_1$ column vector of ones.
 \subsection{Real genotype data processing}
 
 To evaluate different kinship estimators on a real dataset, we use the high-coverage NYGC version of the 1000 Genomes Project \citep{fairley_international_2020}, which were processed as before \citep{yao_limitations_2022}.
-Briefly, using \texttt{plink2} \citep{chang_second-generation_2015} we kept only autosomal biallelic SNP loci with filter ``PASS'', LD-pruned with parameters ``\texttt{-{}-indep-pairwise 1000kb 0.3}'' to remove loci that have a greater than 0.3 correlation coefficient with other loci within 1000kb, and lastly remove loci with $\text{MAF} < 0.01$.
+Briefly, using \texttt{plink2} \citep{chang_second-generation_2015} we kept only autosomal biallelic SNP loci with filter ``PASS'', LD-pruned with parameters ``\texttt{-{}-indep-pairwise 1000kb 0.3}'' to remove loci that have a greater than 0.3 squared correlation coefficient with other loci within 1000kb, and lastly remove loci with $\text{MAF} < 0.01$.
 The resulting data has $m=1,111,266$ loci and $n=2,504$ individuals.
 Traits were simulated for this dataset with $m_1 = n/10 = 250$ causal loci.
 
@@ -652,13 +651,14 @@ $c = 1 - \tilde{\varphi}^T$ and
 .
 \end{align}
 The derivation of this factorization is given in \cref{sec:wg_biasfunc}.
-The determinant of the quadratic solution $q$ is non-negative, since
+The determinant of the quadratic solution $q$ would be non-negative if $\tilde{\varphi}^T$ satisfied
 $
-\tilde{\varphi}^T \le 1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right)
+\tilde{\varphi}^T \le 1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right).
 $
-[TODO: prove it!], so both values of $b$ above are real.
-This $\mathbf{b}$ does not sum to one ($\mathbf{b}^\intercal \mathbf{1} = q \ne 1$ [TODO: unless there's a degenerate case?]), so unlike the Standard bias case, here $\mathbf{B}$ is not evidently singular.
-In fact, we prove that WG-biased kinship matrices are invertible if the original was invertible in \cref{sec:wg_posdef}.
+However, the actual $\tilde{\varphi}^T$ does not satisfy this inequality in any of our empirical cases, so both values of $b$ above are complex.
+This is a consequence of WG estimates being non-positive definite, which we elaborate in the following sections.
+Nevertheless, we find that in practice inference with LMMs works even for non-positive definite kinship matrices, and the same theoretical result applies to these cases except without invoking complex numbers.
+[TODO: is any part of \cref{sec:wg_posdef} still useful?].
 
 \subsubsection{Proof for LMM case}
 
@@ -669,16 +669,16 @@ $$
 =
 \mathbf{B} \mathbf{s}
 \sim
-\text{Normal} \left( \mathbf{0}, 2 (\sigma')^2 \kinMatPrime \right),
+\text{Normal} \left( \mathbf{0}, 2 \sigma^{2\prime} \kinMatPrime \right),
 $$
-where $(\sigma')^2 = c \sigma^2$.
-(This $\mathbf{s}'$ has a degenerate distribution for Standard bias, since $\kinMatPrime$ is singular, but this is not problematic as long as $\mathbf{s}' + \boldsymbol{\epsilon}$ is non-degenerate, whose total covariance $(\sigma')^2 \kinMatPrime + \sigma^2_\epsilon \mathbf{I}$ is invertible as long as $\sigma^2_\epsilon \ne 0$.)
+where $\sigma^{2\prime} = c \sigma^2$.
+(This $\mathbf{s}'$ has a degenerate distribution for Standard bias, since $\kinMatPrime$ is singular, but this is not problematic as long as $\mathbf{s}' + \boldsymbol{\epsilon}$ is non-degenerate, whose covariance $2 \sigma^{2\prime} \kinMatPrime + \sigma^2_\epsilon \mathbf{I}$ is invertible as long as $\sigma^2_\epsilon \ne 0$.)
 Replacing $\mathbf{B} \mathbf{s}$ with the shift form in \cref{eq:B-shift} shows that
 $$
 \mathbf{s}' = \mathbf{s} - \mathbf{1} \eta
 $$
 are equal in distribution.
-Therefore, after matching the variance coefficients $\sigma^2$ and $(\sigma')^2$ as above, the random effect $\mathbf{s}'$ of the biased kinship matrix differs from the random effect $\mathbf{s}$ of the original kinship only by $\mathbf{1} \eta$, a difference compensated for by adjusting the intercept coefficient in \cref{eq:lmm_gwas}: $\alpha' = \alpha + \eta$.
+Therefore, after matching the variance coefficients $\sigma^2$ and $\sigma^{2\prime}$ as above, the random effect $\mathbf{s}'$ of the biased kinship matrix differs from the random effect $\mathbf{s}$ of the original kinship only by $\mathbf{1} \eta$, a difference compensated for by adjusting the intercept coefficient in \cref{eq:lmm_gwas}: $\alpha' = \alpha + \eta$.
 No other regression coefficients, or the total residuals, change when \kinMat is replaced with $\kinMatPrime$, including the association coefficient $\beta_i$ that is the focus of the test.
 
 The LMM association p-value does not change in several common tests, including the F-test, since it only depends on the residuals and these do not change, as well as the likelihood ratio test, because although the covariance matrices do change, their determinants cancel out in the ratio.
@@ -767,6 +767,58 @@ $c = \left( 1 - \f{T}{S} \right)^{-1}$ and
 \end{align*}
 The determinant of $q$ is strictly positive, since $\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} > 0$ (since \kinMat[S] is positive definite, its inverse is too) and $0 \le \f{T}{S} < 1$.
 Thus, the results of the previous section also apply to this transformation: ancestor change is also compensated for by the relatedness and intercept coefficients, which are the only coefficients that depend on the ancestor population, so the association statistics are invariant to this transformation.
+
+\subsection{Characterization of non-positive definite and singular kinship and trait covariance estimators}
+
+While attempting to validate and characterize the earlier factorization of the WG bias function (\cref{eq:kin-bias-general,eq:B-shift,eq:wg-fac-b,eq:wg-fac-q}), we discovered that this estimator does not produce positive definite matrices, which covariance matrices are required to be.
+To characterize this problem more generally, we calculated the eigenvalues of all of the kinship matrices we produced in all evaluations $\kinMat$ as well as the trait covariance matrices given by $\mathbf{V} = 2 \sigma^2 \kinMat + \sigma^2_\epsilon \mathbf{I}$, which we obtained using GCTA's estimates of $\sigma^2$ and $\sigma^2_\epsilon$.
+
+We found that all WG matrices have very large negative minimum eigenvalues, and popkin MOR estimates also have smaller negative eigenvalues (\cref{fig:emin}).
+Since small negative eigenvalues may be obscured in the previous evaluation, we also counted the proportion of matrices across replicates that had negative eigenvalues.
+We discovered that, besides all WG matrices and most popkin MOR estimates, Standard matrices were also often non-positive semidefinite but only in 1000 Genomes (\cref{fig:emin-cut}).
+The likely explanation is that, while Standard estimates are positive-semidefinite by construction when there is no missing data, this is no longer true under missingness.
+Notably, unlike popkin MOR, all popkin ROM estimates are positive definite in every evaluation, including under missingness in 1000 Genomes.
+
+In order to quantify matrix singularity, as well as numerical accuracy problems caused by multiplying by inverses of nearly-singular matrices, we calculated condition numbers, which equal the maximum absolute eigenvalue divided by the minimum absolute eigenvalue of our covariance matrices.
+As expected, we saw that standard kinship matrices are singular on our admixed family simulation (which lacks missingness), as reflected by extremely high condition numbers, but their trait covariances are well conditioned (have small condition numbers; \cref{fig:kappa}).
+Although no other matrices are singular, we do see that popkin MOR estimates in the admixed family simulation have relatively high condition numbers for both the kinship and the trait covariance.
+
+Let us consider the theoretical connection between the eigenvalues of the kinship matrix and those of $\mathbf{V}$.
+The eigendecomposition trick widely used to fit variance components in LMMs \citep{kang_efficient_2008, lippert_fast_2011, svishcheva_rapid_2012, zhou_genome-wide_2012, sul_population_2018} yields
+$$
+\mathbf{V} = \mathbf{U} \left( 2 \sigma^2 \mathbf{\Lambda} + \sigma^2_\epsilon \mathbf{I} \right) \mathbf{U}^\intercal,
+$$
+where $\mathbf{U}$ and $\mathbf{\Lambda}$ are the eigenvectors and eigenvalues of \kinMat (\cref{eq:kin_evd}),
+so the eigenvectors of $\mathbf{V}$ are also $\mathbf{U}$ and its eigenvalues are the diagonal values of $2 \sigma^2 \mathbf{\Lambda} + \sigma^2_\epsilon \mathbf{I}$.
+It follows that if \kinMat is positive definite (all of its eigenvalues are positive) then so is $\mathbf{V}$ (its eigenvalues are also positive), and for these cases the condition number of $\mathbf{V}$ is always smaller (better) than that of \kinMat.
+A negative kinship eigenvalue $\lambda_i$ may become positive for $\mathbf{V}$ only if $\lambda_i  > -\sigma^2_\epsilon/(2\sigma^2) = -(1-h^2)/(2h^2)$, so very large negative $\lambda_i$ values as observed for WG do not become positive in $\mathbf{V}$, in fact often they became more negative (\cref{fig:emin}).
+This equation also shows that $\mathbf{V}$ is always invertible and well-conditioned even when \kinMat is singular positive semi-definite, as the Standard estimator is under no missingness, since a zero kinship eigenvalue becomes $\sigma^2_\epsilon$ for $\mathbf{V}$.
+Conversely, the above equation explains why some non-positive definite kinship matrices are particularly problematic: small negative eigenvectors with values near $-\sigma^2_\epsilon/(2\sigma^2)$ can result in ill-conditioned $\mathbf{V}$.
+We see that popkin MOR estimates are non-positive definite (\cref{fig:emin}) in such a way that their $\mathbf{V}$ are ill-conditioned (\cref{fig:kappa}), and we find that this explains its poorer performance in the admixed family evaluations (\cref{fig:auc_sim,fig:rmsd_sim}), as shown in the next subsection.
+
+\subsection{Further empirical validation of theoretical predictions}
+
+Seeing that WG is always non-positive definite, and to query other instances where predictions were not fully met, here we analyze estimation accuracy of various parameters to better understand theoretically and empirically how this broken assumption affects them.
+
+LMMs such as GCTA perform association testing in two steps.
+First is the restricted maximum likelihood (REML) step used to fit variance components.
+Although the eigendecomposition approaches \citep{kang_efficient_2008, lippert_fast_2011, svishcheva_rapid_2012, zhou_genome-wide_2012, sul_population_2018} require positive-definite $\mathbf{V}$ (lest the determinant of $\mathbf{V}$ be negative), surprisingly the GCTA average information algorithm only requires in practice that $\mathbf{V}$ be invertible \citep{yang_gcta:_2011}.
+Thus, we find that variance components estimated from WG are generally close to those of Standard (\cref{fig:preds-reml-sigmas}).
+Furthermore, the relationship between WG, Standard, and True or Popkin variance components are largely as expected from our theory, with the exception of popkin ROM on 1000 Genomes only, whose genetic variance estimates tended to be a bit smaller than expected (\cref{fig:preds-reml-errors}).
+We were not able to determine a reason that these popkin ROM estimates were worse than expected on 1000 Genomes.
+
+Next we determine the effect of WG bias on coefficient estimates.
+In this second step of association testing, GCTA and other LMMs use generalized least squares to estimate fixed effects coefficients once $\mathbf{V}$ is determined \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}.
+Using the first replicate of the admixture family simulation and the true kinship matrix and the Standard and WG limits only, we recalculated the genetic effect $\beta_i$ and intercept coefficients $\alpha$ in R for all loci, and confirmed that we recovered the GCTA estimates for $\beta_i$ to the given precision.
+We then compare intercept coefficients, which are not given by GCTA, and confirmed our theoretical prediction that they are identical whether the True or WG ROM limit kinship matrices are used (the mean absolute difference was below $10^{-7}$).
+In contrast, intercepts fit using the Standard ROM limit kinship matrix are different than those of True, which agrees with our theoretical prediction that the intercept compensates for the kinship matrix bias (\cref{fig:lmm-intercept-test}).
+However, if the random effect were truly random, then since $\eta = \mathbf{b}^\intercal \mathbf{s}$ we would expect $\eta \sim \text{Normal}( 0, \mathbf{b}^\intercal \kinMat \mathbf{b})$, which does not agree with our empirical observations that the mean of $\eta$ is non-zero, and which is has some dependence on $\alpha$.
+This disagreement is interesting but not unexpected, since maximum likelihood estimates of $\alpha$ are bound to differ from their theoretical values.
+
+Lastly, we want to explain the largest deviations from our predictions at the $\auc$ and $\rmsd$ level, which are limited to popkin ROM in the admixture simulation and popkin MOR for 1000 Genomes.
+Here we use the WG estimates as reference since WG $\mathbf{V}$ matrices generally had the lowest condition numbers, so they should yield the most numerically accurate estimates (\cref{fig:kappa}).
+We find that errors in the genetic variance component estimation ($\sigma^2$) strongly drive the observed popkin ROM errors in 1000 Genomes in $\rmsd$ expectation, and to a lesser extent errors in $\auc$ as well (\cref{fig:reml-err-vs-pred-err}).
+However, for the popkin MOR errors in the admixed family simulation, which were much larger, we did not see $\sigma^2$ estimation errors (\cref{fig:preds-reml-errors}), and the $\rmsd$ and $\auc$ errors are instead well explained by the condition number of $\mathbf{V}$, which is defined for its influence of regression coefficient estimation accuracy (\cref{fig:kappa-vs-pred-err}).
 
 \section{Discussion}
 
@@ -1074,6 +1126,8 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
 
   \label{sec:wg_posdef}
 
+  [TODO: not true, but only part of direct sum is incorrect; is the rest worth keeping as a way to characterize the negative-definite subspace?]
+  
   Starting from a positive-definite kinship matrix \kinMat, we prove that WG-bias transformed matrix $\kinMatPrime = F^\text{WG}( \kinMat )$ is also positive definite (and therefore invertible), except in one degenerate case.
   Recall from \cref{eq:wg_lim} that
   $
@@ -1200,6 +1254,99 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   }
   \label{fig:pvals_eq_real}
 \end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{emin.pdf}
+  \caption{
+    {\bf Minimum eigenvalue of kinship and trait covariance matrices.}
+    ``Trait Cov.'' corresponds to $\mathbf{V}$ (see text).
+    Each distribution is over the 100 replicates of each simulation (only 1000 Genomes ``Kinship'' has a single value because the genotypes did not change across replicates, but ``Trait Cov.'' always varies per replicate).
+    All WG matrices has very large negative eigenvalues, and Popkin MOR has negative eigenvalues as well; in these cases a non-positive definite kinship matrix always resulted in a non-positive definite $\mathbf{V}$.
+  }
+  \label{fig:emin}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{emin-cut.pdf}
+  \caption{
+    {\bf Proportion of kinship and trait covariance matrices with negative eigenvalues.}
+    An eigenvalue was considered negative if it was below $-10^{-7}$ to allow for limited machine precision.
+    Proportion is calculated over the 100 replicates of each simulation (only 1000 Genomes ``Kinship'' has a single value because the genotypes did not change across replicates, but ``Trait Cov.'' always varies per replicate).
+  }
+  \label{fig:emin-cut}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{kappa.pdf}
+  \caption{
+    {\bf Condition numbers of kinship and trait covariance matrices.}
+    Larger condition numbers reflect ill-conditioned problems such as near singularity.
+    Each distribution is over the 100 replicates of each simulation (only 1000 Genomes ``Kinship'' has a single value because the genotypes did not change across replicates, but ``Trait Cov.'' always varies per replicate).
+  }
+  \label{fig:kappa}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{preds-reml-sigmas.pdf}
+  \caption{
+    {\bf Variance component estimates from GCTA across evaluations.}
+    True variances (red and blue dashed lines) are the parameter values of our trait simulations.
+    Each distribution is over the 100 replicates of each simulation.
+  }
+  \label{fig:preds-reml-sigmas}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{preds-reml-errors.pdf}
+  \caption{
+    {\bf Variance component prediction errors across evaluations.}
+    In all ``Residual'' cases the error is $\sigma^{2\prime}_\epsilon - \sigma^2_\epsilon$ and $c = 1$, as the prediction is that they are identical (excess perfect zeroes are due to limited precision of GCTA outputs).
+    For genetic variance, Standard uses $c = 1 - \bar{\varphi}^T$, WG uses $c = 1 - \tilde{\varphi}^T$, in both cases their estimate is $\sigma^{2\prime}$ while $\sigma^2$ is True (for ROM lim.) or Popkin (for corresponding ROM or MOR estimate).
+    However, ``Both'' compares Standard ($\sigma^{2\prime}$) to WG ($\sigma^2$), and genetic variance uses $c = \left( 1 - \bar{\varphi}^T \right) / \left( 1 - \tilde{\varphi}^T \right)$.
+    Each distribution is over the 100 replicates of each simulation.
+  }
+  \label{fig:preds-reml-errors}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=0.5\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/lmm-intercept-test.pdf}
+  \caption{
+    {\bf Comparison of intercept coefficients from True vs Standard ROM limit kinship matrices.}
+    Note coefficient differences are small relative to their absolute value.
+  }
+  \label{fig:lmm-intercept-test}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{reml-err-vs-pred-err.pdf}
+  \caption{
+    {\bf $\auc$ and $\rmsd$ prediction errors explained by variance component errors.}
+    Genetic variance component ($\sigma^2$) absolute error was calculated based on the formulas in \cref{fig:preds-reml-errors} but using WG as reference.
+    $\auc$ and $\rmsd$ are expected to be the same between WG, Standard, and True or Popkin (within each locus weight type).
+    Popkin ROM prediction errors in 1000 Genomes are explained by $\sigma^2$ error, but does not explain errors in the admixed family simulation.
+  }
+  \label{fig:reml-err-vs-pred-err}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[height=0.9\textheight]{kappa-vs-pred-err.pdf}
+  \caption{
+    {\bf $\auc$ and $\rmsd$ prediction errors explained by the condition number of $\mathbf{V}$.}
+    $\auc$ and $\rmsd$ are expected to be the same between WG, Standard, and True or Popkin (within each locus weight type).
+    Popkin MOR prediction errors in the admixed family simulation are explained by the condition number of $\mathbf{V}$, but does not explain errors in 1000 Genomes.
+  }
+  \label{fig:kappa-vs-pred-err}
+\end{figure}
+
+
 
 
 
