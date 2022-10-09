@@ -48,7 +48,7 @@ time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep
 time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep
 # 3m37.934s labbyDuke
 
-# calculate minimum eigenvalues and condition numbers for all kinship and V matrices
+# calculate minimum eigenvalues, number of neg eigenvalues, and condition numbers for all kinship and V matrices
 time Rscript sim-09-eigen.R --bfile $name --n_rep $n_rep
 # 692m24.452s/7450m57.683s viiiaR5
 
@@ -162,9 +162,9 @@ time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep
 time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep
 # 8m40.166s labbyDuke
 
-# calculate minimum eigenvalues and condition numbers for all kinship and V matrices
+# calculate minimum eigenvalues, number of neg eigenvalues, and condition numbers for all kinship and V matrices
 time Rscript sim-09-eigen.R --bfile $name --n_rep $n_rep
-# 13m27.778s/77m36.703s viiiaR5
+# 956m26.957s/10268m1.934s viiiaR5
 
 
 

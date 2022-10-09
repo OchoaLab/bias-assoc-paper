@@ -29,7 +29,7 @@ setwd( '../data/' )
 for ( i in 1L : length( datasets ) ) {
     dataset <- datasets[i]
     setwd( dataset )
-    data <- read_tsv( 'eigen.txt.gz', col_types = 'cicdd' )
+    data <- read_tsv( 'eigen.txt.gz', col_types = 'cicdid' )
     eval <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
     reml <- read_tsv( 'reml.txt.gz', col_types = 'icdddddddd' )
 

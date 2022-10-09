@@ -2,6 +2,8 @@ library(readr)
 library(ochoalabtools)
 library(popkin) # for :::print_labels_multi
 
+# threshold for negative eigenvalues
+cut_evs <- -1e-7
 # a sort of constant
 width <- fig_width()
 
@@ -14,13 +16,13 @@ setwd( '../data/' )
 
 # simulation first, use first replicate only
 setwd( 'sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes' )
-data_sim <- read_tsv( 'eigen.txt.gz', col_types = 'cicdd' )
+data_sim <- read_tsv( 'eigen.txt.gz', col_types = 'cicdid' )
 eval_sim <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
 setwd( '..' )
 
 # now real data
 setwd( 'tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01' )
-data_real <- read_tsv( 'eigen.txt.gz', col_types = 'cicdd' )
+data_real <- read_tsv( 'eigen.txt.gz', col_types = 'cicdid' )
 eval_real <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
 setwd( '..' )
 
@@ -121,7 +123,6 @@ mtext( 'Matrix type, Kinship Estimate', side = 1, outer = TRUE )
 fig_end()
 
 # version that applies threshold to report non-posdef proportions
-cut <- -1e-6
 fig_start(
     'emin-cut',
     width = width,
@@ -131,9 +132,9 @@ fig_start(
 )
 par( mfrow = c(1,2) )
 par( oma = c(1, 0, 0, 0) )
-boxplot_data( data_sim, main = 'Admixed Family sim.', cut = cut, ylab = 'Proportion non-posdef' )
+boxplot_data( data_sim, main = 'Admixed Family sim.', cut = cut_evs, ylab = 'Proportion non-posdef' )
 panel_letter('A', adj = -0.2)
-boxplot_data( data_real, main = '1000 Genomes', is_sim = FALSE, cut = cut, ylab = 'Proportion non-posdef' )
+boxplot_data( data_real, main = '1000 Genomes', is_sim = FALSE, cut = cut_evs, ylab = 'Proportion non-posdef' )
 panel_letter('B', adj = -0.2)
 mtext( 'Matrix type, Kinship Estimate', side = 1, outer = TRUE )
 fig_end()
@@ -156,6 +157,10 @@ boxplot_data( data_real, main = '1000 Genomes', is_sim = FALSE, col_name = 'kapp
 panel_letter('B', adj = -0.2)
 mtext( 'Matrix type, Kinship Estimate', side = 1, outer = TRUE )
 fig_end()
+
+# just add test for number of negative eigenvectors never exceeding 1...
+stopifnot( max( data_sim$n_neg_evs ) <= 1 )
+stopifnot( max( data_real$n_neg_evs ) <= 1 )
 
 # so the story is consistent that posdef breakdowns for V largely depend on K's status
 # why are MOR estimates bad?  for popkin they are not in the guaranteed form!  MOR form exacerbates that, appears ROM is more robust to that issue

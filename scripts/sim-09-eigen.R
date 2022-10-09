@@ -1,10 +1,14 @@
-# just calculate V matrices, save them!
+# calculates eigenvalues, stores key stats only: most negative eigenvalue, number of neg eigenvalues, and condition number
+
 library(optparse)    # for terminal options
 library(readr)
 library(genio) # for read_grm
 library(simtrait) # for cov_trait
 library(tibble)
 library(dplyr) # for bind_rows
+
+# threshold for negative eigenvalues
+cut_evs <- -1e-7
 
 ############
 ### ARGV ###
@@ -44,14 +48,20 @@ read_kin_process <- function( name_method, rep, is_V = FALSE ) {
 
     # eigendecompose! (slowest part)
     evs <- eigen( kinship, symmetric = TRUE, only.values = TRUE )$values
-    # get the two stats we want
+    
+    # get the stats we want
+    
     # first is minimum eigenvalue
     emin <- min( evs )
+
+    # now number of negative eigenvalues (is it just one, or sometimes more?)
+    n_neg_evs <- sum( evs < cut_evs )
+    
     # second is condition number
     evs <- abs( evs )
     kappa <- max( evs ) / min( evs )
     # gather in a tibble row, return
-    return( tibble( kinship = name_method, rep = rep, type = type, emin = emin, kappa = kappa ) )
+    return( tibble( kinship = name_method, rep = rep, type = type, emin = emin, n_neg_evs = n_neg_evs, kappa = kappa ) )
 }
 
 # tibble to grow
