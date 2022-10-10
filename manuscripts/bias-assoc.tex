@@ -656,8 +656,8 @@ $
 \tilde{\varphi}^T \le 1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right).
 $
 However, the actual $\tilde{\varphi}^T$ does not satisfy this inequality in any of our empirical cases, so both values of $b$ above are complex.
-This is a consequence of WG estimates being non-positive definite, which we elaborate in the following sections.
-Nevertheless, we find that in practice inference with LMMs works even for non-positive definite kinship matrices, and the same theoretical result applies to these cases except without invoking complex numbers.
+This is a consequence of WG estimates being non-positive semidefinite, which we elaborate in the following sections.
+Nevertheless, the PCA approach as well as the GCTA algorithms for fitting variance components and estimating association coefficients work for non-positive semidefinite matrices without invoking complex numbers (following sections and \cref{sec:wg_gls}).
 [TODO: is any part of \cref{sec:wg_posdef} still useful?].
 
 \subsubsection{Proof for LMM case}
@@ -680,6 +680,9 @@ $$
 are equal in distribution.
 Therefore, after matching the variance coefficients $\sigma^2$ and $\sigma^{2\prime}$ as above, the random effect $\mathbf{s}'$ of the biased kinship matrix differs from the random effect $\mathbf{s}$ of the original kinship only by $\mathbf{1} \eta$, a difference compensated for by adjusting the intercept coefficient in \cref{eq:lmm_gwas}: $\alpha' = \alpha + \eta$.
 No other regression coefficients, or the total residuals, change when \kinMat is replaced with $\kinMatPrime$, including the association coefficient $\beta_i$ that is the focus of the test.
+
+The above results required positive semidefinite kinship matrices $\kinMatPrime$.
+Nevertheless, for the non-positive semidefinite WG bias combined with the generalized least squares association algorithm, which is used by GCTA and other LMMs \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}, we found a stronger result consistent with the above, namely that $\alpha' = \alpha$, or in other words $\eta = 0$ (\cref{sec:wg_gls}).
 
 The LMM association p-value does not change in several common tests, including the F-test, since it only depends on the residuals and these do not change, as well as the likelihood ratio test, because although the covariance matrices do change, their determinants cancel out in the ratio.
 [TODO: What about Score, Wald tests?  I think there can be changes in one of those cases!]
@@ -708,13 +711,14 @@ where
 $\eta = \mathbf{b}^\intercal \mathbf{U}_d \boldsymbol{\gamma}_d$
 is a scalar.
 Therefore, the relatedness effects again differ only by $\mathbf{1} \eta$, which is compensated for by adjusting the intercept accordingly, so the association coefficient $\beta_i$ and the residuals are the same in both cases.
+Note that the proof works whether there are small numbers of zero or negative eigenvalues in $\kinMatPrime$ (non-positive semidefinite cases), as those rank last and are simply ignored.
 The observations from LMMs, for how p-values change depending on the type of test used, also hold for PCA.
 
 We visualize the top PCs of our two datasets in \cref{fig:pcs} in order to assess the validity of the appoximation in \cref{eq:pc-shift}.
 The approximation is equivalent to each biased PC (Standard or Weir-Goudet) being shifted from the unbiased PC (Popkin), as described in \cref{eq:B-shift}.
 \cref{fig:pcs} indeed shows that PC1 is shifted by noticeable amounts in each of these cases, while PC2 is less shifted.
 However, a rotation of the PCs is also noticeable, particularly in the simulated data, and other large differences between MOR estimators, as expected since we know the approximation cannot be exact.
-One last detail worth noting is that PCs can change order upon the bias transformation, which we noticed in the simulation, where PC2 and PC3 from popkin (and true kinship) actually correspond to PC1 and PC2, respectively, in both Standard and Weir-Goudet estimates (both ROM and MOR), and were plotted as such.
+One last detail worth noting is that PCs can change order upon the bias transformation, which we noticed in the admixed family simulation, where PC2 and PC3 from popkin (and true kinship) actually correspond to PC1 and PC2, respectively, in both Standard and Weir-Goudet estimates (both ROM and MOR), and were plotted as such.
 No PC reordering occured in 1000 Genomes.
 Overall, while the approximation of \cref{eq:pc-shift} can be weakened to merely require that the biased PCs plus intercept span the same subspace of the unbiased PCs plus intercept, the approximate PC shifts better explain intuitively why the result for LMM is also observed for PCA association.
 
@@ -768,15 +772,16 @@ $c = \left( 1 - \f{T}{S} \right)^{-1}$ and
 The determinant of $q$ is strictly positive, since $\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} > 0$ (since \kinMat[S] is positive definite, its inverse is too) and $0 \le \f{T}{S} < 1$.
 Thus, the results of the previous section also apply to this transformation: ancestor change is also compensated for by the relatedness and intercept coefficients, which are the only coefficients that depend on the ancestor population, so the association statistics are invariant to this transformation.
 
-\subsection{Characterization of non-positive definite and singular kinship and trait covariance estimators}
+\subsection{Characterization of non-positive semidefinite and singular kinship and trait covariance estimators}
 
-While attempting to validate and characterize the earlier factorization of the WG bias function (\cref{eq:kin-bias-general,eq:B-shift,eq:wg-fac-b,eq:wg-fac-q}), we discovered that this estimator does not produce positive definite matrices, which covariance matrices are required to be.
-To characterize this problem more generally, we calculated the eigenvalues of all of the kinship matrices we produced in all evaluations $\kinMat$ as well as the trait covariance matrices given by $\mathbf{V} = 2 \sigma^2 \kinMat + \sigma^2_\epsilon \mathbf{I}$, which we obtained using GCTA's estimates of $\sigma^2$ and $\sigma^2_\epsilon$.
+While attempting to validate and characterize the earlier factorization of the WG bias function (\cref{eq:kin-bias-general,eq:B-shift,eq:wg-fac-b,eq:wg-fac-q}), we discovered that this estimator does not produce positive semidefinite matrices, which covariance matrices are required to be.
+To characterize this problem more generally, we calculated the eigenvalues of all of the kinship matrices $\kinMat$ we produced in all evaluations as well as the trait covariance matrices $\mathbf{V} = 2 \sigma^2 \kinMat + \sigma^2_\epsilon \mathbf{I}$ used by LMMs, which we calculated using GCTA's estimates of $\sigma^2$ and $\sigma^2_\epsilon$.
 
-We found that all WG matrices have very large negative minimum eigenvalues, and popkin MOR estimates also have smaller negative eigenvalues (\cref{fig:emin}).
+We found that all WG matrices have very large negative minimum eigenvalues, and popkin MOR estimates also have smaller negative minimum eigenvalues (\cref{fig:emin}).
 Since small negative eigenvalues may be obscured in the previous evaluation, we also counted the proportion of matrices across replicates that had negative eigenvalues.
 We discovered that, besides all WG matrices and most popkin MOR estimates, Standard matrices were also often non-positive semidefinite but only in 1000 Genomes (\cref{fig:emin-cut}).
 The likely explanation is that, while Standard estimates are positive-semidefinite by construction when there is no missing data, this is no longer true under missingness.
+Every non-positive semidefinite matrix only had one negative eigenvalue.
 Notably, unlike popkin MOR, all popkin ROM estimates are positive definite in every evaluation, including under missingness in 1000 Genomes.
 
 In order to quantify matrix singularity, as well as numerical accuracy problems caused by multiplying by inverses of nearly-singular matrices, we calculated condition numbers, which equal the maximum absolute eigenvalue divided by the minimum absolute eigenvalue of our covariance matrices.
@@ -788,29 +793,33 @@ The eigendecomposition trick widely used to fit variance components in LMMs \cit
 $$
 \mathbf{V} = \mathbf{U} \left( 2 \sigma^2 \mathbf{\Lambda} + \sigma^2_\epsilon \mathbf{I} \right) \mathbf{U}^\intercal,
 $$
-where $\mathbf{U}$ and $\mathbf{\Lambda}$ are the eigenvectors and eigenvalues of \kinMat (\cref{eq:kin_evd}),
-so the eigenvectors of $\mathbf{V}$ are also $\mathbf{U}$ and its eigenvalues are the diagonal values of $2 \sigma^2 \mathbf{\Lambda} + \sigma^2_\epsilon \mathbf{I}$.
+where $\mathbf{U}$ and $\mathbf{\Lambda}$ are the eigenvectors and eigenvalues of \kinMat, respectively (\cref{eq:kin_evd}),
+so the eigenvectors of $\mathbf{V}$ are also $\mathbf{U}$ and its eigenvalues are $2 \sigma^2 \mathbf{\Lambda} + \sigma^2_\epsilon \mathbf{I}$.
 It follows that if \kinMat is positive definite (all of its eigenvalues are positive) then so is $\mathbf{V}$ (its eigenvalues are also positive), and for these cases the condition number of $\mathbf{V}$ is always smaller (better) than that of \kinMat.
 A negative kinship eigenvalue $\lambda_i$ may become positive for $\mathbf{V}$ only if $\lambda_i  > -\sigma^2_\epsilon/(2\sigma^2) = -(1-h^2)/(2h^2)$, so very large negative $\lambda_i$ values as observed for WG do not become positive in $\mathbf{V}$, in fact often they became more negative (\cref{fig:emin}).
-This equation also shows that $\mathbf{V}$ is always invertible and well-conditioned even when \kinMat is singular positive semi-definite, as the Standard estimator is under no missingness, since a zero kinship eigenvalue becomes $\sigma^2_\epsilon$ for $\mathbf{V}$.
-Conversely, the above equation explains why some non-positive definite kinship matrices are particularly problematic: small negative eigenvectors with values near $-\sigma^2_\epsilon/(2\sigma^2)$ can result in ill-conditioned $\mathbf{V}$.
-We see that popkin MOR estimates are non-positive definite (\cref{fig:emin}) in such a way that their $\mathbf{V}$ are ill-conditioned (\cref{fig:kappa}), and we find that this explains its poorer performance in the admixed family evaluations (\cref{fig:auc_sim,fig:rmsd_sim}), as shown in the next subsection.
+This equation also shows that $\mathbf{V}$ is always invertible and well-conditioned even when \kinMat is singular positive semidefinite, as the Standard estimator is under no missingness, since a kinship eigenvalue of zero becomes $\sigma^2_\epsilon$ for $\mathbf{V}$.
+Conversely, the above equation explains why some non-positive semidefinite kinship matrices are particularly problematic: small negative eigenvectors with values near $-\sigma^2_\epsilon/(2\sigma^2)$ can result in ill-conditioned $\mathbf{V}$.
+We see that popkin MOR estimates are non-positive semidefinite (\cref{fig:emin}) in such a way that some of their $\mathbf{V}$ are ill-conditioned (\cref{fig:kappa}), and we find that this explains its poorer performance in the admixed family evaluations (\cref{fig:auc_sim,fig:rmsd_sim}), as shown in the next subsection.
 
 \subsection{Further empirical validation of theoretical predictions}
 
-Seeing that WG is always non-positive definite, and to query other instances where predictions were not fully met, here we analyze estimation accuracy of various parameters to better understand theoretically and empirically how this broken assumption affects them.
+Seeing that WG is always non-positive semidefinite, and to query other instances where predictions were not fully met, here we analyze estimation accuracy of various parameters to better understand theoretically and empirically how this broken assumption affects them.
+
+With PCA, no deviations from expectation of $\auc$ and $\rmsd$ were observed for WG (or any other kinship matrices).
+This is as expected since PCA simply ignores eigenvectors with negative or zero eigenvalues (which are ranked last).
+Therefore, our analysis focused on LMM, where deviations were observed and clarification regarding WG is needed.
 
 LMMs such as GCTA perform association testing in two steps.
 First is the restricted maximum likelihood (REML) step used to fit variance components.
-Although the eigendecomposition approaches \citep{kang_efficient_2008, lippert_fast_2011, svishcheva_rapid_2012, zhou_genome-wide_2012, sul_population_2018} require positive-definite $\mathbf{V}$ (lest the determinant of $\mathbf{V}$ be negative), surprisingly the GCTA average information algorithm only requires in practice that $\mathbf{V}$ be invertible \citep{yang_gcta:_2011}.
+Although the eigendecomposition approaches \citep{kang_efficient_2008, lippert_fast_2011, svishcheva_rapid_2012, zhou_genome-wide_2012, sul_population_2018} require positive definite $\mathbf{V}$ (lest the determinant of $\mathbf{V}$ be negative), surprisingly the GCTA average information algorithm only requires in practice that $\mathbf{V}$ be invertible \citep{yang_gcta:_2011}.
 Thus, we find that variance components estimated from WG are generally close to those of Standard (\cref{fig:preds-reml-sigmas}).
 Furthermore, the relationship between WG, Standard, and True or Popkin variance components are largely as expected from our theory, with the exception of popkin ROM on 1000 Genomes only, whose genetic variance estimates tended to be a bit smaller than expected (\cref{fig:preds-reml-errors}).
 We were not able to determine a reason that these popkin ROM estimates were worse than expected on 1000 Genomes.
 
 Next we determine the effect of WG bias on coefficient estimates.
-In this second step of association testing, GCTA and other LMMs use generalized least squares to estimate fixed effects coefficients once $\mathbf{V}$ is determined \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}.
+In this second step of LMM association testing, once $\mathbf{V}$ is determined, GCTA and other LMMs use generalized least squares to estimate fixed effects coefficients \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}.
 Using the first replicate of the admixture family simulation and the true kinship matrix and the Standard and WG limits only, we recalculated the genetic effect $\beta_i$ and intercept coefficients $\alpha$ in R for all loci, and confirmed that we recovered the GCTA estimates for $\beta_i$ to the given precision.
-We then compare intercept coefficients, which are not given by GCTA, and confirmed our theoretical prediction that they are identical whether the True or WG ROM limit kinship matrices are used (the mean absolute difference was below $10^{-7}$).
+We then compare intercept coefficients, which are not given by GCTA, and confirmed our theoretical prediction (\cref{sec:wg_gls}) that they are identical whether the True or WG ROM limit kinship matrices are used (the mean absolute difference was below $10^{-7}$).
 In contrast, intercepts fit using the Standard ROM limit kinship matrix are different than those of True, which agrees with our theoretical prediction that the intercept compensates for the kinship matrix bias (\cref{fig:lmm-intercept-test}).
 However, if the random effect were truly random, then since $\eta = \mathbf{b}^\intercal \mathbf{s}$ we would expect $\eta \sim \text{Normal}( 0, \mathbf{b}^\intercal \kinMat \mathbf{b})$, which does not agree with our empirical observations that the mean of $\eta$ is non-zero, and which is has some dependence on $\alpha$.
 This disagreement is interesting but not unexpected, since maximum likelihood estimates of $\alpha$ are bound to differ from their theoretical values.
@@ -1095,6 +1104,31 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   Therefore, if popkin-ROM is input ($w_i=1$), this transformation yields std-ROM.
   On the other hand, if popkin-MOR is used ($w_i^{-1} = \pith \left( 1 - \pith \right)$), the transformation yields std-MOR.
   
+  \section{Mean kinship inequalities}
+
+  \label{sec:mean_kinship_ineqs}
+
+  Denote the mean of the diagonal kinship terms as $\bar{\delta}^T = \frac{1}{n} \sum_{j=1}^n \kt[j]$.
+  Here we prove that
+  $$
+  0 \le \tilde{\varphi}^T \le \bar{\varphi}^T \le \bar{\delta}^T \le 1,
+  $$
+  with each of $\tilde{\varphi}^T = \bar{\varphi}^T$ and $\bar{\varphi}^T = \bar{\delta}^T$ if and only if all kinship values are equal.
+
+  The inequalities $0 \le \bar{\varphi}^T \le \bar{\delta}^T \le 1$ follow directly from previous work, applied to a kinship matrix rather than a coancestry matrix as done originally, as the proof required solely a covariance matrix with values between 0 and 1 \citep{ochoa_estimating_2021}.
+  Recall that $\tilde{\varphi}^T$ is defined in \cref{eq:wg_tilde}.
+  The lower bound $0 \le \tilde{\varphi}^T$ follows since every kinship value is non-negative.
+  Note that $\bar{\varphi}^T$ and $\tilde{\varphi}^T$ are related by
+  \begin{equation}
+    \label{eq:kinship_mean_tilde}
+    \bar{\varphi}^T
+    =
+    \frac{ \tilde{\varphi}^T (n-1) + \bar{\delta}^T }{n}.
+  \end{equation}
+  Applying $\bar{\varphi}^T \le \bar{\delta}^T$ to \cref{eq:kinship_mean_tilde} and simplifying yields $\tilde{\varphi}^T \le \bar{\delta}^T$.
+  Lastly, since $\bar{\varphi}^T - \tilde{\varphi}^T = \left( \bar{\delta}^T - \tilde{\varphi}^T \right) / n$ (from rearranging \cref{eq:kinship_mean_tilde}), it also follows that $\tilde{\varphi}^T \le \bar{\varphi}^T$, as desired.
+  Furthermore, $\tilde{\varphi}^T = \bar{\varphi}^T$ holds if and only if all $\kt = \bar{\delta}^T$, since that is necessary and sufficient for $\bar{\varphi}^T = \bar{\delta}^T$.
+
   \section{Derivation of WG bias factorization}
   
   \label{sec:wg_biasfunc}
@@ -1121,6 +1155,172 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
     q^2 - 2q + \tilde{\varphi}^T \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) = 0.
   \end{align*}
   The solution to the above quadratic equation is given by \cref{eq:wg-fac-q}, as desired.
+  
+  \section{Proof that WG bias results in zero intercept shift under LMM generalized least squares estimation}
+
+  \label{sec:wg_gls}
+
+  For this section suppose that variance components have been estimated, so $\mathbf{V} = 2 \sigma^2 \kinMat + \sigma^2_\epsilon \mathbf{I}$ is given, assume it is non-singular, and rewrite the LMM association model as
+  $$
+  \mathbf{y}
+  =
+  \mathbf{Z} \boldsymbol{\beta} + \boldsymbol{\epsilon}_V,
+  \quad\quad
+  \boldsymbol{\epsilon}_V \sim \text{Normal} \left( \mathbf{0}, \mathbf{V} \right),
+  $$
+  where the design matrix $\mathbf{Z} = (\mathbf{1}, \mathbf{x}_i, ...)$ contains the intercept, genotype and now additional covariates, and $\boldsymbol{\beta} = (\alpha, \beta_i, ...)$ are their coefficients.
+  The generalized least squares coefficients estimate, used by GCTA and other LMMs, is
+  $$
+  \boldsymbol{\hat{\beta}} = \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1} \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{y}.
+  $$
+
+  Now suppose $\mathbf{V}$ corresponds to some kinship matrix \kinMat while $\mathbf{V}'$ corresponds to $\kinMatPrime = F^\text{WG}(\kinMat)$, and $\mathbf{V}'$ is also non-singular.
+  Our strategy involves repeated application of the Sherman-Morrison formula for calculating inverses of matrices after a rank-1 update, which for a symmetric update of a matrix $\mathbf{A}$ with a vector $\mathbf{z}$ and a scalar $b$ takes the form \citep{sherman_adjustment_1950}
+  $$
+  \left( \mathbf{A} + b \mathbf{z}\mathbf{z}^\intercal \right)^{-1}
+  =
+  \mathbf{A}^{-1} - \frac{
+    b
+  }{
+    1 + b \left( \mathbf{z}^\intercal \mathbf{A}^{-1} \mathbf{z} \right)
+  }
+  \left( \mathbf{A}^{-1} \mathbf{z} \right) \left( \mathbf{A}^{-1} \mathbf{z} \right)^\intercal
+  .
+  $$
+  Since $F^\text{WG}(\kinMat)$ is a rank-1 update of \kinMat by \cref{eq:wg_lim}, then $\mathbf{V}'$ is also a rank-1 update of $\mathbf{V}$:
+  \begin{align*}
+    \mathbf{V}'
+    &=
+      2 \sigma^{2\prime} \kinMatPrime + \sigma^2_\epsilon \mathbf{I}
+      \\
+    &=
+      2 \sigma^2 \left( \kinMat - \tilde{\varphi}^T \mathbf{1}\mathbf{1}^\intercal \right)
+      + \sigma^2_\epsilon \mathbf{I}
+      \\
+    &=
+    \mathbf{V} - d \mathbf{1}\mathbf{1}^\intercal
+    ,
+  \end{align*}
+  where $d = 2 \sigma^2 \tilde{\varphi}^T$ and we used $\sigma^{2\prime} = \left( 1 - \tilde{\varphi}^T \right) \sigma^2$.
+  Therefore,
+  $$
+  \left( \mathbf{V}' \right)^{-1}
+  =
+  \mathbf{V}^{-1} + e \mathbf{V}^{-1} \mathbf{1} \left( \mathbf{V}^{-1} \mathbf{1} \right)^\intercal
+  ,
+  $$
+  where $e = d / \left( 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) \right)$.
+  Therefore the following remains a rank-1 update,
+  $$
+  \mathbf{Z}^\intercal \left( \mathbf{V}' \right)^{-1} \mathbf{Z}
+  =
+  \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} + e \mathbf{u} \mathbf{u}^\intercal
+  ,
+  $$
+  where $\mathbf{u} = \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{1}$ is a column vector the length of the number of covariates (including intercept and genotype).
+  Therefore, 
+  $$
+  \left( \mathbf{Z}^\intercal \left( \mathbf{V}' \right)^{-1} \mathbf{Z} \right)^{-1}
+  =
+  \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1}
+  - g \mathbf{v} \mathbf{v}^\intercal
+  ,
+  $$
+  where $\mathbf{v} = \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1} \mathbf{u}$
+  and $g = e/(1 + e (\mathbf{u}^\intercal \mathbf{v}))$.
+  Noting that the first column of $\mathbf{Z}$ is the intercept, and denoting $\mathbf{Z}_{-1}$ the matrix without the first column (so $\mathbf{Z} = (\mathbf{1}, \mathbf{Z}_{-1})$), a major simplification occurs:
+  \begin{align*}
+    \mathbf{v}
+    &=
+      \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1} \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{1}
+      \\
+    &=
+      \begin{pmatrix}
+        \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} & \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{Z}_{-1} \\
+        \mathbf{Z}_{-1}^\intercal \mathbf{V}^{-1} \mathbf{1} & \mathbf{Z}_{-1}^\intercal \mathbf{V}^{-1} \mathbf{Z}_{-1} \\
+      \end{pmatrix}^{-1}
+      \begin{pmatrix}
+        \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \\
+        \mathbf{Z}_{-1}^\intercal \mathbf{V}^{-1} \mathbf{1} \\
+      \end{pmatrix}
+    \\
+    &=
+      \begin{pmatrix}
+        1 \\
+        \mathbf{0} \\
+      \end{pmatrix}
+      ,
+  \end{align*}
+  where $\mathbf{0}$ is a vector the length of the number of covariates minus one (exclude the intercept).
+  In other words, $\mathbf{v}$ is the first column of the identity matrix because $\mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{1}$ is the first column of $\mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z}$.
+  As a consequence, $\mathbf{Z} \mathbf{v} = \mathbf{1}$, so $\mathbf{u}^\intercal \mathbf{v} = \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1}$ and
+  \begin{align*}
+    g
+    &=
+      \frac{ e } {1 + e (\mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1}) }
+    \\
+    &=
+      \frac{
+      \frac{ d }{ 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) }
+      } {
+      1 + \frac{ d }{ 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) } (\mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1})
+      }
+    \\
+    &=
+      d
+      .
+  \end{align*}
+  The final step yields the coefficient estimates as a rank-1 update:
+  \begin{align*}
+    \boldsymbol{\hat{\beta}}'
+    &=
+      \left( \mathbf{Z}^\intercal \left( \mathbf{V}' \right) ^{-1} \mathbf{Z} \right)^{-1} \mathbf{Z}^\intercal \left( \mathbf{V}' \right)^{-1} \mathbf{y}
+    \\
+    &=
+      \left(   \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1}
+      - d \mathbf{v} \mathbf{v}^\intercal
+      \right) \mathbf{Z}^\intercal \left( \mathbf{V}^{-1} + e \mathbf{V}^{-1} \mathbf{1} \left( \mathbf{V}^{-1} \mathbf{1} \right)^\intercal \right) \mathbf{y}
+    \\
+    &=
+      \boldsymbol{\hat{\beta}}
+      +
+      e \mathbf{v} \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{y} \right)
+      - d \mathbf{v} \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{y} \right)
+      - d e \mathbf{v} \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{y} \right)
+    \\
+    &=
+      \boldsymbol{\hat{\beta}}
+      + \mathbf{v} \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{y} \right) \left(
+      e 
+      - d 
+      - d e \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+      \right)
+      .
+  \end{align*}
+  The last factor above vanishes:
+  \begin{align*}
+    e 
+    - d 
+    - d e \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+    &=
+      \frac{ d }{ 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) }
+      - d 
+      - d \frac{ d }{ 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) } \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+    \\
+    % &=
+    %   \frac{
+    %   d
+    %   - d \left( 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) \right)
+    %   - d^2 \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+    %   }{
+    %   1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+    %   }
+    % \\
+    &=
+      0
+      .
+  \end{align*}
+  Therefore, $\boldsymbol{\hat{\beta}}' = \boldsymbol{\hat{\beta}}$, which shows that all fixed effect coefficients, including the intercept, are invariant to using a WG estimate instead of the unbiased kinship matrix when estimated with generalized least squares.
   
   \section{Proof that WG limits are positive definite}
 
@@ -1166,31 +1366,6 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   where $\bar{\varphi}^T$ is the overall mean kinship value, while $\tilde{\varphi}^T$ is the mean of the off-diagonal kinship values only (\cref{eq:wg_tilde}).
   Note that $v^2, n^2, 1 - \tilde{\varphi}^T > 0$, so the desired result follows if $\tilde{\varphi}^T < \bar{\varphi}^T$, which is proven in \cref{sec:mean_kinship_ineqs}.
   In general it is true that $\tilde{\varphi}^T \le \bar{\varphi}^T$, and $\tilde{\varphi}^T = \bar{\varphi}^T$ occurs if and only if the kinship matrix has the degenerate form $\kinMat = \bar{\varphi}^T \mathbf{J}$, which is a singular matrix not expected in practice (in this case $\kinMatPrime$ is a matrix full of zeroes).
-
-  \section{Mean kinship inequalities}
-
-  \label{sec:mean_kinship_ineqs}
-
-  Denote the mean of the diagonal kinship terms as $\bar{\delta}^T = \frac{1}{n} \sum_{j=1}^n \kt[j]$.
-  Here we prove that
-  $$
-  0 \le \tilde{\varphi}^T \le \bar{\varphi}^T \le \bar{\delta}^T \le 1,
-  $$
-  with each of $\tilde{\varphi}^T = \bar{\varphi}^T$ and $\bar{\varphi}^T = \bar{\delta}^T$ if and only if all kinship values are equal.
-
-  The inequalities $0 \le \bar{\varphi}^T \le \bar{\delta}^T \le 1$ follow directly from previous work, applied to a kinship matrix rather than a coancestry matrix as done originally, as the proof required solely a covariance matrix with values between 0 and 1 \citep{ochoa_estimating_2021}.
-  Recall that $\tilde{\varphi}^T$ is defined in \cref{eq:wg_tilde}.
-  The lower bound $0 \le \tilde{\varphi}^T$ follows since every kinship value is non-negative.
-  Note that $\bar{\varphi}^T$ and $\tilde{\varphi}^T$ are related by
-  \begin{equation}
-    \label{eq:kinship_mean_tilde}
-    \bar{\varphi}^T
-    =
-    \frac{ \tilde{\varphi}^T (n-1) + \bar{\delta}^T }{n}.
-  \end{equation}
-  Applying $\bar{\varphi}^T \le \bar{\delta}^T$ to \cref{eq:kinship_mean_tilde} and simplifying yields $\tilde{\varphi}^T \le \bar{\delta}^T$.
-  Lastly, since $\bar{\varphi}^T - \tilde{\varphi}^T = \left( \bar{\delta}^T - \tilde{\varphi}^T \right) / n$ (from rearranging \cref{eq:kinship_mean_tilde}), it also follows that $\tilde{\varphi}^T \le \bar{\varphi}^T$, as desired.
-  Furthermore, $\tilde{\varphi}^T = \bar{\varphi}^T$ holds if and only if all $\kt = \bar{\delta}^T$, since that is necessary and sufficient for $\bar{\varphi}^T = \bar{\delta}^T$.
 
 \end{appendices}
 
@@ -1262,7 +1437,7 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
     {\bf Minimum eigenvalue of kinship and trait covariance matrices.}
     ``Trait Cov.'' corresponds to $\mathbf{V}$ (see text).
     Each distribution is over the 100 replicates of each simulation (only 1000 Genomes ``Kinship'' has a single value because the genotypes did not change across replicates, but ``Trait Cov.'' always varies per replicate).
-    All WG matrices has very large negative eigenvalues, and Popkin MOR has negative eigenvalues as well; in these cases a non-positive definite kinship matrix always resulted in a non-positive definite $\mathbf{V}$.
+    All WG matrices has very large negative eigenvalues, and Popkin MOR has negative eigenvalues as well; in these cases a non-positive semidefinite kinship matrix always resulted in a non-positive semidefinite $\mathbf{V}$.
   }
   \label{fig:emin}
 \end{figure}
