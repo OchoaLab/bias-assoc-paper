@@ -655,7 +655,7 @@ The determinant of the quadratic solution $q$ would be non-negative if $\tilde{\
 $
 \tilde{\varphi}^T \le 1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right).
 $
-However, the actual $\tilde{\varphi}^T$ does not satisfy this inequality in any of our empirical cases, so both values of $b$ above are complex.
+However, the actual $\tilde{\varphi}^T$ does not satisfy this inequality in any of our empirical cases, and in fact $1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) \le \bar{\varphi}^T$ holds (proven in \cref{sec:min_w_mean_kin}; although $\tilde{\varphi}^T \le \bar{\varphi}^T$ (\cref{sec:mean_kinship_ineqs}), in practice those two are very close while $1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right)$ is much smaller than both), so both values of $b$ above are complex.
 This is a consequence of WG estimates being non-positive semidefinite, which we elaborate in the following sections.
 Nevertheless, the PCA approach as well as the GCTA algorithms for fitting variance components and estimating association coefficients work for non-positive semidefinite matrices without invoking complex numbers (following sections and \cref{sec:wg_gls}).
 [TODO: is any part of \cref{sec:wg_posdef} still useful?].
@@ -1155,7 +1155,55 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
     q^2 - 2q + \tilde{\varphi}^T \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) = 0.
   \end{align*}
   The solution to the above quadratic equation is given by \cref{eq:wg-fac-q}, as desired.
-  
+
+  \section{Minimum weighted mean kinship}
+
+  \label{sec:min_w_mean_kin}
+
+  Consider the weighted mean kinship value
+  $
+  \mathbf{w}^\intercal \kinMat \mathbf{w},
+  $
+  where $\mathbf{w}$ are weights that sum to one ($\mathbf{w}^\intercal \mathbf{1} = 1$).
+  The ordinary (or unweighted) mean kinship $\bar{\varphi}^T$ as given in the rest of this work is the special case with $\mathbf{w} = \frac{1}{n} \mathbf{1}$.
+  The value of the weights, constrained to sum to one, that minimize the weighted mean kinship, is found by solving the lagrangian multiplier problem
+  $$
+  G = \mathbf{w}^\intercal \kinMat \mathbf{w} + \lambda (\mathbf{w}^\intercal \mathbf{1} - 1).
+  $$
+  The derivatives are the constraint and
+  $$
+  \frac{dG}{d \mathbf{w}}
+  =
+  \kinMat \mathbf{w} + \lambda \mathbf{1} = \mathbf{0}.
+  $$
+  The optimal weights thus satisfy
+  $
+  \mathbf{w} = -\lambda \left( \kinMat \right)^{-1} \mathbf{1}.
+  $
+  Multiplying by $\mathbf{1}^\intercal$, since $\mathbf{1}^\intercal \mathbf{w} = 1$, allows us to solve for 
+  $
+  \lambda^{-1} = - \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1}.
+  $
+  Thus, the optimal weights are
+  $$
+  \mathbf{w}
+  = 
+  \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+  ,
+  $$
+  a solution that recurs as optimal weights in related settings \citep{altschul_weights_1989, astle_population_2009}.
+  Therefore, the minimum weighted mean kinship is, and satisfies,
+  $$
+  \mathbf{w}^\intercal \kinMat \mathbf{w}
+%  =
+%  \frac{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} } \kinMat \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+  =
+  \frac{ 1 }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+  \le
+  \bar{\varphi}^T
+  .
+  $$
+    
   \section{Proof that WG bias results in zero intercept shift under LMM generalized least squares estimation}
 
   \label{sec:wg_gls}
