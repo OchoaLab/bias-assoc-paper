@@ -56,9 +56,11 @@ for ( i in 2L : length( codes ) ) {
     code_i <- codes[ i ]
     for ( j in 1L : ( i - 1L ) ) {
         code_j <- codes[ j ]
-        diff_ij <- mean( abs( data$beta[ data$kinship == code_i ] - data$beta[ data$kinship == code_j ] ) )
-        #message( code_i, ', ', code_j, ': ', diff_ij )
-        stopifnot( diff_ij < 1e-7 )
+        stopifnot( mean( abs( data$beta[ data$kinship == code_i ] - data$beta[ data$kinship == code_j ] ) ) < 1e-7 )
+        stopifnot( mean( abs( data$var_beta[ data$kinship == code_i ] - data$var_beta[ data$kinship == code_j ] ) ) < 1e-7 )
+        stopifnot( mean( abs( data$score_stat[ data$kinship == code_i ] - data$score_stat[ data$kinship == code_j ] ) ) < 1e-6 )
+        # these values are in the order of 1000, I think that explains the lower absolute precision (relative precision is about the same as other cases)
+        stopifnot( mean( abs( data$ssr[ data$kinship == code_i ] - data$ssr[ data$kinship == code_j ] ) ) < 1e-3 )
     }
 }
 
