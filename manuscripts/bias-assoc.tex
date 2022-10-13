@@ -658,7 +658,6 @@ $
 However, the actual $\tilde{\varphi}^T$ does not satisfy this inequality in any of our empirical cases, and in fact $1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) \le \bar{\varphi}^T$ holds (proven in \cref{sec:min_w_mean_kin}; although $\tilde{\varphi}^T \le \bar{\varphi}^T$ (\cref{sec:mean_kinship_ineqs}), in practice those two are very close while $1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right)$ is much smaller than both), so both values of $b$ above are complex.
 This is a consequence of WG estimates being non-positive semidefinite, which we elaborate in the following sections.
 Nevertheless, the PCA approach as well as the GCTA algorithms for fitting variance components and estimating association coefficients work for non-positive semidefinite matrices without invoking complex numbers (following sections and \cref{sec:wg_gls}).
-[TODO: is any part of \cref{sec:wg_posdef} still useful?].
 
 \subsubsection{Proof for LMM case}
 
@@ -782,6 +781,7 @@ Since small negative eigenvalues may be obscured in the previous evaluation, we 
 We discovered that, besides all WG matrices and most popkin MOR estimates, Standard matrices were also often non-positive semidefinite but only in 1000 Genomes (\cref{fig:emin-cut}).
 The likely explanation is that, while Standard estimates are positive-semidefinite by construction when there is no missing data, this is no longer true under missingness.
 Every non-positive semidefinite matrix only had one negative eigenvalue.
+The eigenvector with the negative eigenvalue for WG bias is partially characterized in \cref{sec:wg_posdef}.
 Notably, unlike popkin MOR, all popkin ROM estimates are positive definite in every evaluation, including under missingness in 1000 Genomes.
 
 In order to quantify matrix singularity, as well as numerical accuracy problems caused by multiplying by inverses of nearly-singular matrices, we calculated condition numbers, which equal the maximum absolute eigenvalue divided by the minimum absolute eigenvalue of our covariance matrices.
@@ -1370,13 +1370,13 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   \end{align*}
   Therefore, $\boldsymbol{\hat{\beta}}' = \boldsymbol{\hat{\beta}}$, which shows that all fixed effect coefficients, including the intercept, are invariant to using a WG estimate instead of the unbiased kinship matrix when estimated with generalized least squares.
   
-  \section{Proof that WG limits are positive definite}
+  \section{Characterization of WG bias positive definite subspaces, and eigenvector with negative eigenvalue}
 
   \label{sec:wg_posdef}
 
-  [TODO: not true, but only part of direct sum is incorrect; is the rest worth keeping as a way to characterize the negative-definite subspace?]
-  
-  Starting from a positive-definite kinship matrix \kinMat, we prove that WG-bias transformed matrix $\kinMatPrime = F^\text{WG}( \kinMat )$ is also positive definite (and therefore invertible), except in one degenerate case.
+  We found that WG estimates are non-positive semidefinite, and that this is due to a single eigenvalue that is negative.
+  While we did not find a closed form for this eigenvector, we prove that it must have non-zero projections onto two orthogonal subspaces: $S_1$ spanned by the intercept $\mathbf{1}$, and $S_2$ its complement (orthogonal to $\mathbf{1}$).
+  This is because, starting from a positive definite kinship matrix \kinMat, the WG-bias transformed matrix $\kinMatPrime = F^\text{WG}( \kinMat )$ is positive definite in each of the subspaces $S_1, S_2$, so the eigenvector with the negative eigenvalue cannot be wholly in just one of the two subspaces, so it must have non-zero projections to both.
   Recall from \cref{eq:wg_lim} that
   $
   \kinMatPrime
@@ -1385,10 +1385,8 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   .
   $
   We shall not consider $\kinMat = \mathbf{J}$ as a valid kinship matrix, which therefore ensures that $\tilde{\varphi}^T < 1$ as there is at least one kinship value with $\kt < 1$.
-  Now consider two linear subspaces of $\mathbb{R}^n$, $S_1$ spanned by $\mathbf{1}$ and $S_2$ its complement (orthogonal to $\mathbf{1}$), and prove that $\kinMatPrime$ is positive definite in both subspaces, therefore it is positive-definite in the direct sum of the subspaces, which equals the entire space: $\mathbb{R}^n = S_1 \oplus S_2$.
-  (This follows since vectors $\mathbf{v}$ for which $\kinMatPrime$ is not positive definite, if they exist, span a linear subspace, but its intersection to $S_1$, $S_2$, and therefore $S_1 \oplus S_2$, is trivial \citep{hefferon_linear_2020}.)
   In both subspaces we will prove that $\mathbf{v} \in S_i$ and $\mathbf{v} \ne \mathbf{0}$ implies $\mathbf{v}^\intercal \kinMatPrime \mathbf{v} > 0$ which proves that $\kinMatPrime$ is positive definite in that subspace.
-
+  
   We begin by considering $\mathbf{v} \in S_2$, which satisfy $\mathbf{1}^\intercal \mathbf{v} = \mathbf{0}$, and by hypothesis $\mathbf{v} \ne \mathbf{0}$.
   Therefore $\mathbf{v}^\intercal \mathbf{J} \mathbf{v} = 0$ in this subspace, which results in
   $$
@@ -1401,7 +1399,7 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   $$
   where the final inequality follows since the original kinship matrix is positive definite and $1-\tilde{\varphi}^T > 0$.
 
-  Lastly, we consider $\mathbf{v} \in S_1$, which are necessarily of the form $\mathbf{v} = v \mathbf{1}$, and by hypothesis $v \ne 0$.
+  Now consider $\mathbf{v} \in S_1$, which are necessarily of the form $\mathbf{v} = v \mathbf{1}$, and by hypothesis $v \ne 0$.
   Therefore
   $$
   \mathbf{v}^\intercal \kinMatPrime \mathbf{v}
@@ -1415,6 +1413,33 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   Note that $v^2, n^2, 1 - \tilde{\varphi}^T > 0$, so the desired result follows if $\tilde{\varphi}^T < \bar{\varphi}^T$, which is proven in \cref{sec:mean_kinship_ineqs}.
   In general it is true that $\tilde{\varphi}^T \le \bar{\varphi}^T$, and $\tilde{\varphi}^T = \bar{\varphi}^T$ occurs if and only if the kinship matrix has the degenerate form $\kinMat = \bar{\varphi}^T \mathbf{J}$, which is a singular matrix not expected in practice (in this case $\kinMatPrime$ is a matrix full of zeroes).
 
+  Lastly, consider the weights that minimize the weighted mean kinship found in \cref{sec:min_w_mean_kin}, calculated for the unbiased kinship matrix \kinMat:
+  $$
+  \mathbf{w}
+  = 
+  \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+  .
+  $$
+  When applied to the biased kinship matrix \kinMatPrime, given the previous calculation and also that $\mathbf{w}^\intercal \mathbf{1} = 1$, we see that
+  \begin{align*}
+    \mathbf{w}^\intercal \kinMatPrime \mathbf{w}
+    &=
+      \frac{1}{1-\tilde{\varphi}^T}
+      \left(
+      \mathbf{w}^\intercal \kinMat \mathbf{w}
+      - \tilde{\varphi}^T \mathbf{w}^\intercal \mathbf{1}\mathbf{1}^\intercal \mathbf{w}
+      \right)
+      \\
+    &=
+      \frac{1}{1-\tilde{\varphi}^T}
+      \left(
+      \frac{ 1 }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+      - \tilde{\varphi}^T
+      \right)
+  \end{align*}
+  Thus, we again find that a WG-biased matrix is non-positive semidefinite if $1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) \le \tilde{\varphi}^T$, which empirically was always true in our evaluations.
+  This $\mathbf{w}$ is not an eigenvector (even if normalized), but empirically it had a large projection to the desired eigenvector with the negative eigenvalue.
+  
 \end{appendices}
 
 
