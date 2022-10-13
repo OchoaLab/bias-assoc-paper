@@ -683,9 +683,10 @@ No other regression coefficients, or the total residuals, change when \kinMat is
 The above results required positive semidefinite kinship matrices $\kinMatPrime$.
 Nevertheless, for the non-positive semidefinite WG bias combined with the generalized least squares association algorithm, which is used by GCTA and other LMMs \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}, we found a stronger result consistent with the above, namely that $\alpha' = \alpha$, or in other words $\eta = 0$ (\cref{sec:wg_gls}).
 
-The LMM association p-value does not change in several common tests, including the F-test, since it only depends on the residuals and these do not change, as well as the likelihood ratio test, because although the covariance matrices do change, their determinants cancel out in the ratio.
-[TODO: What about Score, Wald tests?  I think there can be changes in one of those cases!]
-The argument holds whether the model is fit with maximum likelihood (ML) or restricted maximum likelihood (REML) \citep{kang_efficient_2008}, since the difference only affects how $\sigma^2$ is estimated, and in both cases the adjusted estimate, which is given by the original $\sigma^2$ multiplied by $c$, results in an identical likelihood so no other estimates are affected.
+The LMM association p-value does not change in several common tests, including the F-test, since it only depends on the residuals and these do not change, as well as the likelihood ratio test, because although covariance determinants change, they cancel out in the ratio.
+The Wald test used by GCTA \citep{yang_advantages_2014} is also invariant to these kinship biases given our empirical results in \cref{fig:pvals_eq_sim,fig:pvals_eq_real} and proven explicitly for WG bias in \cref{sec:wg_gls}.
+Lastly, we confirmed empirically that the Score test for the GCTA model is also invariant to these kinship biases (not shown).
+These arguments hold whether variance components are fit with maximum likelihood (ML) or restricted maximum likelihood (REML) \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}, since multiplying the estimated genetic variance component $\sigma^2$ by $c$ and adjusting the intercept compensates for the bias regardless of how $\sigma^2, \sigma^2_\epsilon$ are estimated.
 
 \subsubsection{Proof for PCA case}
 
@@ -1166,23 +1167,23 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   $
   where $\mathbf{w}$ are weights that sum to one ($\mathbf{w}^\intercal \mathbf{1} = 1$).
   The ordinary (or unweighted) mean kinship $\bar{\varphi}^T$ as given in the rest of this work is the special case with $\mathbf{w} = \frac{1}{n} \mathbf{1}$.
-  The value of the weights, constrained to sum to one, that minimize the weighted mean kinship, is found by solving the lagrangian multiplier problem
+  The value of the weights, constrained to sum to one, that minimize the weighted mean kinship, is found by solving the Lagrangian multiplier problem
   $$
   G = \mathbf{w}^\intercal \kinMat \mathbf{w} + \lambda (\mathbf{w}^\intercal \mathbf{1} - 1).
   $$
   The derivatives are the constraint and
-  $$
+  $
   \frac{dG}{d \mathbf{w}}
   =
-  \kinMat \mathbf{w} + \lambda \mathbf{1} = \mathbf{0}.
-  $$
+  2 \kinMat \mathbf{w} + \lambda \mathbf{1} = \mathbf{0}.
+  $
   The optimal weights thus satisfy
   $
-  \mathbf{w} = -\lambda \left( \kinMat \right)^{-1} \mathbf{1}.
+  \mathbf{w} = \frac{-\lambda}{2} \left( \kinMat \right)^{-1} \mathbf{1}.
   $
   Multiplying by $\mathbf{1}^\intercal$, since $\mathbf{1}^\intercal \mathbf{w} = 1$, allows us to solve for 
   $
-  \lambda^{-1} = - \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1}.
+  \lambda^{-1} = - \frac{1}{2} \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1}.
   $
   Thus, the optimal weights are
   $$
@@ -1369,6 +1370,8 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
       .
   \end{align*}
   Therefore, $\boldsymbol{\hat{\beta}}' = \boldsymbol{\hat{\beta}}$, which shows that all fixed effect coefficients, including the intercept, are invariant to using a WG estimate instead of the unbiased kinship matrix when estimated with generalized least squares.
+
+  Furthermore, since the diagonal values of $\left( \mathbf{Z}^\intercal \left( \mathbf{V}' \right)^{-1} \mathbf{Z} \right)^{-1}$, which correspond to $\Var( \hat{\beta}_k' )$ for each $k$, are the same as those of $\left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1}$ except for the first one corresponding to the intercept, then the Wald test statistic of the $k$th covariate coefficients, given by $\hat{\beta}_k^2 / \Var( \hat{\beta}_k )$, and their p-values, are also the same for $k \ne 1$ for WG bias as for the unbiased kinship matrix.
   
   \section{Characterization of WG bias positive definite subspaces, and eigenvector with negative eigenvalue}
 
@@ -1420,7 +1423,7 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
   .
   $$
-  When applied to the biased kinship matrix \kinMatPrime, given the previous calculation and also that $\mathbf{w}^\intercal \mathbf{1} = 1$, we see that
+  When applied to the WG-biased kinship matrix \kinMatPrime, given the previous calculation and also that $\mathbf{w}^\intercal \mathbf{1} = 1$, we see that
   \begin{align*}
     \mathbf{w}^\intercal \kinMatPrime \mathbf{w}
     &=
