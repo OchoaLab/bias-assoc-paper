@@ -789,7 +789,6 @@ Since small negative eigenvalues may be obscured in the previous evaluation, we 
 We discover that, besides all WG matrices and most popkin MOR estimates, Standard matrices are also often non-positive semidefinite but only in 1000 Genomes (\cref{fig:emin-cut}).
 The likely explanation is that, while Standard estimates are positive semidefinite by construction when there is no missing data, this is no longer true under missingness.
 Every non-positive semidefinite matrix only has one negative eigenvalue.
-The eigenvector with the negative eigenvalue for WG bias is partially characterized in \cref{sec:wg_posdef}.
 Notably, unlike popkin MOR, all popkin ROM estimates are positive definite in every evaluation, including under missingness in 1000 Genomes.
 
 In order to quantify matrix singularity, as well as numerical accuracy problems caused by multiplying by inverses of nearly-singular matrices, we calculate condition numbers, which equal the maximum absolute eigenvalue divided by the minimum absolute eigenvalue of our covariance matrices.
@@ -1379,75 +1378,6 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   Therefore, $\boldsymbol{\hat{\beta}}' = \boldsymbol{\hat{\beta}}$, which shows that all fixed effect coefficients, including the intercept, are invariant to using a WG-biased kinship matrix instead of the unbiased one when the coefficients are estimated with generalized least squares.
 
   Furthermore, since the diagonal values of $\left( \mathbf{Z}^\intercal \left( \mathbf{V}' \right)^{-1} \mathbf{Z} \right)^{-1}$, which correspond to $\Var( \hat{\beta}_k' )$ for each $k$, are the same as those of $\left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1}$ except for the first one corresponding to the intercept, then the Wald test statistic of the $k$th covariate coefficients, given by $\hat{\beta}_k^2 / \Var( \hat{\beta}_k )$, and their p-values, are also the same for $k \ne 1$ for WG bias as for the unbiased kinship matrix.
-  
-  \section{Characterization of WG bias positive definite subspaces, and eigenvector with negative eigenvalue}
-
-  \label{sec:wg_posdef}
-
-  We found empirically that WG estimates are non-positive semidefinite, and that this is due to a single eigenvalue that is negative.
-  We did not find a closed form for this eigenvector, but we prove that it must have non-zero projections onto two orthogonal subspaces: $S_1$ spanned by the intercept $\mathbf{1}$, and $S_2$ its complement (orthogonal to $\mathbf{1}$).
-  This is because, starting from a positive definite kinship matrix \kinMat, the WG-bias transformed matrix $\kinMatPrime = F^\text{WG}( \kinMat )$ is positive definite in each of the subspaces $S_1, S_2$ (shown below), so the eigenvector with the negative eigenvalue cannot be wholly in just one of the two subspaces.
-  Recall from \cref{eq:wg_lim} that
-  $
-  \kinMatPrime
-  =
-  \frac{1}{1-\tilde{\varphi}^T} \left( \kinMat - \tilde{\varphi}^T \boldsymbol{J} \right)
-  .
-  $
-  The transformation requires $\tilde{\varphi}^T < 1$, so $\kinMat \ne \mathbf{J}$.
-  In both subspaces we will prove that $\mathbf{v} \in S_i$ and $\mathbf{v} \ne \mathbf{0}$ implies $\mathbf{v}^\intercal \kinMatPrime \mathbf{v} > 0$ which proves that $\kinMatPrime$ is positive definite in that subspace.
-  
-  We begin by considering $\mathbf{v} \in S_2$, which satisfy $\mathbf{1}^\intercal \mathbf{v} = \mathbf{0}$, and by hypothesis $\mathbf{v} \ne \mathbf{0}$.
-  Therefore $\mathbf{v}^\intercal \mathbf{J} \mathbf{v} = 0$ in this subspace, which results in
-  $$
-  \mathbf{v}^\intercal \kinMatPrime \mathbf{v}
-  =
-  \frac{1}{1-\tilde{\varphi}^T} \mathbf{v}^\intercal \kinMat \mathbf{v}
-  >
-  0
-  ,
-  $$
-  which follows since the original kinship matrix is positive definite and $1-\tilde{\varphi}^T > 0$.
-
-  Now consider $\mathbf{v} \in S_1$, which are necessarily of the form $\mathbf{v} = v \mathbf{1}$, and by hypothesis $v \ne 0$.
-  Therefore
-  $$
-  \mathbf{v}^\intercal \kinMatPrime \mathbf{v}
-  =
-  \frac{ v^2 }{1-\tilde{\varphi}^T}(\boldsymbol{1^\intercal \kinMat 1} - \tilde{\varphi}^T n^2)
-  =
-  \frac{ v^2 n^2 }{1-\tilde{\varphi}^T} \left( \bar{\varphi}^T - \tilde{\varphi}^T \right)
-  > 0
-  ,
-  $$
-  where $\bar{\varphi}^T$ is the overall mean kinship value, while $\tilde{\varphi}^T$ is the mean of the off-diagonal kinship values only (\cref{eq:wg_tilde}), which follows since $v^2, n^2, 1 - \tilde{\varphi}^T > 0$, and $\tilde{\varphi}^T < \bar{\varphi}^T$ (\cref{sec:mean_kinship_ineqs}; note $\tilde{\varphi}^T = \bar{\varphi}^T$ occurs if and only if $\kinMat = \bar{\varphi}^T \mathbf{J}$, which is not positive definite).
-
-  Lastly, consider the optimal weights from \cref{sec:min_w_mean_kin}, calculated for the unbiased kinship matrix \kinMat:
-  $$
-  \mathbf{w}
-  = 
-  \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
-  .
-  $$
-  When applied to \kinMatPrime, since $\mathbf{w}^\intercal \mathbf{1} = 1$, we get
-  \begin{align*}
-    \mathbf{w}^\intercal \kinMatPrime \mathbf{w}
-    &=
-      \frac{1}{1-\tilde{\varphi}^T}
-      \left(
-      \mathbf{w}^\intercal \kinMat \mathbf{w}
-      - \tilde{\varphi}^T \mathbf{w}^\intercal \mathbf{1}\mathbf{1}^\intercal \mathbf{w}
-      \right)
-      \\
-    &=
-      \frac{1}{1-\tilde{\varphi}^T}
-      \left(
-      \frac{ 1 }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
-      - \tilde{\varphi}^T
-      \right)
-  \end{align*}
-  Thus, we again find that a WG-biased matrix is non-positive semidefinite if $1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) \le \tilde{\varphi}^T$, which empirically is always true in our evaluations.
-  This $\mathbf{w}$ is not an eigenvector (even if normalized), but empirically it has a large projection to the desired eigenvector with the negative eigenvalue.
   
 \end{appendices}
 
