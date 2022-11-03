@@ -1283,23 +1283,12 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
   $$
   where $\mathbf{v} = \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1} \mathbf{u}$
   and $g = e/(1 + e (\mathbf{u}^\intercal \mathbf{v}))$.
-  Noting that the first column of $\mathbf{Z}$ is the intercept, and denoting $\mathbf{Z}_{-1}$ the matrix without the first column (so $\mathbf{Z} = (\mathbf{1}, \mathbf{Z}_{-1})$), a major simplification occurs:
+  Noting that $\mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{1}$ is the first column of $\mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z}$, then $\mathbf{v}$ is the first column of the identity matrix:
   \begin{align*}
     \mathbf{v}
     &=
       \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1} \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{1}
-      \\
-    &=
-      \begin{pmatrix}
-        \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} & \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{Z}_{-1} \\
-        \mathbf{Z}_{-1}^\intercal \mathbf{V}^{-1} \mathbf{1} & \mathbf{Z}_{-1}^\intercal \mathbf{V}^{-1} \mathbf{Z}_{-1} \\
-      \end{pmatrix}^{-1}
-      \begin{pmatrix}
-        \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \\
-        \mathbf{Z}_{-1}^\intercal \mathbf{V}^{-1} \mathbf{1} \\
-      \end{pmatrix}
-    \\
-    &=
+      =
       \begin{pmatrix}
         1 \\
         \mathbf{0} \\
@@ -1307,7 +1296,6 @@ The high-coverage version of the 1000 Genomes Project was downloaded from \url{f
       ,
   \end{align*}
   where $\mathbf{0}$ is a vector the length of the number of covariates minus one (exclude the intercept).
-  In other words, $\mathbf{v}$ is the first column of the identity matrix because $\mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{1}$ is the first column of $\mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z}$.
   As a consequence, $\mathbf{Z} \mathbf{v} = \mathbf{1}$, so $\mathbf{u}^\intercal \mathbf{v} = \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1}$ and
   \begin{align*}
     g
