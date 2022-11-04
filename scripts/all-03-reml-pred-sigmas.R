@@ -103,6 +103,10 @@ boxplot_errors <- function ( data, main = '' ) {
     data$err_g_std = data$g_std - data$g_tr * data$c_std
     data$err_g_wg = data$g_wg - data$g_tr * data$c_wg
     data$err_g_both = data$g_std - data$g_wg * ( data$c_std / data$c_wg )
+
+    # in this plot only shorten GW and True
+    kinship_methods$short[ kinship_methods$short== 'Weir-Goudet' ] <- 'WG'
+    kinship_methods$short[ kinship_methods$short== 'True Kinship' ] <- 'True'
     
     # types vary per dataset, so determine them here
     types <- unique( data$type )
@@ -125,9 +129,16 @@ boxplot_errors <- function ( data, main = '' ) {
                 labs_component <- c( labs_component, if ( component == 'e' ) 'Residual' else 'Genetic' )
                 labs_type <- c( labs_type, kinship_methods$type[ kinship_methods$code == paste0( 'std_', type ) ] )
                 if ( short_name == 'both' ) {
-                    labs_short <- c( labs_short, 'Both' )
-                } else 
-                    labs_short <- c( labs_short, kinship_methods$short[ kinship_methods$code == paste0( short_name, '_rom' ) ] )
+                    lab_short <- 'Standard - WG'
+                } else {
+                    short_name_ref <- if ( type == 'rom_lim' ) 'true' else paste0( 'popkin_', type )
+                    lab_short <- paste0(
+                        kinship_methods$short[ kinship_methods$code == paste0( short_name, '_rom' ) ],
+                        ' - ',
+                        kinship_methods$short[ kinship_methods$code == short_name_ref ]
+                    )
+                }
+                labs_short <- c( labs_short, lab_short )
             }
         }
     }
@@ -137,7 +148,7 @@ boxplot_errors <- function ( data, main = '' ) {
         main = main,
         names = NA, # individual labels will be plotted with rest
         xaxt = 'n',
-        ylab = expression(bold((sigma*minute)^2 - c*sigma^2))
+        ylab = 'Prediction error'
     )
     # reuse popkin-style labeling!  Great for hierarchical/factorial setup
     # though popkin has defaults for these, the raw function doesn't have defaults!
@@ -145,7 +156,7 @@ boxplot_errors <- function ( data, main = '' ) {
                  labs = cbind( labs_short, labs_type, labs_component ),
                  labs_cex = c(0.7, 0.6, 1),
                  labs_las = c(2, 0, 0),
-                 labs_line = c(0.5, 4, 6),
+                 labs_line = c(0.5, 5.5, 7),
                  labs_lwd = 1, # default
                  labs_sep = c(FALSE, TRUE, TRUE),
                  labs_even = c(FALSE, TRUE, TRUE),
@@ -183,7 +194,7 @@ fig_start(
     width = width,
     height = width / 2,
     mar_t = 1.5,
-    mar_b = 7
+    mar_b = 8
 )
 par( mfrow = c(1,2) )
 par( oma = c(1, 0, 0, 0) )
@@ -191,7 +202,7 @@ boxplot_errors( data_sim, main = 'Admixed Family sim.' )
 panel_letter('A', adj = -0.2)
 boxplot_errors( data_real, main = '1000 Genomes' )
 panel_letter('B', adj = -0.2)
-mtext( 'Variance Component, Kinship Estimate', side = 1, outer = TRUE )
+mtext( 'Variance Component, Kinship Estimate Pair', side = 1, outer = TRUE )
 fig_end()
 
 # interpretation
