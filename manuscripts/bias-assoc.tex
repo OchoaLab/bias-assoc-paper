@@ -120,7 +120,7 @@ When applied to structured populations with admixed individuals, multiethnic coh
 The most popular association models for structured populations are Linear Mixed-effects Models (LMM) and Principal Component Analysis (PCA), which are closely related except LMM is capable of modeling high-dimensional structures whereas PCA is strictly a low-dimensional model \citep{astle_population_2009, hoffman_correcting_2013, yao_limitations_2022}.
 
 % Kinship in models
-Various association models, including both PCA and LMM, parametrize relatedness using kinship matrices, also known as Genetic Relatedness Matrices or ``GRMs''.
+Various association models, including both PCA and LMM, parameterize relatedness using kinship matrices, also known as Genetic Relatedness Matrices or ``GRMs''.
 Kinship coefficients are well suited for this task since they model the covariance structure of genotypes \citep{malecot_mathematiques_1948, jacquard_structures_1970}.
 Kinship is often encountered in family studies, where they reflect recent relatedness and can be calculated from pedigrees \citep{wright_coefficients_1922, emik_systematic_1949, garcia-cortes_novel_2015}.
 However, as kinship is defined as a probability of identity by descent, it may also capture ancient population relatedness \citep{malecot_mathematiques_1948, astle_population_2009}, and common non-parametric kinship estimators from genotypes indeed include population structure in their estimates \citep{ochoa_estimating_2021}.
@@ -586,7 +586,7 @@ In contrast, the Standard and Weir-Goudet (WG) estimates have large downward bia
 We perform LMM and PCA association tests to determine how kinship biases affect association performance.
 Surprisingly, we find that kinship bias type does not have a discernible effect on association performance, as summarized by $\auc$ (a robust proxy for power; \cref{fig:auc_sim}) and $\rmsd$ (measures null statistic calibration; \cref{fig:rmsd_sim}).
 The largest differences in performance are explained by the association model (LMM vs PCA), as expected due to our use of a family simulation where PCA performs poorly.
-Within association models, there are no clear differences between the performance of any of the kinship matrices, in fact many appear to have identical distributions (both statistics), the only clear exception being LMM popkin MOR, which has a few outlier replicates where performance is exceedingly poor.
+Within association models, there are no clear differences between the performance of any of the kinship matrices, in fact many appear to have identical distributions (both statistics), the only clear exception being LMM popkin MOR, which has a few outlier replicates where performance is exceedingly poor (More details will be discussed in the later section).
 
 \begin{figure}[bp!]
   \centering
@@ -614,7 +614,7 @@ Now we repeat our analysis using the real genotypes of 1000 Genomes.
 Kinship estimates are shown in \cref{fig:kinship_real} (note real data have no true kinship or estimator limits).
 Popkin ROM estimates display an approximate nested block structure that arises from the tree relationships between subpopulations (\cref{fig:kinship_real}A; trees were explicitly fit to this data in previous work \citep{yao_limitations_2022}).
 However, popkin MOR estimates do not follow the nested blocks tree structure, since kinship between African and non-African populations is higher than kinship within African populations (\cref{fig:kinship_real}B).
-Standard estimates have values are closer to zero, and a different bias for each pair of individuals, resulting in higher relative kinship for African compared to non-African populations (\cref{fig:kinship_real}C-D).
+Standard estimates have values closer to zero, and a different bias for each pair of individuals, resulting in higher relative kinship for African compared to non-African populations (\cref{fig:kinship_real}C-D).
 Lastly, WG estimates are uniformly smaller than popkin's and attain large negative values (\cref{fig:kinship_real}E-F).
 
 \begin{figure}[bp!]
@@ -804,7 +804,7 @@ Overall, while the approximation of \cref{eq:pc-shift} can be weakened to merely
 The kinship matrices we used so far have values that depend on the choice of ancestral population $T$.
 Here we consider the effect on association of changing ancestral population, and prove that it is also compensated for by the relatedness and intercept coefficients.
 
-Start from a kinship matrix \kinMat[S] in terms of ancestral population $S$, and let $T$ is a population ancestral to $S$.
+Start from a kinship matrix \kinMat[S] in terms of ancestral population $S$, and let $T$ be a population ancestral to $S$.
 If the inbreeding coefficient of $S$ when $T$ is the reference ancestral population is $\f{T}{S}$, then the kinship matrix \kinMat in terms of $T$ is given by \citep{ochoa_estimating_2021}
 \begin{linenomath*}
 $$
