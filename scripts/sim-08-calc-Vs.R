@@ -8,13 +8,14 @@ library(simtrait) # for cov_trait
 read_kin <- function( name_method )
     read_grm( paste0( 'kinship/', name_method ) )$kinship / 2
 
+# these use global `dir_herit`
 # this one has no scaling and other such bells and whistles
 write_V <- function( V, name_method )
-    write_grm( paste0( 'V/', name_method ), V )
+    write_grm( paste0( dir_herit, 'V/', name_method ), V )
 
 calc_V_single <- function( data, rep, kinships, name_method ) {
     # determine if output already exists, do not recalculate!
-    file_out <- paste0( 'V/', name_method, '.grm.bin' )
+    file_out <- paste0( dir_herit, 'V/', name_method, '.grm.bin' )
     if ( file.exists( file_out ) ) {
         message( 'Output exists, skipping: ', file_out )
         return()
@@ -61,7 +62,9 @@ option_list = list(
     make_option("--bfile", type = "character", default = NA, 
                 help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
     make_option("--n_rep", type = "integer", default = NA, 
-                help = "Total number of replicates", metavar = "int")
+                help = "Total number of replicates", metavar = "int"),
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -70,6 +73,8 @@ opt <- parse_args(opt_parser)
 # get values
 dir_out <- opt$bfile
 n_rep <- opt$n_rep
+herit <- opt$herit
+
 if ( is.na( n_rep ) )
     stop( 'Option `--n_rep` is required!' )
 
@@ -83,8 +88,22 @@ setwd( dir_out )
 # if this directory exists here, this is real data
 is_sim <- !file.exists( 'kinship' )
 
+# to get back down easily
+dir_base <- getwd()
+
+# include additional level if heritability is non-default
+dir_herit <- '' # so stuff works for default case too
+if ( herit != 0.8 ) {
+    dir_herit <- paste0( 'h-', herit, '/' )
+    setwd( dir_herit )
+}
+
 # load sigma!
 data <- read_tsv( 'reml.txt.gz', col_types = 'icdddddddd' )
+
+# for non-default herit, have to get back to base!
+# (this works for default herit too)
+setwd( dir_base )
 
 # NULL means load kinship matrices from each rep as we go
 kinships <- NULL
@@ -99,14 +118,19 @@ if ( !is_sim ) {
     names( kinships ) <- kinship_names
 }
 
+# get back down if needed
+setwd( dir_base )
+
 # navigate all replicates
 for ( rep in 1 : n_rep ) {
     message( 'rep: ', rep )
     dir_rep <- paste0( 'rep-', rep )
     setwd( dir_rep )
     # make output dir for this rep
-    dir.create( 'V' )
-
+    dir_out_rep <- paste0( dir_herit, 'V' )
+    if ( !dir.exists( dir_out_rep ) )
+        dir.create( dir_out_rep )
+    
     # process each type, calculating and saving its V
     lapply( kinship_names, function( name ) calc_V_single( data, rep, kinships, name ) )
     

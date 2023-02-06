@@ -1,6 +1,7 @@
 library(readr)
 library(ochoalabtools)
 library(dplyr)
+library(optparse)    # for terminal options
 
 # a sort of constant
 width <- fig_width()
@@ -21,6 +22,37 @@ kinship_methods$col = 1 : nrow( kinship_methods )
 # store processed data from all datasets
 data_all <- vector( 'list', length( datasets ) )
 
+############
+### ARGV ###
+############
+
+# define options
+option_list = list(
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double")
+)
+
+opt_parser <- OptionParser(option_list = option_list)
+opt <- parse_args(opt_parser)
+
+# get values
+herit <- opt$herit
+
+# include additional level if heritability is non-default
+dir_herit <- '' # so stuff works for default case too
+if ( herit != 0.8 ) {
+    dir_herit <- paste0( 'h-', herit, '/' )
+    # here's a weird hack to load old data for default (high) herit (so prev results are unchanged), but newer data for non-default herit (couldn't use old data for these new results)
+    datasets[1] <- 'sim-admix-n1000-m100000-k3-f0.3-s0.5-g20'
+}
+file_in_eigen <- paste0( dir_herit, 'eigen.txt.gz' )
+file_in_eval <- paste0( dir_herit, 'eval.txt.gz' )
+file_in_reml <- paste0( dir_herit, 'reml.txt.gz' )
+
+#################
+### LOAD DATA ###
+#################
+
 # go where the data is
 # load precomputed sigmas
 setwd( '../data/' )
@@ -29,10 +61,10 @@ setwd( '../data/' )
 for ( i in 1L : length( datasets ) ) {
     dataset <- datasets[i]
     setwd( dataset )
-    data <- read_tsv( 'eigen.txt.gz', col_types = 'cicdid' )
-    eval <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
-    reml <- read_tsv( 'reml.txt.gz', col_types = 'icdddddddd' )
-
+    data <- read_tsv( file_in_eigen, col_types = 'cicdid' )
+    eval <- read_tsv( file_in_eval, col_types = 'cid' )
+    reml <- read_tsv( file_in_reml, col_types = 'icdddddddd' )
+    
     # work to correlate V condition numbers to issues with SRMSDs and AUCs
     # to do it broadly (before focusing on particularly troublesome cases), focus on broad cases where this matters
     # apply filters globally (will not use the removed data anymore)
@@ -113,6 +145,10 @@ for ( i in 1L : length( datasets ) ) {
     # go back down when done
     setwd( '..' )
 }
+
+# store outputs in herit output
+if ( dir_herit != '' )
+    setwd( dir_herit )
 
 # start figure vs condition numbers
 fig_start(

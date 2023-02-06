@@ -29,6 +29,8 @@ option_list = list(
                 help = "Replicate number", metavar = "int"),
     make_option(c("-p", "--n_pcs"), type = "integer", default = 2, 
                 help = "Number of PCs to use", metavar = "int"),
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double"),
     make_option(c("-t", "--threads"), type = "integer", default = 0, 
                 help = "number of threads (default use all cores)", metavar = "int")
 )
@@ -40,6 +42,7 @@ opt <- parse_args(opt_parser)
 dir_out <- opt$bfile
 rep <- opt$rep
 n_pcs <- opt$n_pcs
+herit <- opt$herit
 threads <- opt$threads
 
 # indexes for PCs
@@ -53,15 +56,24 @@ setwd( dir_out )
 is_sim <- !file.exists( 'kinship' )
 
 dir_rep <- paste0( 'rep-', rep )
+# include additional level if heritability is non-default
+dir_herit <- '' # required this way for default herit
+if ( herit != 0.8 )
+    dir_herit <- paste0( 'h-', herit, '/' )
+
 # stay in lower level for real data
+# for sims, enter rep but not dir_herit!
 if ( is_sim ) 
     setwd( dir_rep )
 
+# always point to phenotypes with correct heritability!
+name_phen <- paste0( dir_herit, name )
 # include rep dir for phenotypes if we have real data
-name_phen <- if ( is_sim ) name else paste0( dir_rep, '/', name )
+if ( !is_sim ) 
+    name_phen <- paste0( dir_rep, '/', name_phen )
 
-# to run in parallel on cluster, make sure outputs (even temporary ones) from different reps do not overlap!
-name_out <- paste0( name, '-rep-', rep )
+# to run in parallel on cluster, make sure outputs (even temporary ones) from different reps and heritabilities do not overlap!
+name_out <- paste0( name, '-rep-', rep, '-herit-', herit )
 # same name for all cases! (gets overwritten serially, removed in the end)
 file_covar <- paste0( name_out, '.eigenvec' )
 
@@ -141,5 +153,8 @@ assoc_all( 'wg_mor' )
 # move into rep now for real data (we're already there for sims)
 if ( !is_sim )
     setwd( dir_rep )
+# then move into herit subdir if needed
+if ( dir_herit!= '' )
+    setwd( dir_herit )
 write_tsv( pvals, 'pvals.txt.gz' )
 write_tsv( betas, 'betas.txt.gz' )

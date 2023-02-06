@@ -16,7 +16,9 @@ option_list = list(
     make_option("--bfile", type = "character", default = NA, 
                 help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
     make_option("--n_rep", type = "integer", default = NA, 
-                help = "Total number of replicates", metavar = "int")
+                help = "Total number of replicates", metavar = "int"),
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -25,6 +27,8 @@ opt <- parse_args(opt_parser)
 # get values
 dir_out <- opt$bfile
 n_rep <- opt$n_rep
+herit <- opt$herit
+
 if ( is.na( n_rep ) )
     stop( 'Option `--n_rep` is required!' )
 
@@ -97,10 +101,20 @@ process_tables <- function( name, tol ) {
     ) )
 }
 
+# include additional level if heritability is non-default
+dir_herit <- '' # required this way for default herit
+if ( herit != 0.8 ) {
+    dir_herit <- paste0( 'h-', herit )
+}
+
+# to get back here easily
+dir_base <- getwd()
+
 # get data from each replicate
 # add to various running sums
 for ( rep in 1 : n_rep ) {
-    setwd( paste0( 'rep-', rep ) )
+    # jump immediately to right herit as needed (works for default and non-default)
+    setwd( paste0( 'rep-', rep, '/', dir_herit ) )
 
     message( 'rep-', rep, ': pvals' )
     data <- process_tables( 'pvals', tol = tolp )
@@ -127,7 +141,7 @@ for ( rep in 1 : n_rep ) {
         Eb <- Eb + data$E
     }
 
-    setwd( '..' )
+    setwd( dir_base )
 }
 
 # complete averages
@@ -137,6 +151,10 @@ Cb <- Cb / n_rep
 # for equality, properly consider missingness
 Ep <- Ep / Mp
 Eb <- Eb / Mb
+
+# store final data in base, with herit sublevel if non-default
+if ( dir_herit != '' )
+    setwd( dir_herit )
 
 # save all of these tables!
 write_tsv( as.data.frame( Cp ), 'pvals_cor.txt' )

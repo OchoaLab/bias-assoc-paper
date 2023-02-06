@@ -20,6 +20,8 @@ option_list = list(
                 help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
     make_option("--n_rep", type = "integer", default = NA, 
                 help = "Total number of replicates", metavar = "int"),
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double"),
     make_option(c("-t", "--threads"), type = "integer", default = 0, 
                 help = "number of threads (default use all cores)", metavar = "int")
 )
@@ -30,7 +32,9 @@ opt <- parse_args(opt_parser)
 # get values
 dir_out <- opt$bfile
 n_rep <- opt$n_rep
+herit <- opt$herit
 threads <- opt$threads
+
 if ( is.na( n_rep ) )
     stop( 'Option `--n_rep` is required!' )
 
@@ -41,9 +45,15 @@ setwd( dir_out )
 # if this directory exists here, this is real data
 is_sim <- !file.exists( 'kinship' )
 
+# include additional level if heritability is non-default
+dir_herit <- '' # required this way for default herit
+if ( herit != 0.8 )
+    dir_herit <- paste0( 'h-', herit, '/' )
+
 data_reml <- NULL
 
-gcta_reml_sigmas <- function( name_method, factors = FALSE ) {
+# uses global name
+gcta_reml_sigmas <- function( name_phen, name_method, factors = FALSE ) {
     # setup paths and names for output tables
     name_grm <- paste0( 'kinship/', name_method )
 
@@ -105,35 +115,43 @@ for ( rep in 1 : n_rep ) {
     if ( is_sim ) 
         setwd( dir_rep )
 
-    # include rep dir for phenotypes if we have real data
-    name_phen <- if ( is_sim ) name else paste0( dir_rep, '/', name )
+    # always point to phenotypes with correct heritability!
+    name_phen <- paste0( dir_herit, name )
 
+    # include rep dir for phenotypes if we have real data
+    if ( !is_sim )
+        name_phen <- paste0( dir_rep, '/', name_phen )
+    
     ############
     ### REML ###
     ############
 
     # limits are available for simulations only (true kinship must be known)
     if ( is_sim ) {
-        data_tr <- gcta_reml_sigmas( 'true', factors = TRUE )
-        data_st <- gcta_reml_sigmas( 'std_rom_lim' )
-        data_wg <- gcta_reml_sigmas( 'wg_rom_lim' )
+        data_tr <- gcta_reml_sigmas( name_phen, 'true', factors = TRUE )
+        data_st <- gcta_reml_sigmas( name_phen, 'std_rom_lim' )
+        data_wg <- gcta_reml_sigmas( name_phen, 'wg_rom_lim' )
         reml_tab( data_tr, data_st, data_wg, rep, 'rom_lim' )
     }
 
-    data_tr <- gcta_reml_sigmas( 'popkin_rom', factors = TRUE )
-    data_st <- gcta_reml_sigmas( 'std_rom' )
-    data_wg <- gcta_reml_sigmas( 'wg_rom' )
+    data_tr <- gcta_reml_sigmas( name_phen, 'popkin_rom', factors = TRUE )
+    data_st <- gcta_reml_sigmas( name_phen, 'std_rom' )
+    data_wg <- gcta_reml_sigmas( name_phen, 'wg_rom' )
     reml_tab( data_tr, data_st, data_wg, rep, 'rom' )
 
-    data_tr <- gcta_reml_sigmas( 'popkin_mor', factors = TRUE )
-    data_st <- gcta_reml_sigmas( 'std_mor' )
-    data_wg <- gcta_reml_sigmas( 'wg_mor' )
+    data_tr <- gcta_reml_sigmas( name_phen, 'popkin_mor', factors = TRUE )
+    data_st <- gcta_reml_sigmas( name_phen, 'std_mor' )
+    data_wg <- gcta_reml_sigmas( name_phen, 'wg_mor' )
     reml_tab( data_tr, data_st, data_wg, rep, 'mor' )
 
     # go back down for simulations (only case where it is needed)
     if ( is_sim ) 
         setwd( '..' )
 }
+
+# go into herit dir now if non-default
+if ( dir_herit != '' )
+    setwd( dir_herit )
 
 # save data frame!
 write_tsv( data_reml, 'reml.txt.gz' )

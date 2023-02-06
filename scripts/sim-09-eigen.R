@@ -19,7 +19,9 @@ option_list = list(
     make_option("--bfile", type = "character", default = NA, 
                 help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
     make_option("--n_rep", type = "integer", default = NA, 
-                help = "Total number of replicates", metavar = "int")
+                help = "Total number of replicates", metavar = "int"),
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double")
 )
 
 opt_parser <- OptionParser(option_list = option_list)
@@ -28,8 +30,15 @@ opt <- parse_args(opt_parser)
 # get values
 dir_out <- opt$bfile
 n_rep <- opt$n_rep
+herit <- opt$herit
+
 if ( is.na( n_rep ) )
     stop( 'Option `--n_rep` is required!' )
+
+# include additional level if heritability is non-default
+dir_herit <- '' # so stuff works for default case too
+if ( herit != 0.8 )
+    dir_herit <- paste0( 'h-', herit, '/' )
 
 # before switching away from "scripts", load a table located there
 kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cccc' )
@@ -41,8 +50,10 @@ setwd( dir_out )
 # wrapper around this setup
 read_kin_process <- function( name_method, rep, is_V = FALSE ) {
     # load matrix
+    # note herit affects V only (kinship does not depend on herit)
     type <- if ( is_V ) 'V' else 'kinship'
-    kinship <- read_grm( paste0( type, '/', name_method ) )$kinship
+    type_path <- if ( is_V ) paste0( dir_herit, type ) else type # need `dir_herit` for path only, V only
+    kinship <- read_grm( paste0( type_path, '/', name_method ) )$kinship
     # kinship matrices are halved, V's don't need that
     if ( !is_V ) kinship <- kinship / 2
 
@@ -103,6 +114,10 @@ for ( rep in 1L : n_rep ) {
     
     setwd( '..' )
 }
+
+# put output in herit dir as needed
+if ( dir_herit != '' )
+    setwd( dir_herit )
 
 # write table to output
 write_tsv( data, 'eigen.txt.gz' )

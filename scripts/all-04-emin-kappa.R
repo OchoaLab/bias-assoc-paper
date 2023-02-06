@@ -1,11 +1,39 @@
 library(readr)
 library(ochoalabtools)
 library(popkin) # for :::print_labels_multi
+library(optparse)    # for terminal options
 
 # threshold for negative eigenvalues
 cut_evs <- -1e-7
 # a sort of constant
 width <- fig_width()
+
+############
+### ARGV ###
+############
+
+# define options
+option_list = list(
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double")
+)
+
+opt_parser <- OptionParser(option_list = option_list)
+opt <- parse_args(opt_parser)
+
+# get values
+herit <- opt$herit
+
+# include additional level if heritability is non-default
+dir_herit <- '' # so stuff works for default case too
+if ( herit != 0.8 )
+    dir_herit <- paste0( 'h-', herit, '/' )
+file_in_eigen <- paste0( dir_herit, 'eigen.txt.gz' )
+file_in_eval <- paste0( dir_herit, 'eval.txt.gz' )
+
+#################
+### LOAD DATA ###
+#################
 
 # before switching away from "scripts", load a table located there
 kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cccc' )
@@ -14,17 +42,26 @@ kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cccc' )
 # load precomputed sigmas
 setwd( '../data/' )
 
-# simulation first, use first replicate only
-setwd( 'sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes' )
-data_sim <- read_tsv( 'eigen.txt.gz', col_types = 'cicdid' )
-eval_sim <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
+# simulation first
+# here's a weird hack to load old data for default (high) herit (so prev results are unchanged), but newer data for non-default herit (couldn't use old data for these new results)
+if ( dir_herit != '' ) {
+    setwd( 'sim-admix-n1000-m100000-k3-f0.3-s0.5-g20' )
+} else {
+    setwd( 'sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes' )
+}
+data_sim <- read_tsv( file_in_eigen, col_types = 'cicdid' )
+eval_sim <- read_tsv( file_in_eval, col_types = 'cid' )
 setwd( '..' )
 
 # now real data
 setwd( 'tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01' )
-data_real <- read_tsv( 'eigen.txt.gz', col_types = 'cicdid' )
-eval_real <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
+data_real <- read_tsv( file_in_eigen, col_types = 'cicdid' )
+eval_real <- read_tsv( file_in_eval, col_types = 'cid' )
 setwd( '..' )
+
+# store outputs in herit output
+if ( dir_herit != '' )
+    setwd( dir_herit )
 
 
 boxplot_data <- function ( data, main = '', is_sim = TRUE, col_name = 'emin', ylab = 'Min. eigenvalue', cut = NA, ... ) {

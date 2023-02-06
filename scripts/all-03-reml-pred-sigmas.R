@@ -1,6 +1,33 @@
 library(readr)
 library(ochoalabtools)
 library(popkin)
+library(optparse)    # for terminal options
+
+############
+### ARGV ###
+############
+
+# define options
+option_list = list(
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double")
+)
+
+opt_parser <- OptionParser(option_list = option_list)
+opt <- parse_args(opt_parser)
+
+# get values
+herit <- opt$herit
+
+# include additional level if heritability is non-default
+dir_herit <- '' # so stuff works for default case too
+if ( herit != 0.8 )
+    dir_herit <- paste0( 'h-', herit, '/' )
+file_in <- paste0( dir_herit, 'reml.txt.gz' )
+
+#################
+### LOAD DATA ###
+#################
 
 # before switching away from "scripts", load a table located there
 kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cccc' )
@@ -9,15 +36,29 @@ kinship_methods <- read_tsv( 'kinship_methods.txt', col_types = 'cccc' )
 # load precomputed sigmas
 setwd( '../data/' )
 
-# simulation first, use first replicate only
-setwd( 'sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes' )
-data_sim <- read_tsv( 'reml.txt.gz', col_types = 'icdddddddd' )
+# simulation first
+# here's a weird hack to load old data for default (high) herit (so prev results are unchanged), but newer data for non-default herit (couldn't use old data for these new results)
+if ( dir_herit != '' ) {
+    setwd( 'sim-admix-n1000-m100000-k3-f0.3-s0.5-g20' )
+} else {
+    setwd( 'sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes' )
+}
+data_sim <- read_tsv( file_in, col_types = 'icdddddddd' )
 setwd( '..' )
 
 # now real data
 setwd( 'tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01' )
-data_real <- read_tsv( 'reml.txt.gz', col_types = 'icdddddddd' )
+data_real <- read_tsv( file_in, col_types = 'icdddddddd' )
 setwd( '..' )
+
+# store outputs in herit output
+# create if it didn't already exist
+if ( dir_herit != '' ) {
+    if ( !dir.exists( dir_herit ) )
+        dir.create( dir_herit )
+    setwd( dir_herit )
+}
+
 
 # visualize raw sigma distributions
 # these are useful because the simulations are replicates, so all the same values are being estimated over and over, and the variance is just noise in theory
@@ -77,14 +118,13 @@ boxplot_sigmas <- function ( data, main = '', leg = FALSE ) {
                  doMat = FALSE
              )
     # add some guide lines reflecting biases
-    herit <- 0.8
     # this works because the true overal sigma is 1
     sigma_sq_e_true <- 1 - herit
     abline( h = herit, lty = 2, col = 'blue' )
     abline( h = sigma_sq_e_true, lty = 2, col = 'red' )
     if ( leg )
         legend(
-            'topleft',
+            if ( herit > 0.5 ) 'topleft' else 'bottomleft',
             c('Genetic', 'Residual'),
             lty = 2,
             col = c('blue', 'red'),

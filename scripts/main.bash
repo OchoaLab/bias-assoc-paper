@@ -3,60 +3,81 @@
 m_loci=100000
 n_rep=100
 gen=20
+h=0.8 # default, high herit
 
 # dir output name for this run, which gets passed to other scripts
-name='sim-admix-n1000-m'$m_loci'-k3-f0.3-s0.5-mc100-h0.8-g'$gen'-fes'
+#name='sim-admix-n1000-m'$m_loci'-k3-f0.3-s0.5-mc100-h'$h'-g'$gen'-fes' # original naming convention
+name='sim-admix-n1000-m'$m_loci'-k3-f0.3-s0.5-g'$gen # new doesn't describe phenotypes, as multiple choices can be nested
 
+# all of these are done only once, for default herit or independent of it
 for rep in $(seq 1 $n_rep); do
     # simulate genotypes and phenotypes data on standard K=3 admixture
-    time Rscript sim-00-sim-gen-phen.R -g $gen --fes -r $rep -m $m_loci
+    time Rscript sim-00-sim-gen-phen.R -g $gen --fes -r $rep -m $m_loci --herit $h
     # 0m53.628s viiiaR5
 
     # create all kinship estimates
     time Rscript sim-01-kinship.R --bfile $name -r $rep
     # 0m13.995s
-    
-    # run association tests
-    time Rscript sim-03-assoc.R --bfile $name -p 2 -r $rep
-    # 1m29.778s
-
-    # calculate AUCs and SRMSDs
-    time Rscript sim-04-auc-calc.R --bfile $name -r $rep
-    # 0m1.487s
 done
 
 # kinship plots (rep-1 only)
+# does not depend on trait/heritability
 time Rscript sim-02-kinship-plot.R --bfile $name -r 1
 # 0m3.002s
 
-# gather AUC/RMSD data from all reps into single table
-time Rscript sim-05-auc-rmsd-table.R --bfile $name --n_rep $n_rep
-# 0m1.922s viiiaR5
+# simulate phenotype for non-default herit
+h=0.3 # non-default, low herit
+for rep in $(seq 1 $n_rep); do
+    time Rscript real-01-simtrait.R --bfile $name --fes -r $rep --herit $h
+done
 
-# plot AUCs and SRMSDs (all reps)
-time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
+# these vary by herit
+for h in 0.8 0.3; do
+    for rep in $(seq 1 $n_rep); do
+	# run association tests
+	time Rscript sim-03-assoc.R --bfile $name -p 2 -r $rep --herit $h
+	# OR submit on cluster (hand edit script first!): sbatch -a 1-100 sim-03-assoc.q
+	# 1m29.778s
+	
+	# calculate AUCs and SRMSDs
+	time Rscript sim-04-auc-calc.R --bfile $name -r $rep --herit $h
+	# 0m1.487s
+    done
 
-# statistic correlation heatmaps (all reps)
-time Rscript sim-06-stats-corr.R --bfile $name --n_rep $n_rep
-# 1m7.825s
+    # gather AUC/RMSD data from all reps into single table
+    time Rscript sim-05-auc-rmsd-table.R --bfile $name --n_rep $n_rep --herit $h
+    # 0m1.922s viiiaR5
+    
+    # plot AUCs and SRMSDs (all reps)
+    time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep --herit $h
+    
+    # first calculate, save tables
+    time Rscript sim-06-stats-corr-calc.R --bfile $name --n_rep $n_rep --herit $h
+    # 1m7.825s
+    # now plot!
+    time Rscript sim-06-stats-corr-plot.R --bfile $name --herit $h
 
-# obtain variance component estimates for many follow-up analyses
-time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep
-# 12m23.149s/44m13.530s
+    # obtain variance component estimates for many follow-up analyses
+    time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep --herit $h
+    # 12m23.149s/44m13.530s
 
-# calculate V matrices for all cases, save them
-time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep
-# 3m37.934s labbyDuke
+    # calculate V matrices for all cases, save them
+    time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep --herit $h
+    # 3m37.934s labbyDuke
 
-# calculate minimum eigenvalues, number of neg eigenvalues, and condition numbers for all kinship and V matrices
-time Rscript sim-09-eigen.R --bfile $name --n_rep $n_rep
-# 692m24.452s/7450m57.683s viiiaR5
+    # calculate minimum eigenvalues, number of neg eigenvalues, and condition numbers for all kinship and V matrices
+    time Rscript sim-09-eigen.R --bfile $name --n_rep $n_rep --herit $h
+    # 3m28.429s/14m42.992s viiiaR5
+done
 
+# these minor/unused tests are run on default herit only (non-default not supported!)
 # generate refitted intercepts to test what happens to them
 # also calculates SSR, score and Wald test parts to confirm empirically that they are invariant
+# rep-1 only!
 time Rscript sim-10-lmm-intercept-test.R --bfile $name -r 1
 # 51m25.800s/390m5.579s viiiaR5
 # plot non-trivial results!
+# rep-1 only!
 time Rscript sim-11-lmm-intercept-test-plot.R --bfile $name -r 1
 # creates: lmm-intercept-test.pdf
 # 0m1.688s viiiaR5
@@ -92,86 +113,97 @@ time Rscript real-00-kinship-plot.R --bfile $name
 # a version without WG better for presentations
 time Rscript real-00-kinship-plot.R --bfile $name --noWG
 
-for rep in $(seq 1 $n_rep); do
-    # simulate trait now!
-    time Rscript real-01-simtrait.R --bfile $name --fes -r $rep
-    # m_causal: 250
-    # 0m2.075s
+# these vary by herit
+for h in 0.8 0.3; do
+    for rep in $(seq 1 $n_rep); do
+	# simulate trait now!
+	time Rscript real-01-simtrait.R --bfile $name --fes -r $rep --herit $h
+	# m_causal: 250
+	# 0m2.075s
 
-    # run association tests
-    time Rscript sim-03-assoc.R --bfile $name -p 10 -r $rep
-    # 108m24.091s
+	# run association tests
+	time Rscript sim-03-assoc.R --bfile $name -p 10 -r $rep --herit $h
+	# OR submit on cluster (hand edit script first!): sbatch -a 1-100 sim-03-assoc.q
+	# 108m24.091s
 
-    # calculate AUCs and SRMSDs
-    time Rscript sim-04-auc-calc.R --bfile $name -r $rep
-    # 0m0.615s
+	# calculate AUCs and SRMSDs
+	time Rscript sim-04-auc-calc.R --bfile $name -r $rep --herit $h
+	# 0m0.615s
+    done
+
+    # # DCC version
+    # # after making traits locally (fast), run association tests on cluster
+    # # first transfer data:
+    # cd ../data/$name/
+    # tar -chzf data.tgz data.{bed,bim,fam} pops-annot.txt kinship/ rep-*/{,h-0.3/}{data.phen,simtrait.RData}
+    # # transfer to DCC after creating output directory structure on DCC
+    # scp data.tgz $dcc:/work/ao128/bias-assoc-paper/data/$name/
+    # rm data.tgz # cleanup
+
+    # # on DCC
+    # cd /work/ao128/bias-assoc-paper/data/$name/
+    # tar -xzf data.tgz
+    # rm data.tgz
+    # # when jobs are done, from this same location:
+    # tar -czf pvals.tgz rep-*/{,h-0.3/}{pvals,betas}.txt.gz
+    # tar -czf pvals.tgz rep-*/h-0.3/{pvals,betas}.txt.gz
+    # rm pvals.tgz # after transfer
+
+    # # back on computer
+    # cd ~/docs/ochoalab/bias-assoc-paper/data/$name/
+    # scp $dcc:/work/ao128/bias-assoc-paper/data/$name/pvals.tgz .
+    # tar -xzf pvals.tgz
+    # rm pvals.tgz
+
+    # gather AUC/RMSD data from all reps into single table
+    time Rscript sim-05-auc-rmsd-table.R --bfile $name --n_rep $n_rep --herit $h
+    # 0m2.410s viiiaR5
+
+    # plot AUCs and SRMSDs (all reps)
+    time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep --herit $h
+    # 0m6.258s
+
+    # statistic correlation heatmaps (all reps)
+    # first calculate, save tables
+    time Rscript sim-06-stats-corr-calc.R --bfile $name --n_rep $n_rep --herit $h
+    # 6m12.550s
+    # now plot!
+    time Rscript sim-06-stats-corr-plot.R --bfile $name --herit $h
+    # 0m0.896s
+    # NOTE: beta fig fails every time (betas are extremely correlated)
+
+    # obtain variance component estimates for many follow-up analyses
+    time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep --herit $h
+    # 308m42.172s/474m56.338s
+
+    # calculate V matrices for all cases, save them
+    time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep --herit $h
+    # 6m10.256s viiiaR5
+
+    # calculate minimum eigenvalues, number of neg eigenvalues, and condition numbers for all kinship and V matrices
+    time Rscript sim-09-eigen.R --bfile $name --n_rep $n_rep --herit $h
+    # 7m20.355s/35m14.247s viiiaR5
 done
 
-# # DCC version
-# # after making traits locally (fast), run association tests on cluster
-# # first transfer data:
-# cd ../data/$name/
-# tar -chzf data.tgz data.{bed,bim,fam} pops-annot.txt kinship/ rep-*/{data.phen,simtrait.RData}
-# # transfer to DCC after creating output directory structure on DCC
-# scp data.tgz $dcc:/work/ao128/bias-assoc-paper/data/$name/
-# rm data.tgz # cleanup
+# additional plots created for default herit only, as they were for posters/presentations only
 
-# # on DCC
-# cd /work/ao128/bias-assoc-paper/data/$name/
-# tar -xzf data.tgz
-# rm data.tgz
-# # when jobs are done, from this same location:
-# tar -czf pvals.tgz rep-*/{pvals,betas}.txt.gz
-# rm pvals.tgz # after transfer
-
-# # back on computer
-# cd ~/docs/ochoalab/bias-assoc-paper/data/$name/
-# scp $dcc:/work/ao128/bias-assoc-paper/data/$name/pvals.tgz
-# tar -xzf pvals.tgz
-# rm pvals.tgz
-
-# gather AUC/RMSD data from all reps into single table
-time Rscript sim-05-auc-rmsd-table.R --bfile $name --n_rep $n_rep
-# 0m2.410s viiiaR5
-
-# plot AUCs and SRMSDs (all reps)
-time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep
-# 0m6.258s
 # a version without WG better for presentations
 time Rscript sim-05-auc-rmsd-plot.R --bfile $name --n_rep $n_rep --noWG
 
 # a hacky smaller version for grants only
 time Rscript sim-05-auc-plot_lmm-small.R --bfile $name --n_rep $n_rep
 
-# statistic correlation heatmaps (all reps)
-# first calculate, save tables
-time Rscript sim-06-stats-corr-calc.R --bfile $name --n_rep $n_rep
-# 6m12.550s
-# now plot!
-time Rscript sim-06-stats-corr-plot.R --bfile $name
-# 0m0.896s
-# NOTE: beta fig fails every time (betas are extremely correlated) 
 # a version without WG better for presentations
 time Rscript sim-06-stats-corr-plot.R --bfile $name --noWG
 # 0m0.863s
 
-# obtain variance component estimates for many follow-up analyses
-time Rscript sim-07-reml.R --bfile $name --n_rep $n_rep
-# 308m42.172s/474m56.338s
-
-# calculate V matrices for all cases, save them
-time Rscript sim-08-calc-Vs.R --bfile $name --n_rep $n_rep
-# 8m40.166s labbyDuke
-
-# calculate minimum eigenvalues, number of neg eigenvalues, and condition numbers for all kinship and V matrices
-time Rscript sim-09-eigen.R --bfile $name --n_rep $n_rep
-# 956m26.957s/10268m1.934s viiiaR5
 
 
 
 ### COMBINED ###
 
 # compare popkin ROM/MOR (and true, in sim) in sim and TGP
+# NOTE: old sim path kept, hardcoded
 time Rscript all-01-popkin-mor-rom-bias.R
 # 0m17.224s ideapad
 # remove earlier version if redoing
@@ -183,6 +215,7 @@ time pdf2png ../data/popkin-mor-rom-bias.pdf
 rm ../data/popkin-mor-rom-bias.pdf
 
 # create plot that compares PCs across bias types
+# NOTE: old sim path kept, hardcoded
 time Rscript all-02-pca-plots.R 
 # 0m21.909s viiiaR5
 # Sim: Intercept projection to PC1 of popkin ROM: 0.939904048930533
@@ -190,27 +223,31 @@ time Rscript all-02-pca-plots.R
 # Real: Intercept projection to PC1 of popkin ROM: 0.89979532627367
 # Real: Intercept projection to PC1 of popkin MOR: 0.955378629802354
 
-# plots variance component values and prediction errors
-time Rscript all-03-reml-pred-sigmas.R
-# 0m0.886s labbyDuke
+# these vary by herit
+# NOTE: in these cases, to not change existing paper/preprint data, for high herit it uses old sim, but for low herit it uses new sim (only one that exists)
+# (recall new sim has identical structure parameters to old sim, but everything had to be resimulated because originally I didn't save `p_anc` values that are needed to simulate new traits (low herit), new sim has them)
+for h in 0.8 0.3; do
+    # plots variance component values and prediction errors
+    time Rscript all-03-reml-pred-sigmas.R --herit $h
+    # 0m0.886s labbyDuke
 
-# plot minimum eigenvalues, non-posdef proportions, and condition number distributions
-time Rscript all-04-emin-kappa.R
-# creates: emin.pdf, emin-cut.pdf, kappa.pdf
-# 0m0.670s viiiaR5
+    # plot minimum eigenvalues, non-posdef proportions, and condition number distributions
+    time Rscript all-04-emin-kappa.R --herit $h
+    # creates: emin.pdf, emin-cut.pdf, kappa.pdf
+    # 0m0.670s viiiaR5
 
-# makes figures that proves several things:
-# - for admix sim
-#   - RMSD and AUC deviations form expectation (WG) are perfectly predicted by kappa
-#   - sigma errors are uncorrelated to kappa, so errors are restricted to assoc step
-# - for TGP
-#   - RMSD and AUC errors are generally smaller but still extrema are not predicted at all by kappa
-#   - sigma errors are way biggger and also not predicted by kappa
-#   - sigma errors drive outliers here and not assoc step
-time Rscript all-05-kappa-vs-pred-err.R
-# creates: kappa-vs-pred-err.pdf, reml-err-vs-pred-err.pdf
-# 0m0.907s viiiaR5
-
+    # makes figures that proves several things:
+    # - for admix sim
+    #   - RMSD and AUC deviations form expectation (WG) are perfectly predicted by kappa
+    #   - sigma errors are uncorrelated to kappa, so errors are restricted to assoc step
+    # - for TGP
+    #   - RMSD and AUC errors are generally smaller but still extrema are not predicted at all by kappa
+    #   - sigma errors are way biggger and also not predicted by kappa
+    #   - sigma errors drive outliers here and not assoc step
+    time Rscript all-05-kappa-vs-pred-err.R --herit $h
+    # creates: kappa-vs-pred-err.pdf, reml-err-vs-pred-err.pdf
+    # 0m0.907s viiiaR5
+done
 
 
 ### THEORY/OBSOLETE ###

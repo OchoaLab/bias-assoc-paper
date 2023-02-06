@@ -16,6 +16,8 @@ tolb <- 1e-3
 option_list = list(
     make_option("--bfile", type = "character", default = NA, 
                 help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double"),
     make_option("--noWG", action = "store_true", default = FALSE, 
                 help = "Create plot version that excludes WG, for some presentations")
 )
@@ -25,6 +27,7 @@ opt <- parse_args(opt_parser)
 
 # get values
 dir_out <- opt$bfile
+herit <- opt$herit
 noWG <- opt$noWG
 
 # before switching away from "scripts", load a table located there
@@ -36,6 +39,12 @@ setwd( dir_out )
 
 # if this directory exists here, this is real data
 is_sim <- !file.exists( 'kinship' )
+
+# include additional level if heritability is non-default
+if ( herit != 0.8 ) {
+    dir_herit <- paste0( 'h-', herit )
+    setwd( dir_herit )
+}
 
 # in real data the oracle methods (truth and biased limits) are missing, exclude from `kinship_methods`
 if ( !is_sim )

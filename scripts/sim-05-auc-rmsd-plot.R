@@ -13,6 +13,8 @@ option_list = list(
                 help = "Directory to process (under ../data/, containing input plink files data.BED/BIM/FAM/PHEN)", metavar = "character"),
     make_option("--n_rep", type = "integer", default = NA, 
                 help = "Total number of replicates", metavar = "int"),
+    make_option("--herit", type = "double", default = 0.8, 
+                help = "heritability", metavar = "double"),
     make_option("--noWG", action = "store_true", default = FALSE, 
                 help = "Create plot version that excludes WG, for some presentations")
 )
@@ -23,7 +25,9 @@ opt <- parse_args(opt_parser)
 # get values
 dir_out <- opt$bfile
 n_rep <- opt$n_rep
+herit <- opt$herit
 noWG <- opt$noWG
+
 if ( is.na( n_rep ) )
     stop( 'Option `--n_rep` is required!' )
 
@@ -36,6 +40,12 @@ setwd( dir_out )
 
 # if this directory exists here, this is real data
 is_sim <- !file.exists( 'kinship' )
+
+# include additional level if heritability is non-default
+if ( herit != 0.8 ) {
+    dir_herit <- paste0( 'h-', herit )
+    setwd( dir_herit )
+}
 
 # load precalculated data
 data <- read_tsv( 'eval.txt.gz', col_types = 'cid' )
