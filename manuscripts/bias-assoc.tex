@@ -569,7 +569,7 @@ This high-dimensional admixed family scenario yields a large difference in perfo
 Kinship estimates and limits for this simulation are shown in \cref{fig:kinship_sim}.
 The true kinship matrix shows the family relatedness as high values concentrated near the diagonal and the ancestry-driven population structure as the broad patterns off-diagonal.
 Only Popkin ROM is unbiased, while popkin MOR has a slight upward bias that varies across the matrix (\cref{fig:popkin-rom-mor}A).
-In contrast, the Standard and Weir-Goudet (WG) estimates have large downward biases overall, resulting in abundant negative values; Standard biases vary for every pair of individuals (as described in \cref{eq:kinship_std_lim}), while WG has a uniform bias (following \cref{eq:wg_lim}).
+In contrast, the Standard and Weir-Goudet (WG) estimates have large downward biases overall, resulting in abundant negative values; Standard biases vary for every pair of individuals (as described in \cref{eq:kinship_std_lim}; \cref{fig:kinship-bias}), while WG has a uniform bias (following \cref{eq:wg_lim}).
 The difference is most noticeable near the diagonal: the true kinship matrix has monotonically increasing values, WG has smaller values but which are still monotonically increasing, and Standard estimates follow a U-shaped pattern (decreasing at first, then increasing again in \cref{fig:kinship_sim}D-F).
 
 \begin{figure}[bp!]
@@ -616,8 +616,8 @@ Overall, kinship matrices with different bias types (otherwise matched) result i
 Now we repeat our analysis using the real genotypes of 1000 Genomes.
 Kinship estimates are shown in \cref{fig:kinship_real} (note real data have no true kinship or estimator limits).
 Popkin ROM estimates display an approximate nested block structure that arises from the tree relationships between subpopulations (\cref{fig:kinship_real}A; trees were explicitly fit to this data in previous work \citep{yao_limitations_2022}).
-However, popkin MOR estimates do not follow the nested blocks tree structure, since kinship between African and non-African populations is higher than kinship within African populations (\cref{fig:kinship_real}B).
-Standard estimates have values closer to zero, and a different bias for each pair of individuals, resulting in higher relative kinship for African compared to non-African populations (\cref{fig:kinship_real}C-D).
+However, popkin MOR estimates do not follow the nested blocks tree structure, since kinship between African and non-African populations is higher than kinship within African populations (\cref{fig:kinship_real}B, \cref{fig:popkin-rom-mor}).
+Standard estimates have values closer to zero, and a different bias for each pair of individuals (\cref{fig:kinship-bias}), resulting in higher relative kinship for African compared to non-African populations (\cref{fig:kinship_real}C-D), whereas kinship in African populations is the lowest in the unbiased estimate (\cref{fig:kinship_real}A).
 Lastly, WG estimates are uniformly smaller than popkin's and attain large negative values (\cref{fig:kinship_real}E-F).
 
 \begin{figure}[bp!]
@@ -916,7 +916,7 @@ This result makes sense since the condition number by definition quantifies regr
 \section{Discussion}
 
 % association robust to bias type (empirical and theory / summary)
-Previous research showed that commonly used kinship estimators are biased, and that these biases can be large (\citet{ochoa_estimating_2021}; \cref{fig:kinship_sim}).
+Previous research showed that commonly used kinship estimators are biased, and that these biases can be large (\citet{ochoa_estimating_2021}; \cref{fig:kinship_sim,fig:kinship-bias}).
 Our initial hypothesis was that these kinship biases would affect association testing, but surprisingly found that association is unaffected.
 We then proved theoretically that it is the intercept and relatedness effect (random effect or PCs) coefficients that compensate for the bias, and result in identical association coefficients and significance statistics.
 
@@ -1545,6 +1545,21 @@ and detailed processing instructions are found on GitHub at \url{https://github.
     Popkin MOR biases take on a similar shape as panel A.
     }
   \label{fig:popkin-rom-mor}
+\end{figure}
+
+\begin{figure}[hp!]
+  \centering
+  \includegraphics[width=\textwidth]{kinship-bias.png}
+  \caption{
+    {\bf Comparison of biased kinship estimates.}
+    Kinship (off-diagonal of matrix) and inbreeding (transformed diagonal) are plotted in different colors, to show their biases separately: for WG they are the same, whereas for Standard estimates they differ.
+    In both cases WG is uniformly downwardly biased, whereas Standard biases vary for different pairs of individuals, and are even somewhat negatively correlated with true or unbiased estimates.
+    \textbf{A.}
+    In admixed family simulation, both estimates are compared against true kinship.
+    \textbf{B.}
+    In 1000 Genomes, since true kinship is unknown, popkin ROM takes its place.
+    }
+  \label{fig:kinship-bias}
 \end{figure}
 
 \begin{figure}[bp!]
