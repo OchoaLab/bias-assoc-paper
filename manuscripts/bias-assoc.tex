@@ -483,7 +483,7 @@ When \pit are unknown, to avoid covariance distortions, the intercept coefficien
 \end{align*}
 \end{linenomath*}
 where $\mathbf{1}_{m_1}$ is a length-$m_1$ column vector of ones.
-Genotypes were resimulated from the admixed family model for each heritability value and every replicate.
+Genotypes were simulated from the admixed family model separately per heritability value and every replicate.
 
 \subsection{Real genotype data processing}
 
@@ -539,9 +539,9 @@ All other kinship estimators and limits are calculated using the \texttt{popkins
 PCs are calculated with the \texttt{eigen} function of R.
 
 % association-specific software
-GCTA, which implements \cref{eq:lmm_gwas,eq:lmm_rand_eff}, is used to run all LMM associations \citep{yang_gcta:_2011, yang_advantages_2014}.
+GCTA, which implements the model of \cref{eq:lmm_gwas,eq:lmm_rand_eff}, is used to run all LMM associations \citep{yang_gcta:_2011, yang_advantages_2014}.
 We pass $2 \kinMat$ for all kinship matrices tested (the same scale as its own kinship estimate).
-\texttt{plink2}, which implements \cref{eq:pca_gwas,eq:kin_evd}, performs the PCA associations \citep{chang_second-generation_2015}.
+\texttt{plink2}, which implements the model of \cref{eq:pca_gwas,eq:kin_evd}, performs the PCA associations \citep{chang_second-generation_2015}.
 We use $r = K - 1 = 2$ PCs for the admixed family simulations, and $r = 10$ PCs for 1000 Genomes.
 
 \section{Results}
@@ -570,7 +570,7 @@ Kinship estimates and limits for this simulation are shown in \cref{fig:kinship_
 The true kinship matrix shows the family relatedness as high values concentrated near the diagonal and the ancestry-driven population structure as the broad patterns off-diagonal.
 Only Popkin ROM is unbiased, while popkin MOR has a slight upward bias that varies across the matrix (\cref{fig:popkin-rom-mor}A).
 In contrast, the Standard and Weir-Goudet (WG) estimates have large downward biases overall, resulting in abundant negative values; Standard biases vary for every pair of individuals (as described in \cref{eq:kinship_std_lim}), while WG has a uniform bias (following \cref{eq:wg_lim}).
-The difference is most noticeable near the diagonal: the true kinship matrix has monotonically-increasing values, WG has smaller values but which are still monotonically increasing, and Standard estimates follow a U-shaped pattern (decreasing at first, then increasing again in \cref{fig:kinship_sim}D-F).
+The difference is most noticeable near the diagonal: the true kinship matrix has monotonically increasing values, WG has smaller values but which are still monotonically increasing, and Standard estimates follow a U-shaped pattern (decreasing at first, then increasing again in \cref{fig:kinship_sim}D-F).
 
 \begin{figure}[bp!]
   \centering
@@ -954,7 +954,7 @@ As shown in our theoretical results, another form of the Standard kinship estima
 % conclusion / take away
 In this study, we show empirically and theoretically that association tests are invariant to the use of common kinship estimators that are biased versus a more recent unbiased estimator.
 % future work / implication beyond this work
-Since the results hold in the presence of additional covariates, they hold for multivariate tests in general, which encompasses LASSO approaches and rare variant (burden, kernel, etc) tests that include PCs or random effects from a kinship matrix.
+Since the results hold in the presence of additional covariates, they hold for multivariate tests in general, which encompasses LASSO approaches and rare variant (burden, kernel, etc.) tests that include PCs or random effects from a kinship matrix.
 The underpinnings of our proof show that the same result holds for association with generalized linear models, since the intercept and relatedness effects interact in the same way as for linear models (the link function goes around the trait only); these models include case/control models such as logistic PCA and LMM.
 However, heritability estimation requires unbiased estimates of the random effect coefficient ($\sigma^2$), so it is biased when the standard kinship estimator is used, as it is using GCTA \citep{yang_gcta:_2011, yang_advantages_2014}.
 Nevertheless, heritability estimation is a complex problem and a complete analysis is beyond the scope of this work.
@@ -981,7 +981,7 @@ popkinsuppl, \url{https://github.com/OchoaLab/popkinsuppl}
 \section*{Data and code availability}
 The data and code generated during this study are available on GitHub at \url{https://github.com/OchoaLab/bias-assoc-paper}.
 The high-coverage version of the 1000 Genomes Project was downloaded from \url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20190425_NYGC_GATK/}
-and detailed processing instructions are found on GitHub at \url{https://github.com/OchoaLab/data/}.
+and detailed processing instructions are found on GitHub at \url{https://github.com/OchoaLab/data}.
 
 
 \printbibliography
