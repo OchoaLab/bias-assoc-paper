@@ -214,6 +214,14 @@ time pdf2png ../data/popkin-mor-rom-bias.pdf
 # remove redundant PDF if done
 rm ../data/popkin-mor-rom-bias.pdf
 
+# compare biased estimators
+# similar extra steps to previous fig processing
+time Rscript all-06-kinship-bias-dot-plot.R
+rm ../data/kinship-bias.png
+time pdf2png ../data/kinship-bias.pdf 
+rm ../data/kinship-bias.pdf
+
+
 # create plot that compares PCs across bias types
 # NOTE: old sim path kept, hardcoded
 time Rscript all-02-pca-plots.R 
