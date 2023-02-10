@@ -604,7 +604,8 @@ Within association models, there are no clear differences between the performanc
 
 % agreement
 To better characterize the nearly identical performance distribution just observed, we next measure the agreement between individual association p-values.
-We calculate the proportion of loci between two methods with p-values within 0.01 of each other, which is a stringent measure of numerical agreement, and find a remarkably high agreement between estimators of different bias types after matching association model and locus weight type or limit (\cref{fig:pvals_eq_sim,fig:pvals_eq_sim-h3}).
+We measure high correlations between p-values, near 1 for comparisons involving the same model (between LMM methods or between PCA methods, both heritabilities), and across models around 0.6 for $h^2=0.8$, which increases to 0.88 for $h^2=0.3$ (\cref{fig:pvals_cor_sim,fig:pvals_cor_sim-h3}).
+To measure numerical agreement more stringently, we calculate the proportion of loci between two methods with p-values within 0.01 of each other, and find a remarkably high agreement between estimators of different bias types after matching association model and locus weight type or limit (\cref{fig:pvals_eq_sim,fig:pvals_eq_sim-h3}).
 This is in contrast to low agreement between PCA and LMM statistics, and between LMM statistics with different locus weight types or limits.
 Minimum agreements are higher across PCA methods, though here the true kinship or popkin estimates disagree more from Standard and WG matrices.
 Overall, kinship matrices with different bias types (otherwise matched) result in nearly identical association statistics.
@@ -636,7 +637,7 @@ Lastly, WG estimates are uniformly smaller than popkin's and attain large negati
 Our association test conclusion are similar to our simulation study: $\auc$ and $\rmsd$ distributions are nearly identical for estimators of different bias types but same locus weight type (ROM or MOR) and association model.
 However, unlike the simulation, here for $h^2=0.8$ (but not 0.3) the MOR estimates noticeably outperform ROM estimates (LMM only), in terms of both $\auc$ (\cref{fig:auc_real,fig:auc_real-h3}) and $\rmsd$ (\cref{fig:rmsd_real,fig:rmsd_real-h3}).
 % agreement
-P-values are again nearly identical at a large proportion of loci between approaches with matched association model and locus weight type (MOR or ROM), regardless of bias type (\cref{fig:pvals_eq_real,fig:pvals_eq_real-h3}).
+P-values are even more highly correlated in this case (\cref{fig:pvals_cor_real,fig:pvals_cor_real-h3}), and again nearly identical at a large proportion of loci between approaches with matched association model and locus weight type (MOR or ROM), regardless of bias type (\cref{fig:pvals_eq_real,fig:pvals_eq_real-h3}).
 
 \begin{figure}[bp!]
   \centering
@@ -1580,6 +1581,26 @@ and detailed processing instructions are found on GitHub at \url{https://github.
 
 \begin{figure}[bp!]
   \centering
+  \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-mc100-h0.8-g20-fes/pvals_cor.pdf}
+  \caption{
+    {\bf Correlation between p-values on the admixed family simulation with $h^2=0.8$.}
+    Like \cref{fig:pvals_eq_sim} but measuring correlation instead of agreement.
+    }
+  \label{fig:pvals_cor_sim}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-g20/h-0.3/pvals_cor.pdf}
+  \caption{
+    {\bf Correlation between p-values on the admixed family simulation with $h^2=0.3$.}
+    Like \cref{fig:pvals_cor_sim} except simulated with lower heritability.
+    }
+  \label{fig:pvals_cor_sim-h3}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
   \includegraphics[width=\textwidth]{sim-admix-n1000-m100000-k3-f0.3-s0.5-g20/h-0.3/pvals_eq.pdf}
   \caption{
     {\bf Agreement between p-values on the admixed family simulation with $h^2=0.3$.}
@@ -1616,6 +1637,26 @@ and detailed processing instructions are found on GitHub at \url{https://github.
     Like \cref{fig:rmsd_real} except simulated with lower heritability.
   }
   \label{fig:rmsd_real-h3}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/pvals_cor.pdf}
+  \caption{
+    {\bf Correlation between p-values on 1000 Genomes with $h^2=0.8$.}
+    See \cref{fig:pvals_cor_sim} for more details.
+  }
+  \label{fig:pvals_cor_real}
+\end{figure}
+
+\begin{figure}[bp!]
+  \centering
+  \includegraphics[width=\textwidth]{tgp-nygc-autosomes_ld_prune_1000kb_0.3_maf-0.01/h-0.3/pvals_cor.pdf}
+  \caption{
+    {\bf Correlation between p-values on 1000 Genomes with $h^2=0.3$.}
+    Like \cref{fig:pvals_cor_real} except simulated with lower heritability.
+  }
+  \label{fig:pvals_cor_real-h3}
 \end{figure}
 
 \begin{figure}[bp!]
