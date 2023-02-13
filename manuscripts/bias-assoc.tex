@@ -744,7 +744,8 @@ Therefore, the random effect $\mathbf{s}'$ of the biased kinship matrix differs 
 \end{equation}
 No other regression coefficients, or the total residuals, change when \kinMat is replaced with $\kinMatPrime$, including the association coefficient $\beta_i$ that is the focus of the test.
 
-The above results require kinship matrices $\kinMatPrime$ to be PSD, as covariance matrices are generally required to be, and which are characterized by non-negative eigenvalues and determinants.
+The above results require kinship matrices $\kinMatPrime$ to be PSD, as covariance matrices are generally required to be.
+PSD matrices are characterized by non-negative eigenvalues and determinants.
 Nevertheless, for the non-PSD WG bias (has a negative eigenvalue) combined with the generalized least squares association algorithm, which is used by GCTA and other LMMs \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}, we find a stronger result consistent with \cref{eq:alpha-shift}, namely that $\alpha' = \alpha$, or in other words, $\eta = 0$ (\cref{sec:wg_gls}).
 
 The LMM association p-value does not change in several common tests, including the F-test, since it only depends on the residuals and these do not change, as well as the likelihood ratio test, because although covariance determinants change, they cancel out in the ratio.
@@ -873,9 +874,9 @@ Notably, all popkin ROM estimates are PSD in every evaluation, including under m
 
 In order to quantify matrix singularity, as well as numerical accuracy problems caused by multiplying by inverses of nearly-singular matrices, we calculate condition numbers, which equal the maximum absolute eigenvalue divided by the minimum absolute eigenvalue of our covariance matrices.
 As expected, we see that Standard kinship matrices are singular on our admixed family simulation (which lacks missingness), as reflected by extremely high condition numbers, but their trait covariances have small condition numbers (\cref{fig:kappa,fig:kappa-h3}).
-No other matrices are singular, but popkin MOR estimates in the admixed family simulation have relatively high condition numbers for both kinship and trait covariance for $h^2=0.8$ but not 0.3.
+No other matrices are singular, but popkin MOR estimates in the admixed family simulation have relatively high condition numbers for kinship, as well as trait covariance for $h^2=0.8$ but not 0.3.
 
-Consider the theoretical connection between the eigenvalues of \kinMat and those of $\mathbf{V}$.
+To explain these observations, consider the theoretical connection between the eigenvalues of \kinMat and those of $\mathbf{V}$.
 The eigendecomposition trick widely used to fit variance components in LMMs \citep{kang_efficient_2008, lippert_fast_2011, svishcheva_rapid_2012, zhou_genome-wide_2012, sul_population_2018} yields
 \begin{linenomath*}
 $$
@@ -888,13 +889,13 @@ Therefore, since $\sigma^2, \sigma^2_\epsilon \ge 0$, then if \kinMat is positiv
 A negative kinship eigenvalue $\lambda_k$ may become positive for $\mathbf{V}$ only if $\lambda_k  > -\sigma^2_\epsilon/(2\sigma^2) = -(1-h^2)/(2h^2)$, so very large negative $\lambda_k$ values as observed for WG do not become positive in $\mathbf{V}$, in fact they can become more negative for high heritability (\cref{fig:emin}), though they are less negative at lower heritability (\cref{fig:emin-h3}).
 $\mathbf{V}$ is always invertible and well-conditioned even when \kinMat is singular PSD (has zero eigenvalues), as the Standard estimator is under no missingness, since a kinship zero eigenvalue becomes $\sigma^2_\epsilon$ for $\mathbf{V}$.
 Conversely, the above equation explains why some non-PSD kinship matrices are particularly problematic: negative eigenvectors near the heritability-dependent value $-\sigma^2_\epsilon/(2\sigma^2)$ can result in ill-conditioned $\mathbf{V}$.
-We see that popkin MOR estimates are non-PSD (\cref{fig:emin}) in such a way that some of their $\mathbf{V}$ are ill-conditioned under high heritability (\cref{fig:kappa}) but not the lower heritability (\cref{fig:kappa-h3}), and this explains its poorer performance in the admixed family evaluations (\cref{fig:auc_sim,fig:rmsd_sim}), as shown in the next subsection.
+We see that popkin MOR estimates are non-PSD (\cref{fig:emin}) in such a way that some of their $\mathbf{V}$ are ill-conditioned under high heritability (\cref{fig:kappa}) but not the lower heritability (\cref{fig:kappa-h3}), and this explains its poorer performance in the admixed family evaluations with high heritability (\cref{fig:auc_sim,fig:rmsd_sim}), as shown in the next subsection.
 
 \subsection{Further empirical validation of theoretical predictions}
 
 Seeing that WG is always non-PSD, and to query other instances where predictions are not fully met, here we analyze estimation accuracy of various parameters to better understand theoretically and empirically how broken assumptions affect them.
 With PCA, no deviations from expectation of $\auc$ and $\rmsd$ are observed for WG (\cref{fig:auc_sim,fig:auc_real}, \cref{fig:rmsd_sim,fig:rmsd_real}), which makes sense since PCA simply ignores eigenvectors with negative or zero eigenvalues.
-Therefore, our analysis focuses on LMM, where deviations are observed for $h^2=0.8$ but not for 0.3, and clarification regarding WG is needed.
+Therefore, our analysis focuses on LMM and $h^2=0.8$ only, where large deviations are observed, and clarification regarding WG is needed.
 
 LMMs such as GCTA perform association testing in two steps.
 First is the restricted maximum likelihood step used to fit variance components.
@@ -939,7 +940,7 @@ The cause is variance components are poorly estimated (\cref{fig:preds-reml-erro
 Overall, our assessment suggests that the popkin ROM estimator is the safest choice due to its guarantee of well-conditioned associations that other estimators cannot make.
 
 % MOR weirdness
-Despite being non-PSD, we observe better performance for MOR versus ROM estimators in LMM association of 1000 Genomes with $h^2=0.8$ (\cref{fig:auc_real}), but not under lower heritability (\cref{fig:auc_real-h3}).
+Despite being non-PSD, we observe better performance for MOR versus ROM estimators in LMM association of 1000 Genomes with $h^2=0.8$ (\cref{fig:auc_real}; the approaches were tied under lower heritability in \cref{fig:auc_real-h3}).
 Perhaps this is expected because we simulated larger coefficients for rare variants, while MOR estimators upweigh rare variants.
 This effect is not observed in the admixed family simulation, where MOR and ROM versions give similar kinship estimates (\cref{fig:kinship_sim}) and performed similarly (\cref{fig:auc_sim}), compared to 1000 Genomes where kinship estimates are also strikingly different (\cref{fig:kinship_real}).
 However, only popkin ROM is unbiased (\cref{fig:kinship_sim}B, \cref{fig:popkin-rom-mor}).
@@ -950,6 +951,8 @@ Future work should focus on better approaches for upweighing rare variants or ot
 % implications for other estimators
 Our conclusions that common kinship biases do not affect association studies extend to variations of the Standard kinship estimator that weigh loci according to linkage disequilibrium \citep{speed_reevaluation_2017, wang_efficient_2017}, which also have the Standard bias type since this bias is present in each locus \citep{ochoa_estimating_2021}.
 As shown in our theoretical results, another form of the Standard kinship estimator that weighs individuals to estimate ancestral allele frequencies \pith, including the best unbiased linear estimator in \cref{sec:min_w_mean_kin} \citep{astle_population_2009, thornton_roadtrips:_2010}, is also subject to the same conclusions.
+Our proof holds for arbitrary kinship matrices and their biased counterparts, making no assumptions about how they are related to the loci being tested for association, so they hold whether the test locus was included in the kinship estimate (the scenario tested empirically) or not, such as in the leave-one-chromosome-out variant of association testing with LMMs \citep{lippert_fast_2011, yang_advantages_2014}.
+In addition, the proof does not make any assumptions about the tested loci, so it does not depend on allele frequency, and thus holds for rare and common variants.
 
 % conclusion / take away
 In this study, we show empirically and theoretically that association tests are invariant to the use of common kinship estimators that are biased versus a more recent unbiased estimator.
