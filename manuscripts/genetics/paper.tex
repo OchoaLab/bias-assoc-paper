@@ -1,0 +1,1422 @@
+\documentclass[9pt,twocolumn,twoside]{gsajnl}
+% Use the documentclass option 'lineno' to view line numbers
+
+% Author added:
+% cleveref only for equations and (appendix) sections; figures needed hacks to accomodate supplementary cases
+\usepackage[capitalize]{cleveref}
+\usepackage{appendix}
+
+\usepackage{epstopdf}
+
+\articletype{inv} % article type
+% {inv} Investigation
+% {gs} Genomic Selection
+% {goi} Genetics of Immunity
+% {gos} Genetics of Sex
+% {mp} Multiparental Populations
+
+\runningtitle{Association robust to kinship bias} % For use in the footer
+\runningauthor{Hou \textit{et al.}}
+
+\title{Genetic association models are robust to common population kinship estimation biases}
+
+\author[1]{Zhuoran Hou}
+\author[1,2,$\ast$]{Alejandro Ochoa}
+
+\affil[1]{Department of Biostatistics and Bioinformatics, Duke University, Durham, NC 27705, USA}
+\affil[2]{Duke Center for Statistical Genetics and Genomics, Duke University, Durham, NC 27705, USA}
+
+\correspondingauthoraffiliation[$\ast$]{Corresponding author: \texttt{alejandro.ochoa@duke.edu}}
+
+\begin{abstract}
+  Common genetic association models for structured populations, including Principal Component Analysis (PCA) and Linear Mixed-effects Models (LMM), model the correlation structure between individuals using population kinship matrices, also known as Genetic Relatedness Matrices or ``GRMs''.
+  However, the most common kinship estimators can have severe biases that were only recently determined.
+  Here we characterize the effect of these kinship biases on genetic association.
+  We employ a large simulated admixed family and genotypes from the 1000 Genomes Project, both with simulated traits, to evaluate key kinship estimators.
+  Remarkably, we find practically invariant association statistics for kinship matrices of different bias types (matching all other features).
+  We then prove using statistical theory and linear algebra that LMM association tests are invariant to these kinship biases, and PCA approximately so.
+  Our proof shows that the intercept and relatedness effect coefficients compensate for the kinship bias, an argument that extends to generalized linear models.
+  As a corollary, association testing is also invariant to changing the reference ancestral population of the kinship matrix.
+  Lastly, we observed that all kinship estimators, except for popkin ROM, can give improper non-positive semidefinite matrices, which can be problematic although some LMMs handle them surprisingly well, and condition numbers can be used to choose kinship estimators.
+  Overall, we find that existing association studies are robust to kinship estimation bias, and our calculations may help improve association methods by taking advantage of this unexpected robustness, as well as help determine the effects of kinship bias in related problems.
+\end{abstract}
+
+\keywords{kinship matrices; estimation bias; genetic association studies; linear mixed effects models; principal components analysis}
+
+\dates{\rec{xx xx, xxxx} \acc{xx xx, xxxx}}
+
+% path for figures
+\graphicspath{ {figures/} }
+
+% custom math symbols
+\newcommand{\xij}[1][j]{x_{i#1}}
+\newcommand{\pit}{p_i^T}
+\newcommand{\pith}{\hat{p}_i^T}
+\newcommand{\f}[2]{f^{#1}_{#2}}
+\newcommand{\ft}[1][j]{f_{#1}^T}
+\newcommand{\kt}[1][k]{\varphi_{j#1}^T}
+\newcommand{\ktHatNamed}[2][k]{\hat{\varphi}_{j#1}^{T,\text{#2}}}
+\newcommand{\kinMat}[1][T]{\mathbf{\Phi}^{#1}}
+\newcommand{\kinMatPrime}{\mathbf{\Phi}^{T\prime}}
+\newcommand{\kinMatEstNamed}[1]{\mathbf{\hat{\Phi}}^{T,\text{#1}}}
+\newcommand{\Ajk}[1][k]{A_{j#1}}
+\newcommand{\AMinHat}{\hat{A}_{\text{min}}}
+\newcommand{\AAvgHat}{\hat{A}_{\text{avg}}}
+\newcommand{\toas}{\xrightarrow[m \rightarrow \infty]{\text{a.s.}}}
+\newcommand{\rmsd}{\text{SRMSD}_p}
+\newcommand{\auc}{\text{AUC}_\text{PR}}
+\DeclareMathOperator{\E}{E}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\round}{round}
+
+% hack to define supplementary references without including actual figures/etc
+\makeatletter
+\newcommand{\dummylabel}[2]{\def\@currentlabel{#2}\label{#1}}
+\makeatother
+
+\begin{document}
+
+\maketitle
+\thispagestyle{firststyle}
+%\slugnote
+%\firstpagefootnote
+\vspace{-13pt}% Only used for adjusting extra space in the left column of the first page
+
+% GWAS, LMM and PCA
+\lettrine[lines=2]{\color{color2}T}{}he goal of genetic association is to detect loci that are related to a specific trait, either causally or by proximity to causal loci.
+When applied to structured populations with admixed individuals, multiethnic cohorts, or close relatives, controlling for relatedness is crucial to avoid spurious associations and loss of power \citep{devlin_genomic_1999, voight_confounding_2005, astle_population_2009, yao_limitations_2022}.
+The most popular association models for structured populations are Linear Mixed-effects Models (LMM) and Principal Component Analysis (PCA), which are closely related except LMM is capable of modeling high-dimensional structures whereas PCA is strictly a low-dimensional model \citep{astle_population_2009, hoffman_correcting_2013, yao_limitations_2022}.
+
+% Kinship in models
+Various association models, including both PCA and LMM, parameterize relatedness using kinship matrices, also known as Genetic Relatedness Matrices or ``GRMs''.
+Kinship coefficients are well suited for this task since they model the covariance structure of genotypes \citep{malecot_mathematiques_1948, jacquard_structures_1970}.
+Kinship is often encountered in family studies, where they reflect recent relatedness and can be calculated from pedigrees \citep{wright_coefficients_1922, emik_systematic_1949, garcia-cortes_novel_2015}.
+However, as kinship is defined as a probability of identity by descent, it may also capture ancient population relatedness \citep{malecot_mathematiques_1948, astle_population_2009}, and common non-parametric kinship estimators from genotypes indeed include population structure in their estimates \citep{ochoa_estimating_2021}.
+In LMMs, the kinship matrix is an explicit parameter determining the random effect covariance structure \citep{xie_combining_1998,yu_unified_2006, aulchenko_genomewide_2007, astle_population_2009, kang_efficient_2008, kang_variance_2010, zhou_genome-wide_2012, yang_advantages_2014, loh_efficient_2015, sul_population_2018}.
+In PCA, the principal components (PCs) are in practice the eigenvectors of an empirical genetic covariance matrix that is equivalent to the most common kinship estimator \citep{price_principal_2006, astle_population_2009, hoffman_correcting_2013, yao_limitations_2022}.
+
+% kinship estimators
+Although several kinship estimators have been used with LMMs in the past, work from the last 15 years has converged on what we call the ``standard'' kinship estimator, which is the same estimator used in PCA and other related models \citep{price_principal_2006, astle_population_2009, rakovski_kinship-based_2009, thornton_roadtrips:_2010, yang_common_2010, yang_gcta:_2011, zhou_genome-wide_2012, speed_improved_2012, yang_advantages_2014, speed_relatedness_2015, loh_efficient_2015, wang_efficient_2017, sul_population_2018}.
+The impetus of our work is the recent characterization of a complex bias for this standard estimator, which varies for every pair of individuals \citep{weir_unified_2017, ochoa_estimating_2021}.
+These recent works also produced two new kinship estimators, which we are interested in characterizing in the context of association.
+The Weir-Goudet (WG) estimator constitutes a key improvement in that it has a uniformly downward bias \citep{weir_unified_2017, ochoa_estimating_2021}.
+Lastly, the popkin estimator is the only unbiased estimator under arbitrary relatedness \citep{ochoa_estimating_2021}.
+To the best of our knowledge, the new WG and popkin estimators have not been used in association studies before, but represent potential improvements over the use of the standard estimator for association.
+
+% MOR vs ROM
+One potential confounder when comparing the above kinship estimators is that the standard estimator upweighs rare variants in a formulation previously called ``mean-of-ratios'' (MOR), whereas WG and popkin do not, instead following a ``ratio-of-means'' (ROM) estimation strategy \citep{bhatia_estimating_2013, ochoa_estimating_2021}.
+Recent work also formulated a ROM version of the standard estimator, which has a more predictable bias than the widely used MOR version \citep{ochoa_estimating_2021}.
+Following a locus weight formulation that allows the standard estimator to weigh loci in both ways \citep{wang_efficient_2017}, here we generalize the popkin and WG estimators to have both MOR and ROM versions, to test estimators without confounding by locus weighing strategy.
+
+% This work summary
+In this work, we originally hypothesized that kinship estimation bias would affect association testing.
+We perform evaluations using an admixed family simulation \citep{yao_limitations_2022} as well as real genotypes from the 1000 Genomes project \citep{the_1000_genomes_project_consortium_map_2010, 1000_genomes_project_consortium_integrated_2012, fairley_international_2020}, in both cases with simulated traits, to characterize type I error control and power using robust statistics.
+Surprisingly, we find that both LMM and PCA association statistics are largely invariant to kinship estimation bias.
+We theoretically characterize the conditions under which these kinship biases result in invariant association statistics, which encompass changing ancestral population in the kinship matrix too.
+As we discover that most kinship estimates are non-positive semidefinite (non-PSD), breaking a key modeling assumption, we perform additional empirical validations and discover that some LMMs can handle these improper covariance matrices surprisingly well.
+Overall, we find that long-used association approaches are unaffected by the most common kinship estimation biases, and develop theory that may help improve association and related approaches such as heritability estimation.
+
+\section{Materials and methods}
+
+
+\subsection{Genetic model}
+
+The following genetic model justifies the use of kinship matrices in association studies, and is the basis of all kinship estimation bias calculations that our theoretical work depends upon.
+
+Suppose there are $m$ biallelic loci and $n$ diploid individuals.
+The genotype $\xij \in \{0,1,2\}$ at a locus $i$ of individual $j$ is encoded as the number of reference alleles, for a preselected but otherwise arbitrary reference allele per locus.
+Genotypes are treated as random variables structured according to relatedness.
+If $T$ is the ancestral population on which allele frequencies are conditioned, $\kt$ is the kinship coefficient of two individuals $j$ and $k$, and $\pit$ is the ancestral allele frequency at locus $i$, then under the kinship model \citep{malecot_mathematiques_1948, wright_genetical_1949, jacquard_structures_1970, astle_population_2009, ochoa_estimating_2021} the expectation and covariance are given by
+\begin{align*}
+  \E \left[ \mathbf{x}_i \middle| T \right]
+  =
+    2 \pit \mathbf{1}
+  ,
+  \quad\quad
+  \Cov \left(\mathbf{x}_i \middle| T \right)
+  =
+    4 \pit \left( 1 - \pit \right) \kinMat
+    ,
+\end{align*}
+where $\mathbf{x}_i = (\xij)$ is the length-$n$ column vector of genotypes at locus $i$, $\kinMat = (\kt)$ is the $n \times n$ kinship matrix, and $\mathbf{1}$ is a length-$n$ column vector of ones.
+Both $\kinMat$ and $\pit$ are parameters that depend on the choice of ancestral population, for which the Most Recent Common Ancestor (MRCA) population is the most sensible choice \citep{ochoa_estimating_2021}.
+However, one of the results of this work is proof that the choice of ancestral population does not affect association testing.
+
+\subsection{Kinship estimators}
+
+Each subsection below corresponds to a kinship estimator bias type: Popkin is unbiased, while Standard and WG have different bias functions (defined shortly).
+Each estimator bias type has two locus weight types called \textit{ratio-of-means} (ROM) and \textit{mean-of-ratios} (MOR), a terminology that follows previous convention for these and related estimators \citep{bhatia_estimating_2013, ochoa_estimating_2021}.
+Only ROM estimators have closed-form limits.
+Below
+$
+\pith
+=
+\frac{1}{2n} \mathbf{x}_i^\intercal \mathbf{1}
+$
+is the standard ancestral allele frequency estimator,
+where the $\intercal$ superscript denotes matrix transposition (do not confuse with ancestral population superscript $T$),
+and
+$\kinMatEstNamed{name} = (\ktHatNamed{name})$
+relates the scalar and matrix formulas of each named kinship estimator.
+In our evaluations, all loci were used to estimate kinship and to test for association, as is common practice.
+
+\subsubsection{Popkin estimator:}
+
+The popkin (population kinship) estimator \citep{ochoa_estimating_2021}, generalized here to include locus weights $w_i$, is given by
+\begin{equation}
+  \label{eq:popkin}
+  \begin{split}
+    \ktHatNamed{popkin}
+    &=
+      1 - \frac{\Ajk}{\AMinHat}
+      ,\\
+    \Ajk
+    &=
+      \frac{1}{m} \sum_{i=1}^m w_i ( (\xij-1)(\xij[k]-1) - 1 )
+      ,
+  \end{split}
+\end{equation}
+where in this work $\AMinHat = \min_{j \ne k} \Ajk$, and $w_i$ must be positive but need not add to 1.
+We consider two broad forms for this estimator.
+The original ROM estimator has $w_i = 1$ and has an unbiased almost sure limit as the number of loci $m$ go to infinity,
+$$
+\kinMatEstNamed{popkin-ROM} \toas \kinMat,
+$$
+under the assumption that the true minimum kinship is zero.
+The MOR version, introduced here, upweighs rare variants by using $w_i = \left( \pith \left( 1 - \pith \right) \right)^{-1}$; although it has no closed-form limit, it is approximately unbiased as well (\cref{sec:popkin_w_justif}) and it is connected to the most common estimator, Standard MOR (\cref{sec:conn_popkin_std}). 
+The use of locus weights here is inspired by previous calculations relating the standard ROM and MOR estimators \citep{wang_efficient_2017}.
+
+\subsubsection{Standard estimator:}
+
+The ROM and MOR versions of the standard kinship estimator are, respectively,
+\begin{align}
+  \label{eq:kinship_std_rom}
+  \ktHatNamed{std-ROM}
+  &=
+    \frac{
+    \sum\limits_{i=1}^m \left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)
+    }{
+    \sum\limits_{i=1}^m 4 \pith \left( 1-\pith \right)
+    }
+    , \\
+  \label{eq:kinship_std_mor}
+  \ktHatNamed{std-MOR}
+  &=
+    \frac{1}{m} \sum\limits_{i=1}^m \frac{\left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)}{4 \pith \left( 1-\pith \right)}
+    .
+\end{align}
+The ROM estimator has a biased limit, which is a function of the true kinship matrix \citep{ochoa_estimating_2021}:
+\begin{equation}
+  \label{eq:kinship_std_lim}
+  \begin{split}
+    \kinMatEstNamed{std-ROM}
+    &\toas
+      F^\text{std} \left( \kinMat \right)
+    \\
+    &=
+      \frac{1}{1 - \bar{\varphi}^T}
+      \left(
+      \kinMat
+      + \bar{\varphi}^T \mathbf{J}
+      - \boldsymbol{\varphi}^T \mathbf{1}^\intercal 
+      - \mathbf{1} \left( \boldsymbol{\varphi}^T \right)^\intercal 
+      \right)
+      ,
+  \end{split}
+\end{equation}
+where
+$\mathbf{J} = \mathbf{1} \mathbf{1}^\intercal$ is the $n \times n$ matrix of ones,
+$\boldsymbol{\varphi}^T = \frac{1}{n} \kinMat \mathbf{1}$ is a length-$n$ vector of per-row mean kinship values, and
+$\bar{\varphi}^T = \frac{1}{n^2} \mathbf{1}^\intercal \kinMat \mathbf{1}$ is the scalar overall mean kinship.
+The MOR estimator does not have closed-form limit, but it is well approximated by \cref{eq:kinship_std_lim} in practice, especially when loci with small minor allele frequencies are excluded prior to calculating this estimate.
+In \cref{sec:conn_popkin_std} we prove that, when there are no missing genotypes, the two standard estimators are functions of the corresponding popkin estimators, given by the bias function $F^\text{std}$:
+\begin{align*}
+  \kinMatEstNamed{std-ROM}
+  &=
+    F^\text{std} \left( \kinMatEstNamed{popkin-ROM} \right)
+    , \\
+  \kinMatEstNamed{std-MOR}
+  &=
+    F^\text{std} \left( \kinMatEstNamed{popkin-MOR} \right)
+    .
+\end{align*}
+
+\subsubsection{Weir-Goudet estimator:}
+
+The ROM version of the Weir-Goudet (WG) kinship estimator is given by \citep{weir_unified_2017, ochoa_estimating_2021}
+\begin{equation}
+  \label{eq:wg}
+  \ktHatNamed{WG-ROM}
+  =
+  1 - \frac{\Ajk}{\AAvgHat}
+  , \quad\quad
+  \AAvgHat
+  =
+  \frac{2}{n(n-1)}
+  \sum_{j=2}^n
+  \sum_{k=1}^{j-1}
+    \Ajk
+    ,
+\end{equation}
+where $\Ajk$ is as in \cref{eq:popkin}.
+Its biased limit is also a function of the true kinship matrix:
+\begin{equation}
+  \label{eq:wg_lim}
+  \kinMatEstNamed{WG-ROM}
+  \toas
+  F^\text{WG} \left( \kinMat \right)
+  =
+  \frac{1}{1 - \tilde{\varphi}^T}
+  \left( \kinMat - \tilde{\varphi}^T \mathbf{J} \right)
+  ,
+\end{equation}
+where $\tilde{\varphi}^T$ is the mean kinship excluding the matrix diagonal:
+\begin{equation}
+  \label{eq:wg_tilde}
+  \begin{split}
+    \tilde{\varphi}^T
+    &=
+    \frac{2}{n(n-1)}
+    \sum_{j=2}^n
+    \sum_{k=1}^{j-1}
+    \kt
+    .
+  \end{split}
+\end{equation}
+In \cref{sec:mean_kinship_ineqs} we prove that
+$$
+0 \le \tilde{\varphi}^T \le \bar{\varphi}^T \le 1,
+$$
+and equalities are achieved if and only if all kinship values are equal.
+Since the WG-ROM estimator closely resembles the popkin estimator in \cref{eq:popkin}, it is clear that they are related by the bias function $F^\text{WG}$, while WG-MOR is introduced here and defined by the below formula:
+\begin{align*}
+  \kinMatEstNamed{WG-ROM}
+  &=
+    F^\text{WG} \left( \kinMatEstNamed{popkin-ROM} \right)
+    , \\
+  \kinMatEstNamed{WG-MOR}
+  &=
+    F^\text{WG} \left( \kinMatEstNamed{popkin-MOR} \right)
+  .
+\end{align*}
+
+\subsection{Association models}
+
+LMM and PCA are closely related association models \citep{astle_population_2009, hoffman_correcting_2013, yao_limitations_2022}:
+\begin{align}
+  \label{eq:lmm_gwas}
+  \text{LMM:}\quad
+  \mathbf{y}
+  &=
+    \mathbf{1} \alpha + \mathbf{x}_i \beta_i + \mathbf{s} + \boldsymbol{\epsilon}
+    , \\
+  \label{eq:lmm_rand_eff}
+  \mathbf{s}
+  &\sim
+    \text{Normal} \left( \mathbf{0}, 2 \sigma^2 \kinMat \right), \\
+  \label{eq:pca_gwas}
+  \text{PCA:}\quad
+  \mathbf{y}
+  &=
+    \mathbf{1} \alpha + \mathbf{x}_i \beta_i + \mathbf{U}_r \boldsymbol{\gamma}_r + \boldsymbol{\epsilon}
+    , \\
+  \label{eq:kin_evd}
+  \kinMat
+  &=
+    \mathbf{U} \mathbf{\Lambda} \mathbf{U}^\intercal
+    ,
+\end{align}
+where
+$\mathbf{y}$ is a length-$n$ vector of continuous trait values,
+$\alpha$ is the intercept coefficient,
+$\beta_i$ is the genetic effect (association) coefficient of locus $i$,
+$\mathbf{s}$ is the (genetic) random effect,
+$\sigma^2$ is the random effect variance factor,
+$\mathbf{U}_r$ is the $n \times r$ matrix of the $r$ eigenvectors (PCs) with the largest eigenvalues of $\kinMat$,
+$\boldsymbol{\gamma}_r$ is a length-$r$ vector of coefficients for each eigenvector,
+$\boldsymbol{\epsilon} \sim \text{Normal}(\mathbf{0}, \sigma^2_\epsilon \mathbf{I})$ are random independent residuals,
+and $\mathbf{I}$ is the $n \times n$ identity matrix.
+Furthermore, \cref{eq:kin_evd} is the complete eigendecomposition of $\kinMat$,
+where $\mathbf{U}$ is the $n \times n$ matrix of eigenvectors, and
+$\mathbf{\Lambda}$ is the $n \times n$ diagonal matrix of eigenvalues.
+As $\mathbf{s}$ and $\mathbf{U}_r$ play analogous roles in modeling the effect of relatedness in LMM and PCA, respectively, we refer to them jointly as relatedness effects, and $\sigma^2$ and $\boldsymbol{\gamma}_r$ as their coefficients.
+
+\subsection{Simulations}
+
+\subsubsection{Admixed family genotype simulation:}
+
+An admixed family is simulated following previous work \citep{yao_limitations_2022}, except here only $K=3$ ancestries are simulated and $F_{ST}=0.3$ for the admixed individuals, which more closely resembles Hispanics and African Americans.
+Briefly, our admixture model first simulates $n=1000$ founder individuals with $m=100,000$ loci, which was purposefully reduced compared to previous work to increase the difference between estimated kinship matrices (which will be noisier) and their limits.
+Random ancestral allele frequencies $\pit$, subpopulation allele frequencies $p_i^{S_u}$, individual-specific allele frequencies $\pi_{ij}$, and genotypes $\xij$ are drawn from this hierarchical model:
+\begin{align*}
+  \pit
+  &\sim
+    \text{Uniform}( 0.01, 0.5 )
+    , \\
+  p_i^{S_u} | \pit
+  &\sim
+    \text{Beta} \left(
+    \pit \left( \frac{1}{ \ft[S_u] } - 1 \right),
+    \left( 1 - \pit \right) \left( \frac{1}{ \ft[S_u] } - 1 \right)
+    \right)
+    , \\
+  \pi_{ij}
+  &=
+    \sum_{u = 1}^K q_{ju} p_i^{S_u}
+    , \\
+  \xij | \pi_{ij}
+  &\sim
+    \text{Binomial}(2, \pi_{ij})
+    ,
+\end{align*}
+where this Beta is the Balding-Nichols distribution \citep{balding_method_1995} with mean $\pit$ and variance $\pit \left( 1 - \pit \right) \ft[S_u]$.
+This is implemented in the R package \texttt{bnpsd}.
+
+We also include family structure in the simulation.
+20 generations are generated iteratively.
+Individuals in the first generation ($n=1000$) are ordered by 1D geography, randomly assigned sex, and treated as locally unrelated. 
+From the next generation, individuals are paired iteratively: randomly choosing males from the pool and pairing them with the nearest available female with local kinship $<1/4^3$ (to preserve the admixture structure) until there are no available males or females.
+Family sizes are drawn randomly ensuring every family has at least one child.
+Children are reordered by the average coordinates of their parents, their sex are assigned randomly, and their alleles are drawn from parents independently per locus.
+The simulation is implemented in the R package \texttt{simfam}.
+
+\subsubsection{Trait simulation algorithm:}
+
+Given an $m \times n$ genotype matrix $\mathbf{X} = (\mathbf{x}_i^\intercal)$, traits are simulated from
+$$
+\mathbf{y}
+=
+\mathbf{1} \alpha + \mathbf{X}^\intercal \boldsymbol{\beta} + \boldsymbol{\epsilon}
+, \quad\quad
+\boldsymbol{\epsilon} \sim \text{Normal}(\mathbf{0}, (1 - h^2) \mathbf{I})
+.
+$$
+Given a desired heritability $h^2$ (0.8 or 0.3 in this work) and the number of causal loci $m_1$ (here chosen using $m_1 = \round( n h^2 / 8 )$, which empirically balances power as sample size and heritability are varied), the goal is to choose causal coefficients $\boldsymbol{\beta}$ and the intercept $\alpha$ that result in zero mean and the desired trait heritability.
+Here, we use the ``fixed effect sizes'' trait simulation model described in \citep{yao_limitations_2022}.
+Briefly, first $m_1$ causal loci are randomly selected, and for these steps only $\mathbf{X}$ is subset to these loci and reindexed.
+For known $\pit$, causal coefficients are constructed as:
+$$
+\beta_i = \sqrt{ \frac{h^2}{ 2 m_1 v_i^T } },
+$$
+where
+$
+v_i^T
+=
+\pit \left( 1 - \pit \right)
+;
+$
+for unknown $\pit$ (real genotypes), the unbiased estimate
+$
+\hat{v}_i^T
+=
+\pith \left( 1 - \pith \right) / \left( 1 - \bar{\varphi}^T \right)
+$
+is used, where $\bar{\varphi}^T$ is the mean kinship estimated from \texttt{popkin}.
+Coefficients are made negative randomly with probability 0.5.
+For known $\pit$, we obtain the desired zero trait mean with
+$
+\alpha 
+=
+- 2 \left( \mathbf{p}^T \right)^\intercal \boldsymbol{\beta}
+,
+$
+where here $\mathbf{p}^T = (\pit)$ contains causal loci only.
+When $\pit$ are unknown, to avoid covariance distortions, the intercept coefficient is constructed as
+\begin{align*}
+  \alpha 
+  =
+  - 2 \hat{\bar{p}}^T \mathbf{1}_{m_1}^\intercal \boldsymbol{\beta}
+  , \quad\quad
+  \hat{\bar{p}}^T
+  =
+  \frac{1}{m_1} \mathbf{1}_{m_1}^\intercal \mathbf{\hat{p}}^T
+  ,
+\end{align*}
+where $\mathbf{1}_{m_1}$ is a length-$m_1$ column vector of ones.
+Genotypes were simulated from the admixed family model separately per heritability value and every replicate.
+
+\subsection{Real genotype data processing}
+
+To evaluate different kinship estimators on a real dataset, we use the high-coverage NYGC version of the 1000 Genomes Project \citep{fairley_international_2020}, which is processed as before \citep{yao_limitations_2022}.
+Briefly, using \texttt{plink2} \citep{chang_second-generation_2015} we keep only autosomal biallelic SNP loci with filter ``PASS'', pruned for linkage disequilibrium with parameters ``\texttt{-{}-indep-pairwise 1000kb 0.3}'' to remove loci that have a greater than 0.3 squared correlation coefficient with other loci within 1000kb, and lastly remove loci with minor allele frequencies $< 0.01$.
+The resulting data have $m=1,111,266$ loci and $n=2,504$ individuals.
+
+\subsection{Evaluation of performance}
+
+$\auc$ and $\rmsd$ are used to evaluate approaches as before \citep{yao_limitations_2022}.
+Briefly, $\rmsd$ (Signed Root Mean Square Deviation) measures the difference between the observed null p-value quantiles and the expected uniform quantiles:
+$$
+\rmsd
+=
+\text{sgn}(u_\text{median} - p_\text{median} ) \sqrt{ \frac{1}{m_0} \sum_{i = 1}^{m_0} \left( u_i - p_{(i)} \right)^2 },
+$$
+where
+$m_0 = m - m_1$ is the number of null (non-causal) loci,
+$i$ indexes null loci only,
+$p_{(i)}$ is the $i$th ordered null p-value,
+$u_i = ( i - 0.5 ) / m_0$ is its expectation,
+$p_\text{median}$ is the median observed null p-value,
+$u_\text{median} = \frac{1}{2}$ is its expectation,
+and $\text{sgn}$ is the sign function (1 if $u_\text{median} \ge p_\text{median}$, -1 otherwise).
+$\rmsd = 0$ corresponds to calibrated p-values, $\rmsd > 0$ indicate anti-conservative p-values, and $\rmsd < 0$ are conservative p-values.
+
+$\auc$ (Area Under the Precision and Recall Curve) is a binary classification measure that reflects calibrated power \citep{yao_limitations_2022}, which is calculated from the total numbers of true positives (TP), false positives (FP) and false negatives (FN) at some threshold or parameter $t$:
+\begin{align*}
+  \text{Precision}(t)
+  &=
+    \frac{ \text{TP}(t) }{ \text{TP}(t) + \text{FP}(t) }
+    , \\
+  \text{Recall}(t)
+  &=
+    \frac{ \text{TP}(t) }{ \text{TP}(t) + \text{FN}(t) }
+    ,
+\end{align*}
+followed by calculating the area under the curve traced as $t$ varies recall from zero to one.
+Higher $\auc$ is better, with best performance at $\auc = 1$ for a perfect classifier, while worst performance at $\auc = \frac{m_1}{m}$ (overall proportion of causal loci) is for random classifiers.
+
+\subsection{Software}
+
+% kinship-specific software
+Popkin kinship estimates are calculated with the \texttt{popkin} R package.
+Standard MOR kinship estimates are calculated with GCTA (version 1.93.2beta).
+All other kinship estimators and limits are calculated using the \texttt{popkinsuppl} R package.
+PCs are calculated with the \texttt{eigen} function of R.
+
+% association-specific software
+GCTA, which implements the model of \cref{eq:lmm_gwas,eq:lmm_rand_eff}, is used to run all LMM associations \citep{yang_gcta:_2011, yang_advantages_2014}.
+We pass $2 \kinMat$ for all kinship matrices tested (the same scale as its own kinship estimate).
+\texttt{plink2}, which implements the model of \cref{eq:pca_gwas,eq:kin_evd}, performs the PCA associations \citep{chang_second-generation_2015}.
+We use $r = K - 1 = 2$ PCs for the admixed family simulations, and $r = 10$ PCs for 1000 Genomes.
+
+\section{Results}
+
+\subsection{Empirical analysis using admixed family simulation}
+
+% overview of sim results
+To quantify the effect of kinship estimation bias, we simulate genotypes and traits, and calculate association p-values using a factorial design that tests all kinship matrix (three bias types, times two locus weight types and one limit) and association model (PCA and LMM) combinations.
+We simulate an admixed population with $K=3$ ancestries, who serve as founders for a 20-generation random pedigree.
+This high-dimensional admixed family scenario yields a large difference in performance between PCA and LMM \citep{yao_limitations_2022}.
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{kinship_sim.pdf}
+  \caption{
+    {\bf Kinship estimates and limits on the admixed family simulation.}
+    Each panel shows a kinship matrix as a heatmap, with each of the $n=1000$ individuals along both x and y axes, color represents kinship: positive values in red, negative in blue.
+    Diagonal contains inbreeding values.
+    Each estimator bias type (Popkin, Standard, and Weir-Goudet; rows) has three matrices (columns): two locus weight types (ROM (ratio of means) and MOR (mean of ratios)) and limit of ROM.
+  }
+  \label{fig:kinship_sim}
+\end{figure}
+
+% kinship matrices
+Kinship estimates and limits for this simulation are shown in Fig. \ref{fig:kinship_sim}.
+The true kinship matrix shows the family relatedness as high values concentrated near the diagonal and the ancestry-driven population structure as the broad patterns off-diagonal.
+Only Popkin ROM is unbiased, while popkin MOR has a slight upward bias that varies across the matrix (Fig. \ref*{fig:popkin-rom-mor}A).
+In contrast, the Standard and Weir-Goudet (WG) estimates have large downward biases overall, resulting in abundant negative values; Standard biases vary for every pair of individuals (as described in \cref{eq:kinship_std_lim}; Fig. \ref*{fig:kinship-bias}A), while WG has a uniform bias (following \cref{eq:wg_lim}).
+The difference is most noticeable near the diagonal: the true kinship matrix has monotonically increasing values, WG has smaller values but which are still monotonically increasing, and Standard estimates follow a U-shaped pattern (decreasing at first, then increasing again in Fig. \ref{fig:kinship_sim}D-F).
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{auc_sim.pdf}
+  \caption{
+    {\bf Distributions of Area Under the Precision-Recall Curve ($\auc$) on the admixed family simulation with $h^2=0.8$.}
+    Higher $\auc$ is better performance.
+    Results for 100 replicates (each a random genotype matrix and trait vector).
+    Approaches cluster primarily by association model (LMM or PCA), and vary little across bias types.
+  }
+  \label{fig:auc_sim}
+\end{figure}
+
+% performance
+We perform LMM and PCA association tests to determine how kinship biases affect association performance.
+Surprisingly, we find that kinship bias type does not have a discernible effect on association performance, as summarized by $\auc$ (a robust proxy for power; high and low heritability in Figs. \ref{fig:auc_sim}, \ref*{fig:auc_sim-h3}, respectively) and $\rmsd$ (measures null statistic calibration; Figs. \ref*{fig:rmsd_sim}, \ref*{fig:rmsd_sim-h3}).
+The largest differences in performance are explained by the association model (LMM vs PCA), as expected due to our use of a family simulation where PCA performs poorly.
+Within association models, there are no clear differences between the performance of any of the kinship matrices, in fact many appear to have identical distributions (both statistics), the only clear exception being LMM popkin MOR with $h^2=0.8$, which has a few outlier replicates where performance is exceedingly poor (at the end of the results we show these are due to limited numerical precision exacerbated by high condition numbers of trait covariance matrices).
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{pvals_eq_sim.pdf}
+  \caption{
+    {\bf Agreement between p-values on the admixed family simulation with $h^2=0.8$.}
+    Calculated agreement (absolute difference under 0.01) averaged over loci (color) of association p-values between association models (LMM vs PCA) and kinship matrices (x and y axes).
+    All 100 replicates are used.
+    Different bias types (matched for association model and locus weight type) have large proportions of nearly identical p-values.
+    }
+  \label{fig:pvals_eq_sim}
+\end{figure}
+
+% agreement
+To better characterize the nearly identical performance distribution just observed, we next measure the agreement between individual association p-values.
+We measure high correlations $\rho$ between p-values, near $\rho = 1$ for comparisons involving the same model (between LMM methods or between PCA methods, both heritabilities), and across models around $\rho = 0.6$ for $h^2=0.8$, which increases to $\rho = 0.88$ for $h^2=0.3$ (Figs. \ref*{fig:pvals_cor_sim}, \ref*{fig:pvals_cor_sim-h3}).
+To measure numerical agreement more stringently, we calculate the proportion of loci between two methods with p-values within 0.01 of each other, and find a remarkably high agreement between estimators of different bias types after matching association model and locus weight type or limit (Figs. \ref{fig:pvals_eq_sim}, \ref*{fig:pvals_eq_sim-h3}).
+This is in contrast to low agreement between PCA and LMM statistics, and between LMM statistics with different locus weight types or limits.
+Minimum agreements are higher across PCA methods, though here the true kinship or popkin estimates disagree more from Standard and WG matrices.
+Overall, kinship matrices with different bias types (otherwise matched) result in nearly identical association statistics.
+
+\subsection{Empirical analysis using 1000 Genomes}
+
+% kinship
+Now we repeat our analysis using the real genotypes of 1000 Genomes.
+Kinship estimates are shown in Fig. \ref{fig:kinship_real} (note real data have no true kinship or estimator limits).
+Popkin ROM estimates display an approximate nested block structure that arises from the tree relationships between subpopulations (Fig. \ref{fig:kinship_real}A; trees were explicitly fit to this data in previous work \citep{yao_limitations_2022}).
+However, popkin MOR estimates do not follow the nested blocks tree structure, since kinship between African and non-African populations is higher than kinship within African populations (Figs. \ref{fig:kinship_real}B, \ref*{fig:popkin-rom-mor}B).
+Standard estimates have values closer to zero, and a different bias for each pair of individuals (Fig. \ref*{fig:kinship-bias}B), resulting in higher relative kinship for African compared to non-African populations (Fig. \ref{fig:kinship_real}C-D), whereas kinship in African populations is the lowest in the unbiased estimate (Fig. \ref{fig:kinship_real}A).
+Lastly, WG estimates are uniformly smaller than popkin's and attain large negative values (Fig. \ref{fig:kinship_real}E-F).
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{kinship_real.pdf}
+  \caption{
+    {\bf Kinship estimates on 1000 Genomes.}
+    Each panel represents a kinship matrix as a heatmap, as in Fig. \ref{fig:kinship_sim}.
+    Superpopulation codes: AFR = African, EUR = European, SAS = South Asian, EAS = East Asian, AMR = Admixed Americans (Hispanics).
+    Each estimator bias type (Popkin, Standard, and Weir-Goudet; rows) has two locus weight types (columns): ROM (ratio of means) and MOR (mean of ratios).
+    In this visualization the upper range of all panels is capped to the 99 percentile of the diagonal (population inbreeding values) of the popkin MOR estimates.
+  }
+  \label{fig:kinship_real}
+\end{figure}
+
+% performance
+Our association test conclusion are similar to our simulation study: $\auc$ and $\rmsd$ distributions are nearly identical for estimators of different bias types but same locus weight type (ROM or MOR) and association model.
+However, unlike the simulation, here for $h^2=0.8$ (but not 0.3) the MOR estimates noticeably outperform ROM estimates (LMM only), in terms of both $\auc$ (Figs. \ref{fig:auc_real}, \ref*{fig:auc_real-h3}) and $\rmsd$ (Figs. \ref*{fig:rmsd_real}, \ref*{fig:rmsd_real-h3}).
+% agreement
+P-values are even more highly correlated in this case (Figs. \ref*{fig:pvals_cor_real}, \ref*{fig:pvals_cor_real-h3}), and again nearly identical at a large proportion of loci between approaches with matched association model and locus weight type (MOR or ROM), regardless of bias type (Figs. \ref*{fig:pvals_eq_real}, \ref*{fig:pvals_eq_real-h3}).
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{auc_real.pdf}
+  \caption{
+    {\bf Distributions of Area Under the Precision-Recall Curve ($\auc$) on 1000 Genomes with $h^2=0.8$.}
+    Higher $\auc$ is better performance.
+    Results based on 100 simulated trait replicates (real genotype matrix is fixed).
+    Approaches cluster primarily by association model (LMM or PCA) and locus weight type (ROM or MOR), and do not depend much at all on the bias type.
+  }
+  \label{fig:auc_real}
+\end{figure}
+
+\subsection{Proof of association invariability to common kinship biases}
+
+Our empirical observations suggest that replacing a kinship matrix with either the Standard or WG-biased version does not alter association statistics (with exceptions we attribute to numerical limited precision artifacts); here prove a more general version of these facts mathematically.
+Our constructive proof shows that only a regression model with relatedness effects as covariates and an intercept is required, whose coefficients adapt to the bias, and no other coefficients change.
+This is fortunate, as the intercept and relatedness effect coefficients are nuisance parameters that usually go unreported, while the focal genetic association coefficient and its p-value are unchanged by these biases.
+
+The most general form we identified of the bias function, mapping a kinship matrix to its bias-transformed version, and for which association invariability holds, is
+\begin{equation}
+  \label{eq:kin-bias-general}
+  \kinMatPrime
+  =
+  F \left( \kinMat \right)
+  =
+  \frac{1}{c}
+  \mathbf{B} \kinMat \mathbf{B}^\intercal
+  , \quad\quad
+  \mathbf{B}
+  =
+  \mathbf{I} - \mathbf{1} \mathbf{b}^\intercal
+  ,
+\end{equation}
+where $c$ is any positive scalar and $\mathbf{b}$ is any length-$n$ vector.
+The key property that the linear operator $\mathbf{B}$ must satisfy is that it shifts the input vector by the same scalar across its values, or
+\begin{equation}
+  \label{eq:B-shift}
+  \mathbf{B} \mathbf{s}
+  =
+  \mathbf{s} - \mathbf{1} \eta
+  ,
+\end{equation}
+where $\mathbf{s}$ is any vector and the scalar $\eta = \mathbf{b}^\intercal \mathbf{s}$ is a function of the input vector.
+$\mathbf{B}$ in \cref{eq:kin-bias-general} is the only form that results in \cref{eq:B-shift}.
+
+The Standard bias function $F = F^\text{std}$ of \cref{eq:kinship_std_lim} can be written as \cref{eq:kin-bias-general} with
+$c = 1 - \bar{\varphi}^T$ and
+$\mathbf{b} = \frac{1}{n} \mathbf{1}$, in which case $\mathbf{B}$ equals the centering matrix.
+Further, the generalized Standard estimator studied in \citet{ochoa_estimating_2021} has $\mathbf{b}$ be a vector of individual weights that sum to one: $\mathbf{b}^\intercal \mathbf{1} = 1$.
+These $\mathbf{B}$ and $\kinMatPrime$ are singular transformations (they are not invertible and have a zero eigenvalue), since $\mathbf{B} \mathbf{1} = \mathbf{0}$ and $\mathbf{B}^\intercal \mathbf{b} = \mathbf{0}$.
+
+The WG bias function $F = F^\text{WG}$ of \cref{eq:wg_lim} can be written as \cref{eq:kin-bias-general} with
+$c = 1 - \tilde{\varphi}^T$ and
+\begin{align}
+  \label{eq:wg-fac-b}
+  \mathbf{b}
+  &=
+    q \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+    , \\
+  \label{eq:wg-fac-q}
+  q
+  &=
+    1 \pm \sqrt{1 - \tilde{\varphi}^T \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) }
+.
+\end{align}
+The derivation of this factorization is given in \cref{sec:wg_biasfunc}.
+The determinant of the quadratic solution $q$ would be non-negative if $\tilde{\varphi}^T$ satisfied
+$
+\tilde{\varphi}^T \le 1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right).
+$
+However, the actual $\tilde{\varphi}^T$ does not satisfy this inequality in any of our empirical cases, and in fact $1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) \le \bar{\varphi}^T$ holds (proven in \cref{sec:min_w_mean_kin}; although $\tilde{\varphi}^T \le \bar{\varphi}^T$ (\cref{sec:mean_kinship_ineqs}), in practice those two are very close while $1 / \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right)$ is much smaller than both), so $b$ above is complex.
+This is a consequence of WG estimates being non-PSD, which we elaborate in the following sections.
+Nevertheless, PCA as well as the GCTA algorithms work for non-PSD matrices without invoking complex numbers (following sections and \cref{sec:wg_gls}).
+
+\subsubsection{Proof for LMM case:}
+
+Consider a random effect $\mathbf{s}$ drawn using $\kinMat$, as given in \cref{eq:lmm_rand_eff}.
+Using the affine transformation property of Multivariate Normal distributions (which holds even if $\mathbf{B}$ below is singular) and \cref{eq:kin-bias-general}, then
+$$
+\mathbf{s}'
+=
+\mathbf{B} \mathbf{s}
+\sim
+\text{Normal} \left( \mathbf{0}, 2 \sigma^{2\prime} \kinMatPrime \right),
+$$
+\begin{equation}
+  \label{eq:sigma-rescale}
+  \sigma^{2\prime} = c \sigma^2
+  .
+\end{equation}
+(This $\mathbf{s}'$ has a degenerate distribution for Standard bias, since $\kinMatPrime$ is singular, but $\mathbf{s}' + \boldsymbol{\epsilon}$ is usually non-degenerate, since its covariance $\mathbf{V}' = 2 \sigma^{2\prime} \kinMatPrime + \sigma^2_\epsilon \mathbf{I}$ is invertible as long as $\sigma^2_\epsilon \ne 0$.)
+Replacing $\mathbf{B} \mathbf{s}$ with the shift form in \cref{eq:B-shift} shows that
+$\mathbf{s}' = \mathbf{s} - \mathbf{1} \eta$
+are equal in distribution.
+Therefore, the random effect $\mathbf{s}'$ of the biased kinship matrix differs from the random effect $\mathbf{s}$ of the original kinship only by $\mathbf{1} \eta$, a difference compensated for by adjusting the intercept coefficient in \cref{eq:lmm_gwas}:
+\begin{equation}
+  \label{eq:alpha-shift}
+  \alpha' = \alpha + \eta.
+\end{equation}
+No other regression coefficients, or the total residuals, change when $\kinMat$ is replaced with $\kinMatPrime$, including the association coefficient $\beta_i$ that is the focus of the test.
+
+The above results require kinship matrices $\kinMatPrime$ to be PSD, as covariance matrices are generally required to be.
+PSD matrices are characterized by non-negative eigenvalues and determinants.
+Nevertheless, for the non-PSD WG bias (has a negative eigenvalue) combined with the generalized least squares association algorithm, which is used by GCTA and other LMMs \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}, we find a stronger result consistent with \cref{eq:alpha-shift}, namely that $\alpha' = \alpha$, or in other words, $\eta = 0$ (\cref{sec:wg_gls}).
+
+The LMM association p-value does not change in several common tests, including the F-test, since it only depends on the residuals and these do not change, as well as the likelihood ratio test, because although covariance determinants change, they cancel out in the ratio.
+The Wald test used by GCTA \citep{yang_advantages_2014} is also invariant to these kinship biases given our empirical results in Figs. \ref{fig:pvals_eq_sim}, \ref*{fig:pvals_eq_real}, and proven explicitly for WG bias in \cref{sec:wg_gls}.
+Lastly, using an implementation in R and simulated data, we confirmed that the LMM Score test is also invariant to these kinship biases.
+These arguments hold whether variance components are fit with maximum likelihood or restricted maximum likelihood \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}, since multiplying the estimated genetic variance component $\sigma^2$ by $c$ and adjusting the intercept compensates for the bias regardless of how $\sigma^2, \sigma^2_\epsilon$ are estimated.
+
+\subsubsection{Proof for PCA case:}
+
+We present a proof for the PCA case that relies on an approximation that holds well in practice.
+Based on the PCA model of \cref{eq:pca_gwas,eq:kin_evd}, let $\mathbf{U}_r$ be the top eigenvectors of $\kinMat$, and $\mathbf{U}_r'$ those of $\kinMatPrime$.
+They key approximation is that
+\begin{equation}
+  \label{eq:pc-shift}
+  \mathbf{U}_r' \approx \mathbf{B} \mathbf{U}_r,
+\end{equation}
+which is not strictly equal (since $\mathbf{B} \mathbf{U}_r$ is not generally orthogonal, as eigenvectors must be), but we have found it to be a good approximation in practice.
+In this case the eigenvector coefficients need not change, $\boldsymbol{\gamma}_r' = \boldsymbol{\gamma}_r$, since the difference in scale of the kinship matrices ($c$ in \cref{eq:kin-bias-general}) is absorbed by the eigenvalues not present in this model.
+Applying the shift of \cref{eq:B-shift} shows that
+$$
+\mathbf{U}_r' \boldsymbol{\gamma}_r'
+=
+\mathbf{B} \mathbf{U}_r \boldsymbol{\gamma}_r
+=
+\mathbf{U}_r \boldsymbol{\gamma}_r - \mathbf{1} \eta,
+$$
+where
+$\eta = \mathbf{b}^\intercal \mathbf{U}_r \boldsymbol{\gamma}_r$
+is a scalar.
+Therefore, the relatedness effects again differ only by $\mathbf{1} \eta$, which is compensated for by adjusting the intercept using \cref{eq:alpha-shift}, so the association coefficient $\beta_i$ and the residuals are the same in both cases.
+This proof works if there are small numbers of zero or negative eigenvalues in $\kinMatPrime$ (non-PSD cases), as those rank last and are simply ignored.
+The observations from LMMs, that p-values are invariant to bias types, also hold for PCA.
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{pcs.pdf}
+  \caption{
+    {\bf Visualization of PC shift due to kinship biases.}
+    Each panel shows three estimates (bias types): Popkin, Standard, and Weir-Goudet.
+    ROM estimates are in first row, MOR in second row.
+    (In admixed family, ROM limits are very similar to ROM estimates (not shown).)
+    Columns show estimates from each dataset: admixed family simulation (first replicate) and 1000 Genomes.
+    For popkin (both ROM and MOR estimates) in admixed family only, PC1 and PC2 are replaced with PC2 and PC3 (see text).
+  }
+  \label{fig:pcs}
+\end{figure}
+
+We visualize the top PCs of our datasets in Fig. \ref{fig:pcs} to assess the validity of \cref{eq:pc-shift}.
+The approximation is equivalent to each biased PC (Standard or Weir-Goudet) being shifted from the unbiased PC (Popkin), as described in \cref{eq:B-shift}.
+Fig. \ref{fig:pcs} indeed shows that PC1 is shifted by noticeable amounts in each of these cases, while PC2 is less shifted.
+However, a rotation of the PCs is also noticeable, particularly in the simulated data, and other large differences between MOR estimators, as expected since we know the approximation cannot be exact.
+Also, PCs can change order upon bias transformation, which we notice in the admixed family simulation, where PC2 and PC3 from popkin (and true kinship) actually correspond to PC1 and PC2, respectively, in both Standard and WG, and are plotted as such.
+No PC reordering occurs in 1000 Genomes.
+Overall, while the approximation of Fig. \ref{eq:pc-shift} can be weakened to merely require that the biased PCs plus intercept span the same subspace of the unbiased PCs plus intercept, the approximate PC shifts better explain intuitively why the result for LMM is also observed for PCA association.
+
+\subsection{Proof of association invariability to change in ancestral population}
+
+The kinship matrices we used so far have values that depend on the choice of ancestral population $T$.
+Here we consider the effect on association of changing ancestral population, and prove that it is also compensated for by the relatedness and intercept coefficients.
+
+Start from a kinship matrix $\kinMat[S]$ in terms of ancestral population $S$, and let $T$ be a population ancestral to $S$.
+If the inbreeding coefficient of $S$ when $T$ is the reference ancestral population is $\f{T}{S}$, then the kinship matrix $\kinMat$ in terms of $T$ is given by \citep{ochoa_estimating_2021}
+$$
+\left( \mathbf{J} - \kinMat \right)
+=
+\left( \mathbf{J} - \kinMat[S] \right) \left( 1 - \f{T}{S} \right)
+.
+$$
+Solving for $\kinMat$ and simplifying results in
+$$
+\kinMat
+=
+\left( 1 - \f{T}{S} \right) \kinMat[S] + \f{T}{S} \mathbf{J}
+.
+$$
+This resembles WG bias but in reverse: whereas WG reduces and rescales kinship by $\tilde{\varphi}^T$, changing to a more ancestral population rescales and increases kinship by $\f{T}{S}$.
+Indeed, excluding $\f{T}{S} = 1$, this transformation can be written as \cref{eq:kin-bias-general} with
+$c = \left( 1 - \f{T}{S} \right)^{-1}$ and
+\begin{align*}
+  \mathbf{b}
+  &=
+    q \frac{ \left( \kinMat[S] \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} }
+    , \\
+  q
+  &=
+    1 \pm \sqrt{1 + \frac{ \f{T}{S} }{ 1 - \f{T}{S} } \left( \mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} \right) }
+    .
+\end{align*}
+The determinant of $q$ is strictly positive, since $\mathbf{1}^\intercal \left( \kinMat[S] \right)^{-1} \mathbf{1} > 0$ (since $\kinMat[S]$ is positive definite, its inverse is too) and $0 \le \f{T}{S} < 1$.
+Thus, our previous results apply: ancestor change is compensated for by the relatedness and intercept coefficients, so the association statistics are invariant to this transformation.
+
+\subsection{Characterization of non-PSD and singular kinship and trait covariance estimators}
+
+While attempting to validate and characterize the earlier factorization of the WG bias function (\cref{eq:kin-bias-general,eq:B-shift,eq:wg-fac-b,eq:wg-fac-q}), we discovered that it does not produce PSD matrices, which covariance matrices are required to be.
+To characterize this problem more broadly, we calculate the eigenvalues of all kinship matrices $\kinMat$ and trait covariance matrices $\mathbf{V} = 2 \sigma^2 \kinMat + \sigma^2_\epsilon \mathbf{I}$, the latter used by LMMs and which we calculate using GCTA's estimates of $\sigma^2$ and $\sigma^2_\epsilon$.
+
+We find that all WG matrices have very large negative minimum eigenvalues, and popkin MOR estimates also have smaller negative minimum eigenvalues (Figs. \ref*{fig:emin}, \ref*{fig:emin-h3}).
+Moreover, besides all WG matrices and most popkin MOR estimates, Standard matrices are also often non-PSD but only in 1000 Genomes (Figs. \ref{fig:emin-cut}, \ref*{fig:emin-cut-h3}), which has missing genotypes (the admixed family simulation does not have missing genotypes).
+Each of these non-PSD matrices only has one negative eigenvalue.
+Notably, all popkin ROM estimates are PSD in every evaluation, including under missingness in 1000 Genomes.
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\linewidth]{emin-cut.pdf}
+  \caption{
+    {\bf Proportion of kinship and trait covariance ($\mathbf{V}$) matrices with $h^2=0.8$ that are not positive semidefinite (PSD).}
+    A matrix is non-PSD if it has negative eigenvalues (below $-10^{-7}$ to allow for limited machine precision).
+    Proportion is calculated over 100 replicates (1000 Genomes kinship has one value since genotypes are fixed, but $\mathbf{V}$ varies per replicate).
+    \textbf{A.}
+    In admixed family simulation, which does not have missing genotypes, all WG matrices and most popkin MOR estimates are non-PSD.
+    All non-PSD kinship matrices results in non-PSD $\mathbf{V}$ except some popkin ROM estimates yield PSD $\mathbf{V}$.
+    \textbf{B.}
+    In 1000 Genomes, which has missingness, all kinship estimates are non-PSD except popkin ROM.
+    Of the non-PSD kinship matrices, only some Standard estimates yield PSD $\mathbf{V}$.
+  }
+  \label{fig:emin-cut}
+\end{figure}
+
+In order to quantify matrix singularity, as well as numerical accuracy problems caused by multiplying by inverses of nearly-singular matrices, we calculate condition numbers, which equal the maximum absolute eigenvalue divided by the minimum absolute eigenvalue of our covariance matrices.
+As expected, we see that Standard kinship matrices are singular on our admixed family simulation (which lacks missingness), as reflected by extremely high condition numbers, but their trait covariances have small condition numbers (Figs. \ref*{fig:kappa}, \ref*{fig:kappa-h3}).
+No other matrices are singular, but popkin MOR estimates in the admixed family simulation have relatively high condition numbers for kinship, as well as trait covariance for $h^2=0.8$ but not 0.3.
+
+To explain these observations, consider the theoretical connection between the eigenvalues of $\kinMat$ and those of $\mathbf{V}$.
+The eigendecomposition trick widely used to fit variance components in LMMs \citep{kang_efficient_2008, lippert_fast_2011, svishcheva_rapid_2012, zhou_genome-wide_2012, sul_population_2018} yields
+$$
+\mathbf{V} = \mathbf{U} \left( 2 \sigma^2 \mathbf{\Lambda} + \sigma^2_\epsilon \mathbf{I} \right) \mathbf{U}^\intercal,
+$$
+where $\mathbf{U}$ and $\mathbf{\Lambda}$ are the eigenvectors and eigenvalues of $\kinMat$, respectively (\cref{eq:kin_evd}),
+so the eigenvectors of $\mathbf{V}$ are also $\mathbf{U}$ and its eigenvalues are $2 \sigma^2 \mathbf{\Lambda} + \sigma^2_\epsilon \mathbf{I}$.
+Therefore, since $\sigma^2, \sigma^2_\epsilon \ge 0$, then if $\kinMat$ is positive definite (all of its eigenvalues are positive) then so is $\mathbf{V}$, and the condition number of $\mathbf{V}$ is always smaller (better) or equal than that of $\kinMat$.
+A negative kinship eigenvalue $\lambda_k$ may become positive for $\mathbf{V}$ only if $\lambda_k  > -\sigma^2_\epsilon/(2\sigma^2) = -(1-h^2)/(2h^2)$, so very large negative $\lambda_k$ values as observed for WG do not become positive in $\mathbf{V}$, in fact they can become more negative for high heritability (Fig. \ref*{fig:emin}), though they are less negative at lower heritability (Fig. \ref*{fig:emin-h3}).
+$\mathbf{V}$ is always invertible and well-conditioned even when $\kinMat$ is singular PSD (has zero eigenvalues), as the Standard estimator is under no missingness, since a kinship zero eigenvalue becomes $\sigma^2_\epsilon$ for $\mathbf{V}$.
+Conversely, the above equation explains why some non-PSD kinship matrices are particularly problematic: negative eigenvectors near the heritability-dependent value $-\sigma^2_\epsilon/(2\sigma^2)$ can result in ill-conditioned $\mathbf{V}$.
+We see that popkin MOR estimates are non-PSD (Fig. \ref*{fig:emin}) in such a way that some of their $\mathbf{V}$ are ill-conditioned under high heritability (Fig. \ref*{fig:kappa}) but not the lower heritability (Fig. \ref*{fig:kappa-h3}), and this explains its poorer performance in the admixed family evaluations with high heritability (Figs. \ref{fig:auc_sim}, \ref*{fig:rmsd_sim}), as shown in the next subsection.
+
+\subsection{Further empirical validation of theoretical predictions}
+
+Seeing that WG is always non-PSD, and to query other instances where predictions are not fully met, here we analyze estimation accuracy of various parameters to better understand theoretically and empirically how broken assumptions affect them.
+With PCA, no deviations from expectation of $\auc$ and $\rmsd$ are observed for WG (Figs. \ref{fig:auc_sim}, \ref{fig:auc_real}, \ref*{fig:rmsd_sim}, \ref*{fig:rmsd_real}), which makes sense since PCA simply ignores eigenvectors with negative or zero eigenvalues.
+Therefore, our analysis focuses on LMM and $h^2=0.8$ only, where large deviations are observed, and clarification regarding WG is needed.
+
+LMMs such as GCTA perform association testing in two steps.
+First is the restricted maximum likelihood step used to fit variance components.
+Although the eigendecomposition approaches \citep{kang_efficient_2008, lippert_fast_2011, svishcheva_rapid_2012, zhou_genome-wide_2012, sul_population_2018} require positive definite $\mathbf{V}$ (lest the determinant of $\mathbf{V}$ be negative), surprisingly the GCTA average information algorithm only requires in practice that $\mathbf{V}$ be invertible \citep{yang_gcta:_2011}.
+Thus, the relationship between WG, Standard, and True or Popkin variance components are largely as expected from our theoretical prediction $\sigma^{2\prime} = c \sigma^2$ in \cref{eq:sigma-rescale}, with the exception of popkin ROM on 1000 Genomes $h^2=0.8$ only, whose genetic variance estimates are slightly smaller than expected (Figs. \ref*{fig:preds-reml-errors}, \ref*{fig:preds-reml-errors-h3}).
+
+Next we determine the effect of WG bias on coefficient estimates.
+In this second step of LMM association testing, once $\mathbf{V}$ is determined, GCTA and other LMMs use generalized least squares to estimate fixed effects coefficients \citep{kang_efficient_2008, kang_variance_2010, yang_advantages_2014}.
+Using the first replicate of the admixed family simulation and the true kinship matrix and the Standard and WG limits only, we recalculate the genetic effect $\beta_i$ and intercept coefficients $\alpha$ in R for all loci, and confirm that we recover the GCTA estimates for $\beta_i$ to the given precision.
+We then compare intercept coefficients, which are not given by GCTA, and confirm our theoretical prediction (\cref{sec:wg_gls}) that they are identical whether the True or WG ROM limit kinship matrices are used (the mean absolute difference is below $10^{-7}$).
+In contrast, intercepts fit using the Standard ROM limit kinship matrix are different than those of the true kinship (not shown), which agrees with our theoretical prediction that the intercept varies to compensate for the kinship matrix bias ($\alpha' = \alpha + \eta$ in \cref{eq:alpha-shift}).
+
+Lastly, we explain the largest deviations from our predictions of the performance metrics $\auc$ and $\rmsd$ for $h^2=0.8$ (for $h^2=0.3$ there are no large prediction deviations).
+We find that the small performance errors of popkin ROM in 1000 Genomes (Figs. \ref{fig:auc_real}, \ref*{fig:rmsd_real}) are driven by errors in genetic variance component estimation $\sigma^2$ (Fig. \ref*{fig:reml-err-vs-pred-err}).
+However, the larger performance errors of popkin MOR in the admixed family simulation (Figs. \ref{fig:auc_sim}, \ref*{fig:rmsd_sim}) are instead explained by the condition number of $\mathbf{V}$ (Fig. \ref*{fig:kappa-vs-pred-err}).
+This result makes sense since the condition number by definition quantifies regression coefficient estimation accuracy.
+
+\section{Discussion}
+
+% association robust to bias type (empirical and theory / summary)
+Previous research showed that commonly used kinship estimators are biased, and that these biases can be large (\citet{ochoa_estimating_2021}; Figs. \ref{fig:kinship_sim}, \ref*{fig:kinship-bias}).
+Our initial hypothesis was that these kinship biases would affect association testing, but surprisingly found that association is unaffected.
+We then proved theoretically that it is the intercept and relatedness effect (random effect or PCs) coefficients that compensate for the bias, and result in identical association coefficients and significance statistics.
+
+% ancestor population
+Kinship estimates depend on the choice of ancestral population, which conditions the distributions of allele frequencies and genotypes, but the effect of this choice of association testing was not only unknown but completely disregarded.
+A corollary of our theoretical results is that changes of ancestral population, which behave algebraically like kinship bias, are also compensated for by the relatedness and intercept coefficients, so association testing is also invariant to the choice of ancestral population.
+Thus, although a choice of ancestral population is always being made when estimating kinship, this choice is fortunately inconsequential to association testing, as it ought to be since relatedness is being conditioned upon in these tests.
+
+% non-posdef, numerical stability
+Given that kinship bias type is not important for association studies, we are free to choose a kinship estimator based on other properties.
+Ideally, kinship matrices result in well conditioned trait covariance matrices, since that has the largest effect in numerical accuracy and power in LMMs.
+Well-conditioned association is guaranteed for PSD kinship matrices, and popkin ROM is the only estimator that produces PSD matrices consistently across our evaluations (Fig. \ref{fig:emin-cut}).
+Popkin ROM is also the only unbiased kinship estimator \citep{ochoa_estimating_2021}.
+We observed that Standard kinship estimates are also not PSD when genotypes are missing, a well understood phenomenon for related sample covariance estimators outside genetics \citep{jurczak_spectral_2017}.
+Fortunately, non-PSD kinship estimators often perform well for association.
+Nevertheless, in our admixed family simulation we did see the other popkin estimator (the MOR version) perform particularly poorly due to being non-PSD, which in a heritability-dependent manner results in ill-conditioned association tests and substantial loss of accuracy and power (Figs. \ref{fig:auc_sim}, \ref*{fig:rmsd_sim}, \ref*{fig:kappa-vs-pred-err}).
+Theory predicts that the same can happen with any non-PSD estimator, depending on unknowns such as the heritability and the value of the negative eigenvalues of the kinship estimator, so it is risky to use MOR estimators (all of which are non-PSD in 1000 Genomes), as well as the WG estimator generally (which is non-PSD in all replicates of all of our evaluations).
+We also observe smaller numerical inaccuracies for popkin ROM, the estimator we recommend, in 1000 Genomes with $h^2=0.8$ only, although the result is mixed: performance is slightly better (Fig. \ref{fig:auc_real}) although null p-value calibration is slightly worse (Fig. \ref*{fig:rmsd_real}).
+The cause is variance components are poorly estimated (Fig. \ref*{fig:preds-reml-errors}), but we did not find a more fundamental explanation.
+Overall, our assessment suggests that the popkin ROM estimator is the safest choice due to its guarantee of well-conditioned associations that other estimators cannot make.
+
+% MOR weirdness
+Despite being non-PSD, we observe better performance for MOR versus ROM estimators in LMM association of 1000 Genomes with $h^2=0.8$ (Fig. \ref{fig:auc_real}; the approaches were tied under lower heritability in Fig. \ref*{fig:auc_real-h3}).
+Perhaps this is expected because we simulated larger coefficients for rare variants, while MOR estimators upweigh rare variants.
+This effect is not observed in the admixed family simulation, where MOR and ROM versions give similar kinship estimates (Fig. \ref{fig:kinship_sim}) and performed similarly (Fig. \ref{fig:auc_sim}), compared to 1000 Genomes where kinship estimates are also strikingly different (Fig. \ref{fig:kinship_real}).
+However, only popkin ROM is unbiased (Figs. \ref{fig:kinship_sim}B, \ref*{fig:popkin-rom-mor}).
+One potential explanation is that our kinship model assumes that all variants existed in the MRCA population, whereas rare variants in human data are known to be more recent mutations, and thus their effective kinship matrix is different than that of ancestral variants.
+Therefore, despite its biases, the popkin MOR estimator may better capture the covariance of rare variants and thus model them better in association tests, particularly in LMMs where the effect is most pronounced.
+Future work should focus on better approaches for upweighing rare variants or otherwise estimating their covariance structure while resulting in positive definite kinship estimates.
+
+% implications for other estimators
+Our conclusions that common kinship biases do not affect association studies extend to variations of the Standard kinship estimator that weigh loci according to linkage disequilibrium \citep{speed_reevaluation_2017, wang_efficient_2017}, which also have the Standard bias type since this bias is present in each locus \citep{ochoa_estimating_2021}.
+As shown in our theoretical results, another form of the Standard kinship estimator that weighs individuals to estimate ancestral allele frequencies $\pith$, including the best unbiased linear estimator in \cref{sec:min_w_mean_kin} \citep{astle_population_2009, thornton_roadtrips:_2010}, is also subject to the same conclusions.
+Our proof holds for arbitrary kinship matrices and their biased counterparts, making no assumptions about how they are related to the loci being tested for association, so they hold whether the test locus was included in the kinship estimate (the scenario tested empirically) or not, such as in the leave-one-chromosome-out variant of association testing with LMMs \citep{lippert_fast_2011, yang_advantages_2014}.
+In addition, the proof does not make any assumptions about the tested loci, so it does not depend on allele frequency, and thus holds for rare and common variants.
+
+% conclusion / take away
+In this study, we show empirically and theoretically that association tests are invariant to the use of common kinship estimators that are biased versus a more recent unbiased estimator.
+% future work / implication beyond this work
+Since the results hold in the presence of additional covariates, they hold for multivariate tests in general, which encompasses LASSO approaches and rare variant (burden, kernel, etc.) tests that include PCs or random effects from a kinship matrix.
+The underpinnings of our proof show that the same result holds for association with generalized linear models, since the intercept and relatedness effects interact in the same way as for linear models (the link function goes around the trait only); these models include case/control models such as logistic PCA and LMM.
+However, heritability estimation requires unbiased estimates of the random effect coefficient ($\sigma^2$), so it is biased when the standard kinship estimator is used, as it is using GCTA \citep{yang_gcta:_2011, yang_advantages_2014}.
+Nevertheless, heritability estimation is a complex problem and a complete analysis is beyond the scope of this work.
+Overall, we have described an unexpected robustness of association studies, and our theoretical understanding of this result may help guide future improvements for association and other related models.
+
+\section{Data availability}
+The data and code generated during this study are available on GitHub at \url{https://github.com/OchoaLab/bias-assoc-paper}.
+The high-coverage version of the 1000 Genomes Project was downloaded from \url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20190425_NYGC_GATK/}
+and detailed processing instructions are found on GitHub at \url{https://github.com/OchoaLab/data}.
+
+\section{Web resources}
+plink2, \url{https://www.cog-genomics.org/plink/2.0/}\\
+GCTA, \url{https://yanglab.westlake.edu.cn/software/gcta/}\\
+bnpsd, \url{https://cran.r-project.org/package=bnpsd}\\
+simfam, \url{https://cran.r-project.org/package=simfam}\\
+simtrait, \url{https://cran.r-project.org/package=simtrait}\\
+popkin, \url{https://cran.r-project.org/package=popkin}\\
+popkinsuppl, \url{https://github.com/OchoaLab/popkinsuppl}
+
+%\section{Acknowledgments}
+
+\section{Funding}
+This work was funded in part by the Duke University School of Medicine Whitehead Scholars Program, a gift from the Whitehead Charitable Foundation.
+The 1000 Genomes data were generated at the New York Genome Center with funds provided by NHGRI Grant 3UM1HG008901-03S1.
+
+\section{Conflicts of interest}
+The authors declare no conflicts of interest.
+
+\bibliography{bibliography}
+
+\begin{appendices}
+  \appendix
+
+  % allow counting here! (counteracts setting in `gsajnl.cls`)
+  \setcounter{secnumdepth}{1}
+  
+  \appendixpage
+  
+  \section{Justification for popkin generalizations}
+
+  \label{sec:popkin_w_justif}
+
+  The popkin estimator in \cref{eq:popkin} has been generalized in this work to include locus weights $w_i$.
+  The original ROM formulation had $w_i=1$ for all loci $i$ \citep{ochoa_estimating_2021}.
+  Recalling from that original work that
+  $$
+  \E \left[ (\xij-1)(\xij[k]-1) - 1 \middle| T \right]
+  =
+  4 \pit \left( 1 - \pit \right) \left( \kt - 1 \right),
+  $$
+  then for fixed $w_i$ we get
+  \begin{align*}
+    \E \left[ \Ajk \middle| T \right]
+    &=
+      v_m^T \left( \kt - 1 \right)
+      , \\
+    v_m^T
+    &=
+      \frac{4}{m} \sum_{i=1}^m w_i \pit \left( 1 - \pit \right)
+      .
+  \end{align*}
+  Therefore, as before all the unknowns $\pit$ and now also the known weights $w_i$ collapse into a single parameter $v_m^T$, which is estimated under the assumption that the minimum kinship is zero, giving $\AMinHat = -v_m^T$, so that
+  $$
+  \ktHatNamed{popkin-ROM}
+  =
+  1 - \frac{\Ajk}{\AMinHat}
+  \toas
+  \kt
+  $$
+  as desired.
+
+  The MOR case of $w_i = \left( \pith \left( 1 - \pith \right) \right)^{-1}$ does not fit the previous case because this $w_i$ is a random variable (it is a function of the genotypes).
+  The term of interest $w_i ( (\xij-1)(\xij[k]-1) - 1 )$ is a ratio of random variables whose expectation does not have a closed form.
+  In this case, we rely on the first-order approximation to this expectation, namely
+  \begin{align*}
+    \E \left[ \frac{ (\xij-1)(\xij[k]-1) - 1 }{ \pith \left( 1 - \pith \right) } \middle| T \right]
+    &\approx
+      \frac{ \E \left[ (\xij-1)(\xij[k]-1) - 1 \middle| T \right] }{ \E \left[ \pith \left( 1 - \pith \right) \middle| T \right] }
+    \\
+    &=
+      \frac{ 4 \pit \left( 1 - \pit \right) \left( \kt - 1 \right) }{ \pit \left( 1 - \pit \right) \left( 1 - \bar{\varphi}^T \right) }
+    \\
+    &=
+      \frac{ 4 \left( \kt - 1 \right) }{ 1 - \bar{\varphi}^T }
+  ,
+  \end{align*}
+  where the expectation of $\pith \left( 1 - \pith \right)$ was calculated previously \citep{ochoa_estimating_2021}.
+  In this case the expectation of $\Ajk$, summing across loci, is also approximated by
+  $$
+  \E \left[ \Ajk \middle| T \right]
+  \approx
+  \frac{ 4 \left( \kt - 1 \right) }{ 1 - \bar{\varphi}^T }
+  .
+  $$
+  The same strategy as before applies to estimate the unknown factor $4 / \left( 1- \bar{\varphi}^T \right)$, namely that if the minimum kinship is zero then $\AMinHat \approx - 4 / \left( 1- \bar{\varphi}^T \right)$, resulting in
+  $$
+  \ktHatNamed{popkin-MOR}
+  =
+  1 - \frac{\Ajk}{\AMinHat}
+  \approx
+  \kt
+  .
+  $$
+
+  \section{Connection between popkin and standard kinship estimator}
+
+  \label{sec:conn_popkin_std}  
+
+  Since the connection we discovered holds when data are complete, but not under missingness, to determine necessary conditions we introduce more complete forms of the estimators that handle missingness.
+  Popkin (with locus weights) has the following parts updated:
+  \begin{equation*}
+    %\label{eq:popkin_miss}
+    \begin{split}
+      A_{ijk}
+      &=
+        I_{ij} I_{ik} ( (\xij-1)(\xij[k]-1) - 1 )
+      , \\
+      \Ajk
+      &=
+        \frac{1}{m_{jk}} \sum_{i=1}^m w_i A_{ijk}
+        , \\
+      m_{jk}
+      &=
+        \sum_{i=1}^m I_{ij} I_{ik}
+        ,
+    \end{split}
+  \end{equation*}
+  where $I_{ij} = 1$ if $\xij$ is not missing, 0 otherwise (this way missing $\xij$ can have any value and not contribute to the estimator).
+  Only loci with both genotypes ($\xij$ and $\xij[k]$) non-missing are included in the above average, and $m_{jk}$ counts the total number of such loci.
+  The ancestral allele frequency estimator with missingness is
+  \begin{align*}
+    \pith
+    &=
+      \frac{1}{2 n_i} \sum_{j=1}^n I_{ij} \xij
+      , \\
+    n_i
+    &=
+      \sum_{j=1}^n I_{ij}
+      ,
+  \end{align*}
+  which averages over individuals rather than loci, so its denominator is the number of non-missing individuals at this locus.
+  Let us compute some averages of the popkin estimator.
+  Since the result we want holds at every locus separately, let us formulate the averages of interest at locus $i$ only:
+  \begin{align*}
+    \bar{A}_{ij}
+    &=
+      \frac{1}{n} \sum_{k=1}^n A_{ijk}
+      =
+      I_{ij} \frac{n_i}{n} \left( ( \xij - 1 ) \left( 2 \pith - 1 \right) - 1 \right)
+      , \\
+    \bar{A}_i
+    &=
+      \frac{1}{n} \sum_{k=1}^n \bar{A}_{ij}
+      =
+      - \left( \frac{n_i}{n} \right)^2 4 \pith \left( 1 - \pith \right)
+      .
+  \end{align*}
+  Therefore, the combination of interest is:
+  \begin{align*}
+    & A_{ijk} + \bar{A}_i - \bar{A}_{ij}  - \bar{A}_{ik} \\
+    % &=
+    %   I_{ij} I_{ik} ( (\xij-1)(\xij[k]-1) - 1 )
+    %   - \left( \frac{n_i}{n} \right)^2 4 \pith ( 1 - \pith )
+    %   - I_{ij} \frac{n_i}{n} ( ( \xij - 1 )( 2 \pith - 1 ) - 1 )
+    %   - I_{ik} \frac{n_i}{n} ( ( \xij[k] - 1 )( 2 \pith - 1 ) - 1 )
+    %   \\
+    &=
+      I_{ij} I_{ik} \left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)
+    \\
+      &+ \frac{n_i}{n} \left( I_{ij} - \frac{n_i}{n} \right) 4 \pith
+        + \left( \left( \frac{n_i}{n} \right)^2 -  I_{ij} I_{ik} \right) 4 \left( \pith \right)^2
+    \\
+      &+ I_{ij} \left( I_{ik} - \frac{n_i}{n} \right) \xij \left( 2 \pith - 1 \right)
+      + I_{ik} \left( I_{ij} - \frac{n_i}{n} \right) \xij[k] \left( 2 \pith - 1 \right)
+      .
+  \end{align*}
+  For the above to equal $I_{ij} I_{ik} \left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)$, which is the first term above, the rest of the terms must vanish for arbitrary values of $\pith$, $\xij$, and $\xij[k]$.
+  Since $n_i > 0$ (there is at least one non-missing individual at every locus), the term $\frac{n_i}{n} ( I_{ij} - \frac{n_i}{n} ) 4 \pith$ vanishes if and only if $I_{ij} = \frac{n_i}{n}$, and since $I_{jk}=0$ does not solve this equation (because $n_i > 0$), then $I_{jk}=1$, which requires $n_i=n$, so no individuals can have missing data at this locus (the rest of the terms vanish when this is so).
+  Thus,
+  $$
+  A_{ijk} + \bar{A}_i - \bar{A}_{ij}  - \bar{A}_{ik}
+  =
+  I_{ij} I_{ik} \left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)
+  $$
+  if and only if there is no missing data at locus $i$.
+  The other desired result of
+  $$
+  \bar{A}_i
+  =
+  - 4 \pith \left( 1 - \pith \right)
+  $$
+  also requires $n_i = n$.
+
+  Assuming now no missingness, transforming the popkin estimates using the Standard bias function of \cref{eq:kinship_std_lim} gives
+  \begin{align*}
+    & \frac{
+      \ktHatNamed{popkin}
+      + \bar{ \hat{ \varphi } }^{T,\text{popkin}}
+      - \bar{ \hat{ \varphi } }_j^{T,\text{popkin}}
+      - \bar{ \hat{ \varphi } }_k^{T,\text{popkin}}
+      }{
+      1 - \bar{ \hat{ \varphi } }^{T,\text{popkin}}
+      }
+    \\
+    % &=
+    %   \frac{
+    %   ( 1 - \frac{\Ajk}{\AMinHat} )
+    %   + ( 1 - \frac{\bar{A}}{\AMinHat} )
+    %   - ( 1 - \frac{\bar{A}_j}{\AMinHat} )
+    %   - ( 1 - \frac{\bar{A}_k}{\AMinHat} )
+    %   }{
+    %   \frac{\bar{A}}{\AMinHat}
+    %   }
+    % \\
+    &=
+      \frac{
+      \Ajk
+      + \bar{A}
+      - \bar{A}_j
+      - \bar{A}_k
+      }{
+      - \bar{A}
+      }
+    \\
+    &=
+      \frac{
+      \sum_{i=1}^m w_i ( A_{ijk} + \bar{A}_i - \bar{A}_{ij} - \bar{A}_{ik} )
+      }{
+      - \sum_{i=1}^m w_i \bar{A}_i
+      }
+    \\
+    &=
+      \frac{
+      \sum_{i=1}^m w_i \left( \xij - 2 \pith \right) \left( \xij[k] - 2 \pith \right)
+      }{
+      \sum_{i=1}^m w_i 4 \pith \left( 1 - \pith \right)
+      }
+      .
+  \end{align*}
+  Therefore, if popkin ROM is input ($w_i=1$), this transformation yields Standard ROM.
+  On the other hand, if popkin MOR is used ($w_i^{-1} = \pith \left( 1 - \pith \right)$), the transformation yields Standard MOR.
+  
+  \section{Mean kinship inequalities}
+
+  \label{sec:mean_kinship_ineqs}
+
+  Denote the mean of the diagonal kinship terms as $\bar{\delta}^T = \frac{1}{n} \sum_{j=1}^n \kt[j]$.
+  Here we prove that
+  $$
+  0 \le \tilde{\varphi}^T \le \bar{\varphi}^T \le \bar{\delta}^T \le 1,
+  $$
+  with each of $\tilde{\varphi}^T = \bar{\varphi}^T$ and $\bar{\varphi}^T = \bar{\delta}^T$ if and only if all kinship values are equal.
+
+  The inequalities $0 \le \bar{\varphi}^T \le \bar{\delta}^T \le 1$ follow directly from previous work, applied to a kinship matrix rather than a coancestry matrix as done originally, as the proof required solely a covariance matrix with values between 0 and 1 \citep{ochoa_estimating_2021}.
+  $\tilde{\varphi}^T$ is defined in \cref{eq:wg_tilde}.
+  $0 \le \tilde{\varphi}^T$ follows since every kinship value is non-negative.
+  $\bar{\varphi}^T$ and $\tilde{\varphi}^T$ are related by
+  \begin{equation}
+    \label{eq:kinship_mean_tilde}
+    \bar{\varphi}^T
+    =
+    \frac{ \tilde{\varphi}^T (n-1) + \bar{\delta}^T }{n}.
+  \end{equation}
+  Applying $\bar{\varphi}^T \le \bar{\delta}^T$ to \cref{eq:kinship_mean_tilde} and simplifying yields $\tilde{\varphi}^T \le \bar{\delta}^T$.
+  Lastly, since $\bar{\varphi}^T - \tilde{\varphi}^T = \left( \bar{\delta}^T - \tilde{\varphi}^T \right) / n$ (from rearranging \cref{eq:kinship_mean_tilde}), it also follows that $\tilde{\varphi}^T \le \bar{\varphi}^T$, as desired.
+  Furthermore, $\tilde{\varphi}^T = \bar{\varphi}^T$ holds if and only if all $\kt = \bar{\delta}^T$, since that is necessary and sufficient for $\bar{\varphi}^T = \bar{\delta}^T$.
+
+  \section{Derivation of WG bias factorization}
+  
+  \label{sec:wg_biasfunc}
+
+  Here we rewrite the WG bias function of \cref{eq:wg_lim} as a factorization of the form of \cref{eq:kin-bias-general}.
+  It is easy to see that $c = 1 - \tilde{\varphi}^T$.
+  Expanding \cref{eq:kin-bias-general} gives
+  \begin{align*}
+    \mathbf{B} \kinMat \mathbf{B}^\intercal
+    &= \left( \mathbf{I} - \mathbf{1} \mathbf{b}^\intercal \right) \kinMat \left( \mathbf{I} - \mathbf{b} \mathbf{1}^\intercal \right)
+    \\
+    &= \kinMat - \mathbf{1} \left( \kinMat \mathbf{b} \right)^\intercal - \left( \kinMat \mathbf{b} \right) \mathbf{1}^\intercal + \mathbf{J}(\mathbf{b}^\intercal \kinMat \mathbf{b} ),
+  \end{align*} 
+  where $\mathbf{b}^\intercal \kinMat \mathbf{b}$ is a scalar and $\kinMat\mathbf{b}$ a vector.
+  Equating the above to \cref{eq:wg_lim} and rearranging, we obtain
+  \begin{align*}
+    \mathbf{J} \left( \tilde{\varphi}^T + \left( \mathbf{b}^\intercal \kinMat \mathbf{b} \right) \right)
+    &= \mathbf{1} \left( \kinMat \mathbf{b} \right)^\intercal + \left( \kinMat\mathbf{b} \right) \mathbf{1}^\intercal .
+  \end{align*}
+  Since $\tilde{\varphi}^T + \left( \mathbf{b}^\intercal \kinMat \mathbf{b} \right)$ is a scalar and $\mathbf{J} = \mathbf{1} \mathbf{1}^\intercal$, we can see that the solution requires the right side to also be a constant matrix, which is only achieved if $\kinMat\mathbf{b} \propto \mathbf{1}$.
+  We choose the scaling factor for the last $\mathbf{1}$ to be $q \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right)^{-1}$ as this simplifies notation later, and solving for $\mathbf{b}$ results in \cref{eq:wg-fac-b}.
+  To solve for q, we replace $\mathbf{b}$ from \cref{eq:wg-fac-b} into the above equation, which after rearranging results in
+  \begin{align*}
+    q^2 - 2q + \tilde{\varphi}^T \left( \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} \right) = 0.
+  \end{align*}
+  The solution to the above quadratic equation is given by \cref{eq:wg-fac-q}, as desired.
+
+  \section{Minimum weighted mean kinship}
+
+  \label{sec:min_w_mean_kin}
+
+  Consider the weighted mean kinship value
+  $
+  \mathbf{w}^\intercal \kinMat \mathbf{w},
+  $
+  where $\mathbf{w}$ are weights that sum to one ($\mathbf{w}^\intercal \mathbf{1} = 1$).
+  The ordinary mean kinship $\bar{\varphi}^T$ is the special case with $\mathbf{w} = \frac{1}{n} \mathbf{1}$.
+  The weights that minimize the weighted mean kinship are the solution of the Lagrangian multiplier problem
+  $$
+  G = \mathbf{w}^\intercal \kinMat \mathbf{w} + \lambda (\mathbf{w}^\intercal \mathbf{1} - 1).
+  $$
+  The derivatives are the constraint and
+  $
+  \frac{dG}{d \mathbf{w}}
+  =
+  2 \kinMat \mathbf{w} + \lambda \mathbf{1} = \mathbf{0}.
+  $
+  The optimal weights thus satisfy
+  $
+  \mathbf{w} = \frac{-\lambda}{2} \left( \kinMat \right)^{-1} \mathbf{1}.
+  $
+  Multiplying by $\mathbf{1}^\intercal$, since $\mathbf{1}^\intercal \mathbf{w} = 1$, allows us to solve for 
+  $
+  \lambda^{-1} = - \frac{1}{2} \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1}.
+  $
+  Thus, the optimal weights are
+  $$
+  \mathbf{w}
+  = 
+  \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+  ,
+  $$
+  a solution that recurs in related settings, and applied to genotypes as $\pith = \mathbf{w}^\intercal \mathbf{x}_i / 2$ yields the best linear unbiased estimator of $\pit$ \citep{altschul_weights_1989, astle_population_2009, thornton_roadtrips:_2010}.
+  Therefore, the minimum weighted mean kinship is, and satisfies,
+  $$
+  \mathbf{w}^\intercal \kinMat \mathbf{w}
+%  =
+%  \frac{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} } \kinMat \frac{ \left( \kinMat \right)^{-1} \mathbf{1} }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+  =
+  \frac{ 1 }{ \mathbf{1}^\intercal \left( \kinMat \right)^{-1} \mathbf{1} }
+  \le
+  \bar{\varphi}^T
+  \approx
+  \tilde{\varphi}^T
+  .
+  $$
+    
+  \section{Proof that WG bias results in zero intercept shift under LMM generalized least squares estimation}
+
+  \label{sec:wg_gls}
+
+  For this section suppose that variance components have been estimated, so $\mathbf{V} = 2 \sigma^2 \kinMat + \sigma^2_\epsilon \mathbf{I}$ is given, assume it is invertible, and rewrite the LMM as
+  $$
+  \mathbf{y}
+  =
+  \mathbf{Z} \boldsymbol{\beta} + \boldsymbol{\epsilon}_V,
+  \quad\quad
+  \boldsymbol{\epsilon}_V \sim \text{Normal} \left( \mathbf{0}, \mathbf{V} \right),
+  $$
+  where the design matrix $\mathbf{Z} = (\mathbf{1}, \mathbf{x}_i, ...)$ contains the intercept, genotype and now additional covariates, and $\boldsymbol{\beta} = (\alpha, \beta_i, ...)$ are their coefficients.
+  The generalized least squares coefficients estimate, used by GCTA and other LMMs, is
+  $$
+  \boldsymbol{\hat{\beta}} = \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1} \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{y}.
+  $$
+
+  Now suppose $\mathbf{V}$ corresponds to some kinship matrix $\kinMat$ while $\mathbf{V}'$ corresponds to $\kinMatPrime = F^\text{WG}(\kinMat)$, and $\mathbf{V}'$ is also invertible.
+  Our strategy involves repeated application of the Sherman-Morrison formula for calculating inverses of matrices after a rank-1 update, which for a symmetric update of a matrix $\mathbf{A}$ with a vector $\mathbf{z}$ and a scalar $b$ takes the form \citep{sherman_adjustment_1950}
+  $$
+  \left( \mathbf{A} + b \mathbf{z}\mathbf{z}^\intercal \right)^{-1}
+  =
+  \mathbf{A}^{-1} - \frac{
+    b
+  }{
+    1 + b \left( \mathbf{z}^\intercal \mathbf{A}^{-1} \mathbf{z} \right)
+  }
+  \left( \mathbf{A}^{-1} \mathbf{z} \right) \left( \mathbf{A}^{-1} \mathbf{z} \right)^\intercal
+  .
+  $$
+  Since $F^\text{WG}(\kinMat)$ is a rank-1 update of $\kinMat$ by \cref{eq:wg_lim}, then $\mathbf{V}'$ is also a rank-1 update of $\mathbf{V}$:
+  \begin{align*}
+    \mathbf{V}'
+    &=
+      2 \sigma^{2\prime} \kinMatPrime + \sigma^2_\epsilon \mathbf{I}
+      \\
+    &=
+      2 \sigma^2 \left( \kinMat - \tilde{\varphi}^T \mathbf{1}\mathbf{1}^\intercal \right)
+      + \sigma^2_\epsilon \mathbf{I}
+      \\
+    &=
+    \mathbf{V} - d \mathbf{1}\mathbf{1}^\intercal
+    ,
+  \end{align*}
+  where $d = 2 \sigma^2 \tilde{\varphi}^T$ and we used $\sigma^{2\prime} = \left( 1 - \tilde{\varphi}^T \right) \sigma^2$.
+  Therefore,
+  $$
+  \left( \mathbf{V}' \right)^{-1}
+  =
+  \mathbf{V}^{-1} + e \mathbf{V}^{-1} \mathbf{1} \left( \mathbf{V}^{-1} \mathbf{1} \right)^\intercal
+  ,
+  $$
+  where $e = d / \left( 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) \right)$.
+  Therefore the following remains a rank-1 update,
+  $$
+  \mathbf{Z}^\intercal \left( \mathbf{V}' \right)^{-1} \mathbf{Z}
+  =
+  \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} + e \mathbf{u} \mathbf{u}^\intercal
+  ,
+  $$
+  where $\mathbf{u} = \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{1}$ is a column vector the length of the number of covariates (including intercept and genotype).
+  Therefore, 
+  $$
+  \left( \mathbf{Z}^\intercal \left( \mathbf{V}' \right)^{-1} \mathbf{Z} \right)^{-1}
+  =
+  \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1}
+  - g \mathbf{v} \mathbf{v}^\intercal
+  ,
+  $$
+  where $\mathbf{v} = \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1} \mathbf{u}$
+  and $g = e/(1 + e (\mathbf{u}^\intercal \mathbf{v}))$.
+  Noting that $\mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{1}$ is the first column of $\mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z}$, then $\mathbf{v}$ is the first column of the identity matrix:
+  \begin{align*}
+    \mathbf{v}
+    &=
+      \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1} \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{1}
+      =
+      \begin{pmatrix}
+        1 \\
+        \mathbf{0} \\
+      \end{pmatrix}
+      ,
+  \end{align*}
+  where $\mathbf{0}$ is a vector the length of the number of covariates minus one (exclude the intercept).
+  As a consequence, $\mathbf{Z} \mathbf{v} = \mathbf{1}$, so $\mathbf{u}^\intercal \mathbf{v} = \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1}$ and
+  \begin{align*}
+    g
+    &=
+      \frac{ e } {1 + e (\mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1}) }
+    \\
+    &=
+      \frac{
+      \frac{ d }{ 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) }
+      } {
+      1 + \frac{ d }{ 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) } (\mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1})
+      }
+    \\
+    &=
+      d
+      .
+  \end{align*}
+  The final step yields the coefficient estimates as a rank-1 update:
+  \begin{align*}
+    \boldsymbol{\hat{\beta}}'
+    &=
+      \left( \mathbf{Z}^\intercal \left( \mathbf{V}' \right) ^{-1} \mathbf{Z} \right)^{-1} \mathbf{Z}^\intercal \left( \mathbf{V}' \right)^{-1} \mathbf{y}
+    \\
+    &=
+      \left(   \left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1}
+      - d \mathbf{v} \mathbf{v}^\intercal
+      \right) \mathbf{Z}^\intercal \left( \mathbf{V}^{-1} + e \mathbf{V}^{-1} \mathbf{1} \left( \mathbf{V}^{-1} \mathbf{1} \right)^\intercal \right) \mathbf{y}
+    \\
+    &=
+      \boldsymbol{\hat{\beta}}
+      +
+      e \mathbf{v} \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{y} \right)
+      - d \mathbf{v} \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{y} \right)
+    \\
+    & - d e \mathbf{v} \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{y} \right)
+    \\
+    &=
+      \boldsymbol{\hat{\beta}}
+      + \mathbf{v} \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{y} \right) \left(
+      e 
+      - d 
+      - d e \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+      \right)
+      .
+  \end{align*}
+  The last factor above vanishes:
+  \begin{align*}
+    & e 
+      - d 
+      - d e \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+    \\
+    &=
+      \frac{ d }{ 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) }
+      - d 
+      - d \frac{ d }{ 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) } \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+    \\
+    % &=
+    %   \frac{
+    %   d
+    %   - d \left( 1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right) \right)
+    %   - d^2 \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+    %   }{
+    %   1 - d \left( \mathbf{1}^\intercal \mathbf{V}^{-1} \mathbf{1} \right)
+    %   }
+    % \\
+    &=
+      0
+      .
+  \end{align*}
+  Therefore, $\boldsymbol{\hat{\beta}}' = \boldsymbol{\hat{\beta}}$, which shows that all fixed effect coefficients, including the intercept, are invariant to using a WG-biased kinship matrix instead of the unbiased one when the coefficients are estimated with generalized least squares.
+  
+  Furthermore, since the diagonal values of $\left( \mathbf{Z}^\intercal \left( \mathbf{V}' \right)^{-1} \mathbf{Z} \right)^{-1}$, which correspond to $\Var( \hat{\beta}_k' )$ for each $k$, are the same as those of $\left( \mathbf{Z}^\intercal \mathbf{V}^{-1} \mathbf{Z} \right)^{-1}$ except for the first one corresponding to the intercept, then the Wald test statistic of the $k$th covariate coefficients, given by $\hat{\beta}_k^2 / \Var( \hat{\beta}_k )$, and their p-values, are also the same for $k \ne 1$ for WG bias as for the unbiased kinship matrix.
+  
+\end{appendices}
+
+% define labels for supplementary figures, which are not actually present in this document
+% https://tex.stackexchange.com/questions/582054/how-to-make-fake-labels
+\dummylabel{fig:popkin-rom-mor}{S1}
+\dummylabel{fig:kinship-bias}{S2}
+\dummylabel{fig:auc_sim-h3}{S3}
+\dummylabel{fig:rmsd_sim}{S4}
+\dummylabel{fig:rmsd_sim-h3}{S5}
+\dummylabel{fig:pvals_cor_sim}{S6}
+\dummylabel{fig:pvals_cor_sim-h3}{S7}
+\dummylabel{fig:pvals_eq_sim-h3}{S8}
+\dummylabel{fig:auc_real-h3}{S9}
+\dummylabel{fig:rmsd_real}{S10}
+\dummylabel{fig:rmsd_real-h3}{S11}
+\dummylabel{fig:pvals_cor_real}{S12}
+\dummylabel{fig:pvals_cor_real-h3}{S13}
+\dummylabel{fig:pvals_eq_real}{S14}
+\dummylabel{fig:pvals_eq_real-h3}{S15}
+\dummylabel{fig:emin}{S16}
+\dummylabel{fig:emin-h3}{S17}
+\dummylabel{fig:emin-cut-h3}{S18}
+\dummylabel{fig:kappa}{S19}
+\dummylabel{fig:kappa-h3}{S20}
+\dummylabel{fig:preds-reml-errors}{S21}
+\dummylabel{fig:preds-reml-errors-h3}{S22}
+\dummylabel{fig:reml-err-vs-pred-err}{S23}
+\dummylabel{fig:kappa-vs-pred-err}{S24}
+
+\end{document} 
