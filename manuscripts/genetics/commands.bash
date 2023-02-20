@@ -18,3 +18,8 @@ pdftk ../bias-assoc.pdf cat 44-65 output supp.pdf
 sed '/Link/d' < supp.pdf > supp2.pdf
 # manually compared, agreed this solves problem, so replace
 mv supp2.pdf supp.pdf
+# final name
+mv supp.pdf File\ S1.pdf
+
+# create zip file to upload
+zip -r paper.zip paper.{pdf,tex,log} gsajnl.cls styles/ figures/ bibliography.bib genetics.bst GENETICSturquoise.pdf 
